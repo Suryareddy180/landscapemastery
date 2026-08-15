@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from .email_service import send_enrollment_confirmation_email
 
 JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-landscape-mastery-executive-portal-key')
 
@@ -58,6 +59,9 @@ def create_checkout_session(request):
         algorithm='HS256'
     )
 
+    # Trigger Django SMTP email confirmation
+    email_sent = send_enrollment_confirmation_email(email, order_id, amount_cents=49900)
+
     return Response({
         'success': True,
         'keyId': settings.RAZORPAY_KEY_ID,
@@ -66,7 +70,8 @@ def create_checkout_session(request):
         'currency': 'INR',
         'email': email,
         'accessToken': token,
-        'message': 'Razorpay checkout session created via Django API.'
+        'emailSent': email_sent,
+        'message': 'Razorpay checkout session created via Django API and confirmation email dispatched.'
     })
 
 @api_view(['GET'])
