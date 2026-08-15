@@ -18,18 +18,20 @@ export default function DashboardView({ onNavigate }) {
   return (
     <React.Fragment>
       {/* Sidebar: Glassmorphic Navigation Panel */}
-      <aside className="w-80 h-full glass-panel flex flex-col pt-8 hidden md:flex flex-shrink-0 z-20">
-        <div className="px-6 mb-8 flex items-center gap-3">
-          <img 
-            src="/lm_logo.png" 
-            alt="Landscape Mastery Logo" 
-            className="w-10 h-10 object-contain rounded-xl shadow-md"
-          />
+      <aside className="w-80 h-full glass-panel flex flex-col pt-6 hidden md:flex flex-shrink-0 z-20 bg-white border-r border-stone-200 shadow-sm">
+        <div className="px-6 mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-stone-50 border border-emerald-800/15 shadow-sm overflow-hidden flex items-center justify-center">
+            <img 
+              src="/lm_logo.png" 
+              alt="Landscape Mastery Logo" 
+              className="w-full h-full object-contain rounded-full"
+            />
+          </div>
           <div>
-            <div className="font-body-md text-body-md font-semibold text-on-surface">Master Architect</div>
-            <div className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Tier: Professional</span>
+            <div className="font-serif text-base font-bold text-emerald-950">Master Architect</div>
+            <div className="text-xs text-stone-500 flex items-center gap-1.5 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="font-semibold text-emerald-800">Tier: Lifetime Access</span>
             </div>
           </div>
         </div>
@@ -82,16 +84,31 @@ export default function DashboardView({ onNavigate }) {
       </aside>
 
       {/* Main Area: Distraction-Free Cinematic Learning Environment */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto min-w-0 bg-surface">
-        {/* Mobile Top Bar */}
-        <header className="w-full bg-surface/80 backdrop-blur-md shadow-sm sticky top-0 z-10 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 md:hidden">
-          <div className="flex items-center gap-2 text-primary font-headline-md text-headline-md font-semibold">
-            <img src="/lm_logo.png" alt="Landscape Mastery Logo" className="w-8 h-8 object-contain rounded-lg" />
-            <span>Landscape Mastery</span>
+      <main className="flex-1 flex flex-col h-full overflow-y-auto min-w-0 bg-stone-50">
+        {/* Executive Desktop & Mobile Top Bar */}
+        <header className="w-full bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-0 z-30 flex justify-between items-center px-6 py-3.5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-xs text-stone-700 hidden sm:inline">The Landscape Mastery</span>
+            <span className="text-stone-300 hidden sm:inline">/</span>
+            <span className="bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-lg">
+              Module {activeModule}: {modules.find(m => m.id === activeModule)?.title}
+            </span>
           </div>
-          <button className="text-on-surface-variant">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-600 font-medium">
+              <span className="material-symbols-outlined text-emerald-700 text-sm">verified_user</span>
+              <span>DRM Active • Verified Stream</span>
+            </div>
+
+            <button
+              onClick={() => onNavigate('v1')}
+              className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-stone-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
+              Exit Portal
+            </button>
+          </div>
         </header>
 
         <div className="p-margin-mobile md:p-margin-desktop max-w-6xl mx-auto w-full flex-1 flex flex-col justify-center">

@@ -25,6 +25,8 @@ export default function AdminDashboardLayout({
     { id: 'settings', label: 'System Settings', icon: 'settings', badge: null }
   ];
 
+  const currentNav = navItems.find(i => i.id === activeSection) || navItems[0];
+
   return (
     <div className="h-screen bg-stone-100/70 text-stone-800 flex overflow-hidden font-body-md">
       {/* SIDEBAR NAVIGATION (Light Themed) */}
@@ -59,13 +61,13 @@ export default function AdminDashboardLayout({
           </div>
 
           {/* User Account Info Bar */}
-          <div className="px-5 py-3 bg-stone-50/80 border-b border-stone-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+          <div className="px-5 py-3.5 bg-stone-50 border-b border-stone-200/80 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-800 text-white font-bold flex items-center justify-center text-xs shadow-sm">
               {user?.email?.charAt(0).toUpperCase() || 'A'}
             </div>
             <div className="overflow-hidden flex-1">
-              <span className="text-xs font-semibold text-stone-800 block truncate">{user?.email || 'admin@landscapemastery.com'}</span>
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full inline-block mt-0.5">
+              <span className="text-xs font-semibold text-stone-900 block truncate">{user?.email || 'admin@landscapemastery.com'}</span>
+              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full inline-block mt-0.5">
                 {user?.role || 'SUPER_ADMIN'}
               </span>
             </div>
@@ -84,7 +86,7 @@ export default function AdminDashboardLayout({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
                     isActive
-                      ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-900/20'
+                      ? 'bg-emerald-800 text-white shadow-sm shadow-emerald-950/20'
                       : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                   }`}
                 >
@@ -108,14 +110,14 @@ export default function AdminDashboardLayout({
           <div className="p-4 border-t border-stone-200 bg-stone-50/60 space-y-1.5">
             <button
               onClick={() => onNavigate('v3')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base text-stone-500">preview</span>
               Student Portal View
             </button>
             <button
               onClick={() => onNavigate('v1')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-all"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">logout</span>
               Logout &amp; Exit
@@ -126,9 +128,9 @@ export default function AdminDashboardLayout({
 
       {/* MAIN CONTENT CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-full bg-stone-100/70">
-        {/* TOP NAVBAR (Single Clean Bar) */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/90 px-6 py-3.5 flex justify-between items-center gap-4 shadow-sm">
-          <div className="flex items-center gap-4">
+        {/* ENHANCED EXECUTIVE TOP NAVBAR */}
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-stone-200 px-6 py-4 flex justify-between items-center gap-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center gap-4 min-w-0">
             <button 
               onClick={() => setMobileSidebarOpen(true)}
               className="md:hidden text-stone-600 hover:text-stone-900 p-1.5 rounded-lg border border-stone-200"
@@ -136,22 +138,32 @@ export default function AdminDashboardLayout({
               <span className="material-symbols-outlined text-xl">menu</span>
             </button>
             
-            <div className="relative hidden sm:block w-72">
+            {/* Breadcrumb & Section Name */}
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <span className="text-stone-400 font-medium">Admin</span>
+              <span className="text-stone-300">/</span>
+              <span className="font-bold text-stone-800 flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200/60">
+                <span className="material-symbols-outlined text-base text-emerald-700">{currentNav.icon}</span>
+                {currentNav.label}
+              </span>
+            </div>
+
+            <div className="relative hidden lg:block w-64 ml-2">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">search</span>
               <input
                 type="text"
-                placeholder="Search courses, students, media..."
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-4 py-2 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                placeholder="Search..."
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* Quick Add Menu Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setQuickAddOpen(!quickAddOpen)}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm shadow-emerald-950/20 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
                 Quick Add
@@ -199,7 +211,7 @@ export default function AdminDashboardLayout({
             </div>
 
             {/* Platform Status Indicator */}
-            <div className="hidden lg:flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
               <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
               <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">Live &amp; Synced</span>
             </div>
@@ -207,7 +219,7 @@ export default function AdminDashboardLayout({
             {/* Logout Action Button */}
             <button
               onClick={() => onNavigate('v1')}
-              className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1 border border-stone-200"
+              className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-stone-200 cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">logout</span>
               Logout
