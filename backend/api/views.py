@@ -18,6 +18,7 @@ def get_tokens_for_user(usr):
         'usr_id': usr.id,
         'email': usr.email,
         'role': usr.role,
+        'paid': usr.paid,
         'exp': int(time.time()) + 86400
     }
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
@@ -31,6 +32,8 @@ def login(req):
         return Response({'error': 'Email and password required'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         usr = Usr.objects.get(email=email)
+        if usr.role == 'STUDENT' and not usr.paid:
+            return Response({'error': 'Payment required to access course content'}, status=status.HTTP_403_FORBIDDEN)
         if usr.check_password(pwd):
             tok = get_tokens_for_user(usr)
             return Response({'token': tok, 'user': {'email': usr.email, 'role': usr.role, 'paid': usr.paid}})
@@ -55,13 +58,11 @@ def razorpay_webhook(req):
         phn = entity.get('contact')
         if usrMail and phn:
             usr, created = Usr.objects.get_or_create(email=usrMail, defaults={'phone': phn, 'role': 'STUDENT', 'paid': True})
-            if created:
-                usr.set_password(phn)
-                usr.save()
-                sndMail(usrMail, phn)
-            else:
-                usr.paid = True
-                usr.save()
+            usr.set_password(phn)
+            usr.phone = phn
+            usr.paid = True
+            usr.save()
+            sndMail(usrMail, phn)
     return Response({'status': 'ok'})
 
 @api_view(['GET', 'POST'])
@@ -111,6 +112,8 @@ def admin_students(req):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def student_stream(req, pk):
+    if req.user.role == 'STUDENT' and not req.user.paid:
+        return Response({'error': 'Strict Access Denied: Payment required'}, status=status.HTTP_403_FORBIDDEN)
     if req.user.role not in ['STUDENT', 'ADMIN']:
         return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
