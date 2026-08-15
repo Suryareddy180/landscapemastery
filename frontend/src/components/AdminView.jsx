@@ -98,8 +98,28 @@ export default function AdminView({ user, onNavigate, token }) {
     setSavingSettings(false);
   };
 
-  const handleExportCSV = () => {
-    window.open('http://localhost:8000/api/admin/export/students/', '_blank');
+  const handleExportCSV = async () => {
+    try {
+      const url = token ? `http://localhost:8000/api/admin/export/students/?token=${token}` : 'http://localhost:8000/api/admin/export/students/';
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'students_roster.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+      } else {
+        window.open(url, '_blank');
+      }
+    } catch (err) {
+      window.open('http://localhost:8000/api/admin/export/students/', '_blank');
+    }
   };
 
   return (
