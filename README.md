@@ -1,46 +1,47 @@
-# Landscape Mastery - Paid Educational Video Platform
+# 🌿 Landscape Mastery — Executive Architecture Platform
 
-A premium 3-screen web application and API service for **Landscape Mastery**, an executive educational platform for landscape architecture. Built with React 18, Tailwind CSS, Framer Motion spring physics, glassmorphic UI, and a Python Django 5.2 REST Framework backend.
+A high-converting, motion-driven web application and DRM video platform for **Landscape Mastery**.
+
+Built as a production-grade monorepo featuring a **React 18 + Tailwind CSS + Framer Motion** frontend and a **Python Django 5.2 + Django REST Framework** backend powered by **PostgreSQL** and **Razorpay Payment Gateway**.
 
 ---
 
-## 📁 Repository Structure
+## 📐 Architecture & Directory Structure
 
 ```
-LandscapeMastery/
-├── frontend/                     # React 18 + Vite + Tailwind CSS + Framer Motion
-│   ├── src/                      # Source code
-│   │   ├── components/           # React UI Components
-│   │   │   ├── Header.jsx        # Elevated Navigation Header & Logo
-│   │   │   ├── LandingView.jsx   # Screen 1: Hero & Glass Checkout Card
-│   │   │   ├── LoginView.jsx     # Screen 2: Strict Closed Access Login Portal
-│   │   │   ├── DashboardView.jsx # Screen 3: Secure Video Dashboard
-│   │   │   ├── Footer.jsx        # Footer Component
-│   │   │   └── MagneticButton.jsx# Interactive Magnetic Spring CTA Button
-│   │   ├── App.jsx               # View router container
-│   │   ├── index.css             # Tailwind & Glassmorphism design tokens
-│   │   └── main.jsx              # React Entrypoint
-│   ├── public/                   # Static public assets (lm_logo.png)
-│   ├── index.html                # Main HTML Document & Favicon
+landscapemastery/
+├── frontend/                     # React 18 + Vite + Tailwind CSS App
+│   ├── public/                   # Public static assets (lm_logo.png)
+│   ├── src/
+│   │   ├── components/           # UI Components
+│   │   │   ├── Header.jsx        # Glassmorphic elevated header with brand logo
+│   │   │   ├── LandingView.jsx   # Hero section & Razorpay Checkout Card
+│   │   │   ├── LoginView.jsx     # Restricted access login card
+│   │   │   ├── DashboardView.jsx # DRM video player portal with dynamic watermark
+│   │   │   └── MagneticButton.jsx# Framer Motion spring physics button
+│   │   ├── App.jsx               # Navigation router container
+│   │   ├── index.css             # Design tokens & glassmorphic utilities
+│   │   └── main.jsx              # React entry point
+│   ├── index.html                # HTML entry with Google Fonts & Razorpay SDK
 │   ├── package.json              # Frontend dependencies
-│   ├── vite.config.js            # Vite bundler config
-│   ├── tailwind.config.js        # Custom Tailwind design tokens
-│   └── postcss.config.js         # PostCSS configuration
+│   ├── tailwind.config.js        # Stitch design token rules
+│   └── vite.config.js            # Vite bundler setup
 │
 ├── backend/                      # Python Django 5.2 + Django REST Framework API
 │   ├── api/                      # Django REST API app
 │   │   ├── models.py             # CourseModule & Enrollment models
 │   │   ├── views.py              # Login, Checkout & DRM Manifest views
+│   │   ├── email_service.py      # Django SMTP email notification service
 │   │   ├── urls.py               # API endpoints (/api/auth/, /api/checkout/, /api/video/)
 │   │   └── apps.py               # API AppConfig
 │   ├── core/                     # Django core project configuration
-│   │   ├── settings.py           # Settings & CORS config
+│   │   ├── settings.py           # PostgreSQL DB & Django SMTP settings
 │   │   ├── urls.py               # Root URLconf
 │   │   ├── wsgi.py               # WSGI application
 │   │   └── asgi.py               # ASGI application
-│   ├── db.sqlite3                # SQLite database
 │   ├── manage.py                 # Django command-line utility
-│   └── requirements.txt          # Python dependencies (Django, DRF, PyJWT)
+│   ├── requirements.txt          # Python dependencies (Django, DRF, PyJWT, psycopg2-binary)
+│   └── .env.example              # Environment variables template
 │
 ├── DESIGN.md                     # Stitch MCP Design Tokens specification
 ├── package.json                  # Root monorepo workspace configuration
@@ -52,8 +53,9 @@ LandscapeMastery/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Python**: v3.10+ (Django 5.2, DRF, PyJWT)
+- **Python**: v3.10+ (Django 5.2, DRF, PyJWT, psycopg2-binary)
 - **Node.js**: v18+ (React, Vite, Tailwind, Framer Motion)
+- **PostgreSQL**: v13+ (Database Engine)
 
 ### Running Frontend & Backend Concurrently
 From the root directory:
