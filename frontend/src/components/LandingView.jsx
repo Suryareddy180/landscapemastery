@@ -175,9 +175,6 @@ export default function LandingView({ onNavigate }) {
                 <span className="material-symbols-outlined text-2xl" title="QR Instant Checkout">qr_code_scanner</span>
                 <span className="material-symbols-outlined text-2xl" title="256-Bit SSL">verified_user</span>
               </div>
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-widest text-[10px]">
-                Secured by Razorpay • Key: rzp_test_T70jvhfe9o6Nci
-              </span>
             </div>
           </div>
         </motion.div>
