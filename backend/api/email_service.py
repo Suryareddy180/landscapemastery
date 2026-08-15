@@ -72,7 +72,7 @@ The Landscape Mastery Team
     </html>
     """
 
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Landscape Mastery <landscapemastery.official@gmail.com>')
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Landscape Mastery <noreply@landscapemastery.com>')
 
     try:
         send_mail(
