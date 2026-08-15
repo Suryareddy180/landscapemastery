@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Builds & Outputs
+frontend/dist/
+frontend/dist/assets/lm_logo*.png
+*.pyc
+__pycache__/
+*.sqlite3
+
+# Environment & IDE
+.env
+.env.local
+.vscode/
+.idea/
+.DS_Store

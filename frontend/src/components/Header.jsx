@@ -1,0 +1,52 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+
+export default function Header({ activeView, onNavigate }) {
+  return (
+    <motion.header 
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full top-0 sticky bg-surface/85 backdrop-blur-xl border-b border-outline-variant/25 z-40 shadow-[0_4px_30px_rgba(6,78,59,0.04)]"
+    >
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-margin-mobile md:px-margin-desktop py-3.5">
+        {/* Brand Logo & Title */}
+        <motion.button 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          onClick={() => onNavigate('v1')} 
+          className="flex items-center gap-3.5 group focus:outline-none cursor-pointer"
+        >
+          <div className="relative p-2 rounded-2xl bg-gradient-to-br from-primary-container to-primary shadow-lg shadow-primary-container/20 border border-emerald-400/30 overflow-hidden flex items-center justify-center">
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <img 
+              src="/lm_logo.png" 
+              alt="Landscape Mastery Logo" 
+              className="h-9 w-auto object-contain brightness-110 drop-shadow-md"
+            />
+          </div>
+
+          <span className="font-headline-md text-xl md:text-2xl font-bold tracking-tight text-primary bg-gradient-to-r from-primary via-primary-container to-surface-tint bg-clip-text text-transparent">
+            Landscape Mastery
+          </span>
+        </motion.button>
+
+        {/* Auth Action Button */}
+        <motion.button 
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          className={`font-body-md text-sm font-semibold focus:outline-none cursor-pointer px-5 py-2.5 rounded-xl transition-all shadow-sm ${
+            activeView === 'v2'
+              ? 'bg-primary-container text-on-primary shadow-primary-container/20'
+              : 'btn-primary'
+          }`}
+          onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
+        >
+          {activeView === 'v2' ? 'Back Home' : 'Login'}
+        </motion.button>
+      </div>
+    </motion.header>
+  );
+}
