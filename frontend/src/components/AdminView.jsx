@@ -45,8 +45,6 @@ export default function AdminView({ user, onNavigate, token }) {
     { id: 2, code: 'EARLYBIRD', discount_pct: 20, max_uses: 50, used_count: 32, active: true }
   ]);
 
-  const [newCoupon, setNewCoupon] = useState({ code: '', discount_pct: 15, max_uses: 100 });
-  const [selectedStudent, setSelectedStudent] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
@@ -132,88 +130,88 @@ export default function AdminView({ user, onNavigate, token }) {
     >
       {/* SECTION 1: DASHBOARD OVERVIEW */}
       {activeSection === 'overview' && (
-        <div className="space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <div>
-              <h1 className="text-2xl font-bold text-white">Platform Dashboard Overview</h1>
-              <p className="text-xs text-slate-400 mt-1">Real-time database analytics, revenue metrics, and course completion funnels.</p>
+              <h1 className="text-xl font-bold text-stone-900">Platform Analytics Overview</h1>
+              <p className="text-xs text-stone-500 mt-1">Real-time database analytics, revenue metrics, and course completion funnels.</p>
             </div>
-            <button onClick={handleExportCSV} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+            <button onClick={handleExportCSV} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">download</span>
               Export Student Roster (CSV)
             </button>
           </div>
 
           {/* Metric Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Enrolled Students</span>
-                <span className="material-symbols-outlined text-emerald-400 bg-emerald-950 p-2 rounded-xl border border-emerald-800/40">group</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Enrolled Students</span>
+                <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">group</span>
               </div>
-              <div className="text-3xl font-bold text-white">{analytics.studentCount}</div>
-              <p className="text-[11px] text-emerald-400 font-semibold mt-2">↑ 100% Verified Paid Enrollees</p>
+              <div className="text-2xl font-bold text-stone-900">{analytics.studentCount}</div>
+              <p className="text-[11px] text-emerald-700 font-semibold mt-2">↑ 100% Verified Paid Enrollees</p>
             </div>
 
-            <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Platform Revenue</span>
-                <span className="material-symbols-outlined text-emerald-400 bg-emerald-950 p-2 rounded-xl border border-emerald-800/40">payments</span>
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Gross Platform Revenue</span>
+                <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">payments</span>
               </div>
-              <div className="text-3xl font-bold text-white">₹{analytics.totalRevenue.toLocaleString()}</div>
-              <p className="text-[11px] text-emerald-400 font-semibold mt-2">Lifetime Access Razorpay Sales</p>
+              <div className="text-2xl font-bold text-stone-900">₹{analytics.totalRevenue.toLocaleString()}</div>
+              <p className="text-[11px] text-emerald-700 font-semibold mt-2">Lifetime Access Razorpay Sales</p>
             </div>
 
-            <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Published Courses</span>
-                <span className="material-symbols-outlined text-emerald-400 bg-emerald-950 p-2 rounded-xl border border-emerald-800/40">auto_stories</span>
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Published Courses</span>
+                <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">auto_stories</span>
               </div>
-              <div className="text-3xl font-bold text-white">{analytics.publishedCourses}</div>
-              <p className="text-[11px] text-slate-400 mt-2">{analytics.totalEnrollments} Total Active Enrollments</p>
+              <div className="text-2xl font-bold text-stone-900">{analytics.publishedCourses}</div>
+              <p className="text-[11px] text-stone-500 mt-2">{analytics.totalEnrollments} Active Enrollments</p>
             </div>
 
-            <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Media &amp; PDF Assets</span>
-                <span className="material-symbols-outlined text-emerald-400 bg-emerald-950 p-2 rounded-xl border border-emerald-800/40">video_library</span>
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Media &amp; PDF Assets</span>
+                <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">video_library</span>
               </div>
-              <div className="text-3xl font-bold text-white">{analytics.totalContent}</div>
-              <p className="text-[11px] text-slate-400 mt-2">{analytics.longVideoCount} Masterclasses (2h+) • {analytics.pdfCount} PDFs</p>
+              <div className="text-2xl font-bold text-stone-900">{analytics.totalContent}</div>
+              <p className="text-[11px] text-stone-500 mt-2">{analytics.longVideoCount} Masterclasses (2h+) • {analytics.pdfCount} PDFs</p>
             </div>
           </div>
 
           {/* Student Progress Funnel Overview */}
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 space-y-6">
-            <h2 className="text-lg font-bold text-white">Student Course Completion Funnel</h2>
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5">
+            <h2 className="text-base font-bold text-stone-900">Student Course Completion Funnel</h2>
             <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                <div className="flex justify-between text-xs font-semibold text-stone-700 mb-1">
                   <span>Enrolled &amp; Access Granted</span>
                   <span>100% ({analytics.studentCount} Students)</span>
                 </div>
-                <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full w-[100%]" />
+                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-600 rounded-full w-[100%]" />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                <div className="flex justify-between text-xs font-semibold text-stone-700 mb-1">
                   <span>Long Masterclass Completion (2+ Hours)</span>
                   <span>94.2%</span>
                 </div>
-                <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-teal-500 rounded-full w-[94%]" />
+                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-teal-600 rounded-full w-[94%]" />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                <div className="flex justify-between text-xs font-semibold text-stone-700 mb-1">
                   <span>PDF Blueprint Downloads</span>
                   <span>88.5%</span>
                 </div>
-                <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full w-[88%]" />
+                <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-600 rounded-full w-[88%]" />
                 </div>
               </div>
             </div>
@@ -229,21 +227,21 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 4: STUDENT ROSTER */}
       {activeSection === 'students' && (
-        <div className="space-y-8">
-          <div className="flex justify-between items-center bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <div>
-              <h1 className="text-2xl font-bold text-white">Verified Student Roster</h1>
-              <p className="text-xs text-slate-400 mt-1">Manage paid enrollees, passwords, and access statuses.</p>
+              <h1 className="text-xl font-bold text-stone-900">Verified Student Roster</h1>
+              <p className="text-xs text-stone-500 mt-1">Manage paid enrollees, passwords, and access statuses.</p>
             </div>
-            <button onClick={handleExportCSV} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all">
+            <button onClick={handleExportCSV} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm">
               Export CSV
             </button>
           </div>
 
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                <tr className="border-b border-stone-200 text-stone-500 uppercase font-semibold">
                   <th className="py-3 px-3">Student Email (Username)</th>
                   <th className="py-3 px-3">Phone (Password)</th>
                   <th className="py-3 px-3">Date Enrolled</th>
@@ -253,17 +251,17 @@ export default function AdminView({ user, onNavigate, token }) {
               </thead>
               <tbody>
                 {students.map((std) => (
-                  <tr key={std.id} className="border-b border-slate-800/60 hover:bg-slate-900/50">
-                    <td className="py-4 px-3 font-semibold text-slate-200">{std.email}</td>
-                    <td className="py-4 px-3 font-mono text-slate-300">{std.phone || 'N/A'}</td>
-                    <td className="py-4 px-3 text-slate-400">{std.created_at || 'Recent'}</td>
+                  <tr key={std.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                    <td className="py-4 px-3 font-semibold text-stone-900">{std.email}</td>
+                    <td className="py-4 px-3 font-mono text-stone-700">{std.phone || 'N/A'}</td>
+                    <td className="py-4 px-3 text-stone-500">{std.created_at || 'Recent'}</td>
                     <td className="py-4 px-3">
-                      <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/50 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
                         ✓ PAID &amp; VERIFIED
                       </span>
                     </td>
                     <td className="py-4 px-3 text-right">
-                      <button onClick={() => setSelectedStudent(std)} className="text-teal-400 hover:underline font-semibold">
+                      <button className="text-emerald-700 hover:underline font-semibold">
                         View Progress
                       </button>
                     </td>
@@ -277,16 +275,16 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 5: PAYMENTS & ORDERS */}
       {activeSection === 'payments' && (
-        <div className="space-y-8">
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
-            <h1 className="text-2xl font-bold text-white">Razorpay Payments &amp; Order Log</h1>
-            <p className="text-xs text-slate-400 mt-1">Verified backend payment records captured via webhook.</p>
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <h1 className="text-xl font-bold text-stone-900">Razorpay Payments &amp; Order Log</h1>
+            <p className="text-xs text-stone-500 mt-1">Verified backend payment records captured via webhook.</p>
           </div>
 
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                <tr className="border-b border-stone-200 text-stone-500 uppercase font-semibold">
                   <th className="py-3 px-3">Order ID</th>
                   <th className="py-3 px-3">Student Email</th>
                   <th className="py-3 px-3">Amount</th>
@@ -296,13 +294,13 @@ export default function AdminView({ user, onNavigate, token }) {
               </thead>
               <tbody>
                 {students.map((std, i) => (
-                  <tr key={i} className="border-b border-slate-800/60 hover:bg-slate-900/50">
-                    <td className="py-4 px-3 font-mono text-emerald-400">order_1786790408_{i+1}</td>
-                    <td className="py-4 px-3 text-slate-200 font-medium">{std.email}</td>
-                    <td className="py-4 px-3 font-bold text-white">₹499.00</td>
-                    <td className="py-4 px-3 text-slate-400">Razorpay Webhook (INR)</td>
+                  <tr key={i} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                    <td className="py-4 px-3 font-mono font-semibold text-emerald-800">order_1786790408_{i+1}</td>
+                    <td className="py-4 px-3 text-stone-800 font-medium">{std.email}</td>
+                    <td className="py-4 px-3 font-bold text-stone-900">₹499.00</td>
+                    <td className="py-4 px-3 text-stone-500">Razorpay Webhook (INR)</td>
                     <td className="py-4 px-3 text-right">
-                      <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/50 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full">
                         SUCCESS
                       </span>
                     </td>
@@ -316,31 +314,31 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 6: LANDING CMS & LOGO ADJUSTER */}
       {activeSection === 'cms' && (
-        <div className="space-y-8">
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
-            <h1 className="text-2xl font-bold text-white">Landing Page CMS &amp; Brand Logo Customizer</h1>
-            <p className="text-xs text-slate-400 mt-1">Control your brand logo dimensions, aspect ratio, and hero headline in real-time.</p>
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <h1 className="text-xl font-bold text-stone-900">Landing Page CMS &amp; Brand Logo Customizer</h1>
+            <p className="text-xs text-stone-500 mt-1">Control your brand logo dimensions, aspect ratio, and hero headline in real-time.</p>
           </div>
 
-          <form onSubmit={handleSaveSettings} className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 space-y-6">
+          <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
             {/* Interactive Logo Sizer */}
-            <div className="p-5 bg-slate-900/80 rounded-xl border border-slate-800 space-y-4">
+            <div className="p-5 bg-stone-50 rounded-xl border border-stone-200 space-y-4">
               <div className="flex justify-between items-center">
-                <label className="font-semibold text-xs text-slate-300">
-                  Header Brand Logo Height: <span className="text-emerald-400 font-bold">{siteSettings.logoSize}px</span>
+                <label className="font-bold text-xs text-stone-800">
+                  Header Brand Logo Height: <span className="text-emerald-700 font-bold">{siteSettings.logoSize}px</span>
                 </label>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setSiteSettings({ ...siteSettings, logoFitMode: 'auto' })}
-                    className={`text-xs font-semibold px-3 py-1 rounded-lg ${siteSettings.logoFitMode === 'auto' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                    className={`text-xs font-semibold px-3 py-1 rounded-lg ${siteSettings.logoFitMode === 'auto' ? 'bg-emerald-700 text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-200'}`}
                   >
                     Auto-Adjust
                   </button>
                   <button
                     type="button"
                     onClick={() => setSiteSettings({ ...siteSettings, logoFitMode: 'manual' })}
-                    className={`text-xs font-semibold px-3 py-1 rounded-lg ${siteSettings.logoFitMode === 'manual' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                    className={`text-xs font-semibold px-3 py-1 rounded-lg ${siteSettings.logoFitMode === 'manual' ? 'bg-emerald-700 text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-200'}`}
                   >
                     Manual Scale
                   </button>
@@ -353,12 +351,12 @@ export default function AdminView({ user, onNavigate, token }) {
                 max="120"
                 value={siteSettings.logoSize}
                 onChange={(e) => setSiteSettings({ ...siteSettings, logoSize: parseInt(e.target.value, 10) || 48 })}
-                className="w-full accent-emerald-500 cursor-pointer"
+                className="w-full accent-emerald-600 cursor-pointer"
               />
 
               <div className="flex items-center gap-4 pt-2">
-                <span className="text-xs font-semibold text-slate-400">Live Header Preview:</span>
-                <div className="p-2 bg-stone-50 rounded-full border border-emerald-800/20 shadow-md flex items-center justify-center overflow-hidden">
+                <span className="text-xs font-semibold text-stone-600">Live Header Preview:</span>
+                <div className="p-2 bg-stone-50 rounded-full border border-emerald-800/20 shadow-sm flex items-center justify-center overflow-hidden">
                   <img
                     src={siteSettings.logoUrl || '/lm_logo.png'}
                     alt="Brand Logo"
@@ -370,37 +368,37 @@ export default function AdminView({ user, onNavigate, token }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Hero Title</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">Hero Title</label>
               <input
                 type="text"
                 value={siteSettings.heroTitle}
                 onChange={(e) => setSiteSettings({ ...siteSettings, heroTitle: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-900 focus:bg-white focus:border-emerald-600 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Hero Subtitle</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">Hero Subtitle</label>
               <textarea
                 rows="3"
                 value={siteSettings.heroSubtitle}
                 onChange={(e) => setSiteSettings({ ...siteSettings, heroSubtitle: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-900 focus:bg-white focus:border-emerald-600 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Course Enrollment Price ($ / ₹)</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">Course Enrollment Price ($ / ₹)</label>
               <input
                 type="number"
                 value={siteSettings.coursePrice}
                 onChange={(e) => setSiteSettings({ ...siteSettings, coursePrice: parseFloat(e.target.value) || 499 })}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-900 focus:bg-white focus:border-emerald-600 focus:outline-none"
               />
             </div>
 
             <div className="flex justify-end">
-              <button type="submit" disabled={savingSettings} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all">
+              <button type="submit" disabled={savingSettings} className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-sm">
                 {savingSettings ? 'Saving Settings...' : 'Save CMS Settings'}
               </button>
             </div>
@@ -410,18 +408,18 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 7: COUPONS & OFFERS */}
       {activeSection === 'coupons' && (
-        <div className="space-y-8">
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-white">Coupons &amp; Promotional Offers</h1>
-              <p className="text-xs text-slate-400 mt-1">Create discount codes for promotional student access.</p>
+              <h1 className="text-xl font-bold text-stone-900">Coupons &amp; Promotional Offers</h1>
+              <p className="text-xs text-stone-500 mt-1">Create discount codes for promotional student access.</p>
             </div>
           </div>
 
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                <tr className="border-b border-stone-200 text-stone-500 uppercase font-semibold">
                   <th className="py-3 px-3">Coupon Code</th>
                   <th className="py-3 px-3">Discount %</th>
                   <th className="py-3 px-3">Usage Limit</th>
@@ -430,12 +428,12 @@ export default function AdminView({ user, onNavigate, token }) {
               </thead>
               <tbody>
                 {coupons.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-800/60 hover:bg-slate-900/50">
-                    <td className="py-4 px-3 font-mono font-bold text-emerald-400">{c.code}</td>
-                    <td className="py-4 px-3 font-bold text-white">{c.discount_pct}% OFF</td>
-                    <td className="py-4 px-3 text-slate-400">{c.used_count} / {c.max_uses} Used</td>
+                  <tr key={c.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                    <td className="py-4 px-3 font-mono font-bold text-emerald-800">{c.code}</td>
+                    <td className="py-4 px-3 font-bold text-stone-900">{c.discount_pct}% OFF</td>
+                    <td className="py-4 px-3 text-stone-600">{c.used_count} / {c.max_uses} Used</td>
                     <td className="py-4 px-3 text-right">
-                      <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/50 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full">
                         ACTIVE
                       </span>
                     </td>
@@ -449,16 +447,16 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 8: AUDIT LOGS */}
       {activeSection === 'audit' && (
-        <div className="space-y-8">
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
-            <h1 className="text-2xl font-bold text-white">Security Audit Trail &amp; System Logs</h1>
-            <p className="text-xs text-slate-400 mt-1">Server-side recorded log of all administrative actions, IP addresses, and timestamps.</p>
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <h1 className="text-xl font-bold text-stone-900">Security Audit Trail &amp; System Logs</h1>
+            <p className="text-xs text-stone-500 mt-1">Server-side recorded log of all administrative actions, IP addresses, and timestamps.</p>
           </div>
 
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 overflow-x-auto">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                <tr className="border-b border-stone-200 text-stone-500 uppercase font-semibold">
                   <th className="py-3 px-3">Admin Actor</th>
                   <th className="py-3 px-3">Action</th>
                   <th className="py-3 px-3">Target Object</th>
@@ -468,12 +466,12 @@ export default function AdminView({ user, onNavigate, token }) {
               </thead>
               <tbody>
                 {auditLogs.map((log) => (
-                  <tr key={log.id} className="border-b border-slate-800/60 hover:bg-slate-900/50">
-                    <td className="py-4 px-3 font-semibold text-slate-200">{log.actor__email || 'System'}</td>
-                    <td className="py-4 px-3 font-bold text-emerald-400">{log.action}</td>
-                    <td className="py-4 px-3 text-slate-300">{log.target}</td>
-                    <td className="py-4 px-3 font-mono text-slate-400">{log.ip_address || '127.0.0.1'}</td>
-                    <td className="py-4 px-3 text-right text-slate-400">{log.timestamp}</td>
+                  <tr key={log.id} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                    <td className="py-4 px-3 font-semibold text-stone-900">{log.actor__email || 'System'}</td>
+                    <td className="py-4 px-3 font-bold text-emerald-800">{log.action}</td>
+                    <td className="py-4 px-3 text-stone-700">{log.target}</td>
+                    <td className="py-4 px-3 font-mono text-stone-500">{log.ip_address || '127.0.0.1'}</td>
+                    <td className="py-4 px-3 text-right text-stone-500">{log.timestamp}</td>
                   </tr>
                 ))}
               </tbody>
@@ -484,32 +482,32 @@ export default function AdminView({ user, onNavigate, token }) {
 
       {/* SECTION 9: SYSTEM SETTINGS */}
       {activeSection === 'settings' && (
-        <div className="space-y-8">
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800">
-            <h1 className="text-2xl font-bold text-white">System Security &amp; SMTP Settings</h1>
-            <p className="text-xs text-slate-400 mt-1">Configure Hostinger SMTP mailer parameters and session security policies.</p>
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <h1 className="text-xl font-bold text-stone-900">System Security &amp; SMTP Settings</h1>
+            <p className="text-xs text-stone-500 mt-1">Configure Hostinger SMTP mailer parameters and session security policies.</p>
           </div>
 
-          <div className="bg-slate-950/70 p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block mb-1">Database Engine</span>
-                <span className="text-white font-bold font-mono">PostgreSQL (django.db.backends.postgresql)</span>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                <span className="text-stone-500 block mb-1">Database Engine</span>
+                <span className="text-stone-900 font-bold font-mono">PostgreSQL (django.db.backends.postgresql)</span>
               </div>
 
-              <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block mb-1">Email Service Dispatcher</span>
-                <span className="text-white font-bold font-mono">Hostinger SMTP (Port 465 SSL/TLS)</span>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                <span className="text-stone-500 block mb-1">Email Service Dispatcher</span>
+                <span className="text-stone-900 font-bold font-mono">Hostinger SMTP (Port 465 SSL/TLS)</span>
               </div>
 
-              <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block mb-1">Signed Video Token Expiry</span>
-                <span className="text-white font-bold font-mono">300 Seconds (5 Minutes)</span>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                <span className="text-stone-500 block mb-1">Signed Video Token Expiry</span>
+                <span className="text-stone-900 font-bold font-mono">300 Seconds (5 Minutes)</span>
               </div>
 
-              <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400 block mb-1">Payment Gateway</span>
-                <span className="text-emerald-400 font-bold font-mono">Razorpay Verified Webhook</span>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                <span className="text-stone-500 block mb-1">Payment Gateway</span>
+                <span className="text-emerald-800 font-bold font-mono">Razorpay Verified Webhook</span>
               </div>
             </div>
           </div>

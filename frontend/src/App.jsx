@@ -75,8 +75,7 @@ export default function App() {
 
       {/* Admin Operations Panel */}
       {activeView === 'admin' && (
-        <div className="view-section active min-h-screen flex flex-col bg-surface">
-          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} user={user} />
+        <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
           <AdminView user={user} onNavigate={setActiveView} token={token} />
         </div>
       )}
