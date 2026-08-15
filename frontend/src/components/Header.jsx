@@ -2,50 +2,91 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export default function Header({ activeView, onNavigate, logoSize = 48, user }) {
+  const scrollToSection = (id) => {
+    if (activeView !== 'v1') {
+      onNavigate('v1');
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <motion.header 
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full top-0 sticky bg-surface/85 backdrop-blur-xl border-b border-outline-variant/25 z-40 shadow-[0_4px_30px_rgba(6,78,59,0.04)]"
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full top-0 sticky bg-white/95 backdrop-blur-xl border-b border-stone-200/90 z-50 shadow-[0_4px_25px_-4px_rgba(6,78,59,0.08)]"
     >
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-margin-mobile md:px-margin-desktop py-3.5">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3.5">
         {/* Brand Logo & Title */}
         <motion.button 
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
           onClick={() => onNavigate('v1')} 
-          className="flex items-center gap-3.5 group focus:outline-none cursor-pointer"
+          className="flex items-center gap-3.5 group focus:outline-none cursor-pointer text-left"
         >
-          <div className="relative rounded-full shadow-md overflow-hidden flex items-center justify-center border border-emerald-800/15 bg-stone-50 transition-transform duration-300 group-hover:scale-105">
+          <div className="relative rounded-full shadow-md overflow-hidden flex items-center justify-center ring-2 ring-emerald-800/20 ring-offset-2 ring-offset-white bg-stone-50 transition-all duration-300 group-hover:ring-emerald-700">
             <img 
               src="/lm_logo.png" 
               alt="Landscape Mastery Logo" 
-              style={{ height: `${logoSize || 46}px`, width: `${logoSize || 46}px` }}
-              className="object-contain rounded-full transition-all duration-300"
+              style={{ height: `${Math.max(logoSize || 46, 44)}px`, width: `${Math.max(logoSize || 46, 44)}px` }}
+              className="object-contain rounded-full transition-transform duration-300 group-hover:scale-105"
             />
           </div>
 
-          <span className="font-headline-md text-xl md:text-2xl font-bold tracking-tight text-primary bg-gradient-to-r from-primary via-primary-container to-surface-tint bg-clip-text text-transparent">
-            Landscape Mastery
-          </span>
+          <div>
+            <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-emerald-950 block leading-none">
+              Landscape Mastery
+            </span>
+            <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-widest mt-1 block">
+              Architectural Masterclass
+            </span>
+          </div>
         </motion.button>
 
-        {/* Header Navigation Actions */}
+        {/* Central Navigation Anchor Links */}
+        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-stone-600">
+          <button 
+            onClick={() => scrollToSection('course-curriculum')}
+            className="hover:text-emerald-800 transition-colors cursor-pointer py-1"
+          >
+            Curriculum
+          </button>
+          <button 
+            onClick={() => scrollToSection('features')}
+            className="hover:text-emerald-800 transition-colors cursor-pointer py-1"
+          >
+            Masterclass Framework
+          </button>
+          <button 
+            onClick={() => scrollToSection('enroll-card')}
+            className="hover:text-emerald-800 transition-colors cursor-pointer py-1"
+          >
+            Pricing &amp; Access
+          </button>
+        </nav>
+
+        {/* Header Right Action */}
         <div className="flex items-center gap-3">
           <motion.button 
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className={`font-body-md text-sm font-semibold focus:outline-none cursor-pointer px-5 py-2.5 rounded-xl transition-all shadow-sm ${
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className={`font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
               activeView === 'v2'
-                ? 'bg-primary-container text-on-primary shadow-primary-container/20'
-                : 'btn-primary'
+                ? 'bg-stone-100 text-stone-800 border border-stone-300 hover:bg-stone-200'
+                : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-emerald-950/20'
             }`}
-            onClick={() => onNavigate(activeView === 'v2' ? 'v1' : activeView === 'admin' ? 'v1' : 'v2')}
+            onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
           >
-            {activeView === 'v2' ? 'Back Home' : activeView === 'admin' ? 'Logout' : 'Login'}
+            <span className="material-symbols-outlined text-sm">
+              {activeView === 'v2' ? 'arrow_back' : 'lock'}
+            </span>
+            {activeView === 'v2' ? 'Back Home' : 'Login'}
           </motion.button>
         </div>
       </div>
