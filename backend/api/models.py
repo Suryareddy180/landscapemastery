@@ -1,22 +1,39 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-class CourseModule(models.Model):
+class UsrMgr(BaseUserManager):
+    def create_user(self, email, password=None, **extra):
+        if not email:
+            raise ValueError('Email required')
+        email = self.normalize_email(email)
+        usr = self.model(email=email, **extra)
+        usr.set_password(password)
+        usr.save(using=self._db)
+        return usr
+
+    def create_superuser(self, email, password=None, **extra):
+        extra.setdefault('is_staff', True)
+        extra.setdefault('is_superuser', True)
+        extra.setdefault('role', 'ADMIN')
+        return self.create_user(email, password, **extra)
+
+class Usr(AbstractBaseUser, PermissionsMixin):
+    ROLE_CHOICES = (('ADMIN', 'ADMIN'), ('STUDENT', 'STUDENT'))
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='STUDENT')
+    paid = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UsrMgr()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+class Vid(models.Model):
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    duration_minutes = models.IntegerField(default=30)
-    order = models.IntegerField(default=1)
-    is_completed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Module {self.order}: {self.title}"
-
-class EnrollmentSession(models.Model):
-    email = models.EmailField()
-    order_id = models.CharField(max_length=100, unique=True)
-    amount_cents = models.IntegerField(default=49900)
-    is_paid = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.email} ({self.order_id})"
+    file = models.FileField(upload_to='videos/', blank=True, null=True)
+    url = models.CharField(max_length=500, blank=True, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    dur = models.CharField(max_length=50, default='45 mins')

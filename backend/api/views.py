@@ -1,97 +1,143 @@
+import hmac
+import hashlib
+import json
 import time
 import jwt
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .email_service import send_enrollment_confirmation_email
+from .models import Usr, Vid
+from .email_service import sndMail
 
 JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-development-key-landscape-mastery-portal')
 
+def get_tokens_for_user(usr):
+    payload = {
+        'usr_id': usr.id,
+        'email': usr.email,
+        'role': usr.role,
+        'exp': int(time.time()) + 86400
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login(req):
+    email = req.data.get('email')
+    pwd = req.data.get('password')
+    if not email or not pwd:
+        return Response({'error': 'Email and password required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        usr = Usr.objects.get(email=email)
+        if usr.check_password(pwd):
+            tok = get_tokens_for_user(usr)
+            return Response({'token': tok, 'user': {'email': usr.email, 'role': usr.role, 'paid': usr.paid}})
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    except Usr.DoesNotExist:
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def razorpay_webhook(req):
+    sig = req.headers.get('X-Razorpay-Signature')
+    sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
+    if sec and sig:
+        exp_sig = hmac.new(sec.encode('utf-8'), req.body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(exp_sig, sig):
+            return Response({'error': 'Invalid signature'}, status=status.HTTP_400_BAD_REQUEST)
+    body = req.data
+    event = body.get('event')
+    if event == 'payment.captured':
+        entity = body.get('payload', {}).get('payment', {}).get('entity', {})
+        usrMail = entity.get('email')
+        phn = entity.get('contact')
+        if usrMail and phn:
+            usr, created = Usr.objects.get_or_create(email=usrMail, defaults={'phone': phn, 'role': 'STUDENT', 'paid': True})
+            if created:
+                usr.set_password(phn)
+                usr.save()
+                sndMail(usrMail, phn)
+            else:
+                usr.paid = True
+                usr.save()
+    return Response({'status': 'ok'})
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_videos(req):
+    if req.user.role != 'ADMIN':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    if req.method == 'GET':
+        vids = list(Vid.objects.values())
+        return Response({'videos': vids})
+    elif req.method == 'POST':
+        title = req.data.get('title')
+        cost = req.data.get('cost', 0)
+        file_obj = req.FILES.get('file')
+        url = req.data.get('url')
+        vid = Vid.objects.create(title=title, cost=cost, file=file_obj, url=url)
+        return Response({'status': 'created', 'id': vid.id})
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_video_detail(req, pk):
+    if req.user.role != 'ADMIN':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        vid = Vid.objects.get(pk=pk)
+    except Vid.DoesNotExist:
+        return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
+    if req.method == 'DELETE':
+        vid.delete()
+        return Response({'status': 'deleted'})
+    elif req.method == 'PATCH':
+        if 'cost' in req.data:
+            vid.cost = req.data['cost']
+        if 'title' in req.data:
+            vid.title = req.data['title']
+        vid.save()
+        return Response({'status': 'updated'})
+
 @api_view(['GET'])
-@permission_classes([AllowAny])
-def health_check(request):
+@permission_classes([IsAuthenticated])
+def admin_students(req):
+    if req.user.role != 'ADMIN':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    stds = list(Usr.objects.filter(role='STUDENT').values('email', 'phone', 'paid'))
+    return Response({'students': stds})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def student_stream(req, pk):
+    if req.user.role not in ['STUDENT', 'ADMIN']:
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        vid = Vid.objects.get(pk=pk)
+    except Vid.DoesNotExist:
+        return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
     return Response({
-        "status": "ok",
-        "service": "Landscape Mastery Django REST API",
-        "framework": "Django 5.2",
-        "timestamp": int(time.time())
+        'id': vid.id,
+        'title': vid.title,
+        'url': vid.url or (vid.file.url if vid.file else ''),
+        'dur': vid.dur,
+        'watermark': f"LICENSED TO: {req.user.email.upper()}",
+        'drm': True
     })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def login_view(request):
-    email = request.data.get('email')
-    password = request.data.get('password')
-
-    if not email or not password:
-        return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    token = jwt.encode(
-        {'email': email, 'user_id': 'LM-98420', 'role': 'architect'},
-        JWT_SECRET,
-        algorithm='HS256'
-    )
-
-    return Response({
-        'message': 'Login successful',
-        'token': token,
-        'user': {
-            'email': email,
-            'user_id': 'LM-98420',
-            'tier': 'Professional Architect'
-        }
-    })
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def create_checkout_session(request):
-    email = request.data.get('email')
-
+def checkout_session(req):
+    email = req.data.get('email')
     if not email:
-        return Response({'error': 'Email address is required for checkout.'}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response({'error': 'Email required'}, status=status.HTTP_400_BAD_REQUEST)
     order_id = 'order_' + str(int(time.time()))
-    token = jwt.encode(
-        {'email': email, 'order_id': order_id, 'paid': True, 'tier': 'Professional'},
-        JWT_SECRET,
-        algorithm='HS256'
-    )
-
-    # Trigger Django SMTP email confirmation
-    email_sent = send_enrollment_confirmation_email(email, order_id, amount_cents=49900)
-
     return Response({
         'success': True,
-        'keyId': settings.RAZORPAY_KEY_ID,
+        'keyId': getattr(settings, 'RAZORPAY_KEY_ID', ''),
         'orderId': order_id,
-        'amount': 49900,  # in cents/paise ($499 / INR 499)
+        'amount': 49900,
         'currency': 'INR',
-        'email': email,
-        'accessToken': token,
-        'emailSent': email_sent,
-        'message': 'Razorpay checkout session created via Django API and confirmation email dispatched.'
-    })
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_video_manifest(request, module_id):
-    modules_data = {
-        1: {'title': 'The Foundation of Space', 'duration': '45 mins'},
-        2: {'title': 'Hardscape & Earthwork Layouts', 'duration': '38 mins'},
-        3: {'title': 'Botanical Lighting & Shading', 'duration': '52 mins'},
-        4: {'title': 'Water Features & Modern Hydro-Design', 'duration': '41 mins'},
-    }
-
-    mod_info = modules_data.get(module_id, modules_data[1])
-    email = request.query_params.get('email', 'ARCHITECT@EXAMPLE.COM')
-
-    return Response({
-        'moduleId': module_id,
-        'title': mod_info['title'],
-        'duration': mod_info['duration'],
-        'watermarkText': f"LICENSED TO: {email.upper()} - ID: LM-98420-AP • NON-TRANSFERABLE",
-        'drmProtected': True,
-        'streamQuality': '1080p HD Encrypted'
+        'email': email
     })
