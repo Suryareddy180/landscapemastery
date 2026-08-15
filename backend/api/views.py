@@ -1,11 +1,12 @@
 import time
 import jwt
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
-JWT_SECRET = 'django-insecure-landscape-mastery-executive-portal-key'
+JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-landscape-mastery-executive-portal-key')
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -26,7 +27,6 @@ def login_view(request):
     if not email or not password:
         return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Generate JWT Token for closed access
     token = jwt.encode(
         {'email': email, 'user_id': 'LM-98420', 'role': 'architect'},
         JWT_SECRET,
@@ -60,9 +60,10 @@ def create_checkout_session(request):
 
     return Response({
         'success': True,
+        'keyId': settings.RAZORPAY_KEY_ID,
         'orderId': order_id,
-        'amount': 49900,
-        'currency': 'USD',
+        'amount': 49900,  # in cents/paise ($499 / INR 499)
+        'currency': 'INR',
         'email': email,
         'accessToken': token,
         'message': 'Razorpay checkout session created via Django API.'

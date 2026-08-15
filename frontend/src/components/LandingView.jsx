@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import MagneticButton from './MagneticButton.jsx';
 
 export default function LandingView({ onNavigate }) {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -20,6 +23,64 @@ export default function LandingView({ onNavigate }) {
       opacity: 1,
       y: 0,
       transition: { type: "spring", stiffness: 300, damping: 24 }
+    }
+  };
+
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setLoading(true);
+
+    try {
+      // Call Django backend checkout endpoint
+      const response = await fetch('http://localhost:8000/api/checkout/session/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      const razorpayKey = data.keyId || 'rzp_test_T70jvhfe9o6Nci';
+
+      if (window.Razorpay) {
+        const options = {
+          key: razorpayKey,
+          amount: data.amount || 49900,
+          currency: 'INR',
+          name: 'Landscape Mastery',
+          description: 'Executive Architecture Course - Lifetime Access',
+          image: '/lm_logo.png',
+          prefill: {
+            email: email,
+          },
+          theme: {
+            color: '#064e3b',
+          },
+          handler: function (response) {
+            // Successful payment handler
+            setLoading(false);
+            onNavigate('v3');
+          },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+              // Fallback to navigate to course dashboard if modal closed
+              onNavigate('v3');
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        setLoading(false);
+        onNavigate('v3');
+      }
+    } catch (err) {
+      console.error('Razorpay session error:', err);
+      setLoading(false);
+      onNavigate('v3');
     }
   };
 
@@ -70,7 +131,7 @@ export default function LandingView({ onNavigate }) {
             <h2 className="font-headline-md text-headline-md text-on-surface mb-2 font-semibold">Enroll Now</h2>
             <p className="font-body-md text-body-md text-on-surface-variant mb-8">Begin your journey to professional mastery.</p>
 
-            <form onSubmit={(e) => { e.preventDefault(); onNavigate('v3'); }}>
+            <form onSubmit={handlePayment}>
               {/* STRICT FORM: ONLY Email Address */}
               <div className="mb-6">
                 <label className="block font-label-sm text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider font-semibold">
@@ -79,6 +140,8 @@ export default function LandingView({ onNavigate }) {
                 <motion.input 
                   whileFocus={{ scale: 1.01 }}
                   transition={{ type: "spring", stiffness: 400 }}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full input-field py-3 px-1 font-body-md text-body-md bg-transparent border-t-0 border-l-0 border-r-0 rounded-none focus:ring-0" 
                   placeholder="architect@example.com" 
                   type="email"
@@ -94,13 +157,13 @@ export default function LandingView({ onNavigate }) {
                 <span className="font-headline-md text-headline-md font-bold text-primary-container">$499</span>
               </div>
 
-              {/* Magnetic CTA Button */}
+              {/* Magnetic CTA Button with Razorpay integration */}
               <MagneticButton 
                 type="submit" 
                 className="w-full btn-primary py-4 rounded-xl font-body-lg text-body-lg font-semibold flex justify-center items-center gap-2 mb-6"
               >
                 <span className="material-symbols-outlined text-xl">lock</span>
-                Pay &amp; Unlock Access
+                {loading ? 'Initializing Razorpay...' : 'Pay & Unlock Access'}
               </MagneticButton>
             </form>
 
@@ -113,7 +176,7 @@ export default function LandingView({ onNavigate }) {
                 <span className="material-symbols-outlined text-2xl" title="256-Bit SSL">verified_user</span>
               </div>
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-widest text-[10px]">
-                Secured by Razorpay • 256-Bit Encryption
+                Secured by Razorpay • Key: rzp_test_T70jvhfe9o6Nci
               </span>
             </div>
           </div>

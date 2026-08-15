@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-landscape-mastery-executive-portal-key'
+SECRET_KEY = os.environ.get('JWT_SECRET', 'django-insecure-landscape-mastery-executive-portal-key')
 
 DEBUG = True
 
@@ -76,3 +76,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Razorpay Payment Integration Credentials
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_T70jvhfe9o6Nci')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'vU15p3A1rxC3909gkrxA6oAV')
