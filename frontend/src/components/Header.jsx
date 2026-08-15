@@ -34,23 +34,6 @@ export default function Header({ activeView, onNavigate, logoSize = 48, user }) 
 
         {/* Header Navigation Actions */}
         <div className="flex items-center gap-3">
-          {activeView === 'admin' ? (
-            <button
-              onClick={() => onNavigate('v3')}
-              className="font-body-md text-sm font-semibold px-4 py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container transition-all"
-            >
-              Student Portal
-            </button>
-          ) : (
-            <button
-              onClick={() => onNavigate('admin')}
-              className="font-body-md text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-950/10 text-emerald-900 border border-emerald-800/20 hover:bg-emerald-950/20 transition-all flex items-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-base">admin_panel_settings</span>
-              Admin Portal
-            </button>
-          )}
-
           <motion.button 
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
@@ -60,7 +43,7 @@ export default function Header({ activeView, onNavigate, logoSize = 48, user }) 
                 ? 'bg-primary-container text-on-primary shadow-primary-container/20'
                 : 'btn-primary'
             }`}
-            onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
+            onClick={() => onNavigate(activeView === 'v2' ? 'v1' : activeView === 'admin' ? 'v1' : 'v2')}
           >
             {activeView === 'v2' ? 'Back Home' : activeView === 'admin' ? 'Logout' : 'Login'}
           </motion.button>
