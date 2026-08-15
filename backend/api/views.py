@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .email_service import send_enrollment_confirmation_email
 
-JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-landscape-mastery-executive-portal-key')
+JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-development-key-landscape-mastery-portal')
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

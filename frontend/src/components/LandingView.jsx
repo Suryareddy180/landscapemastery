@@ -41,7 +41,7 @@ export default function LandingView({ onNavigate }) {
       });
 
       const data = await response.json();
-      const razorpayKey = data.keyId || 'rzp_test_T70jvhfe9o6Nci';
+      const razorpayKey = data.keyId || '';
 
       if (window.Razorpay) {
         const options = {
