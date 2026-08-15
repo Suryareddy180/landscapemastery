@@ -18,13 +18,12 @@ export default function Header({ activeView, onNavigate, logoSize = 48, user }) 
           onClick={() => onNavigate('v1')} 
           className="flex items-center gap-3.5 group focus:outline-none cursor-pointer"
         >
-          <div className="relative p-2 rounded-2xl bg-gradient-to-br from-primary-container to-primary shadow-lg shadow-primary-container/20 border border-emerald-400/30 overflow-hidden flex items-center justify-center">
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="relative rounded-full shadow-md overflow-hidden flex items-center justify-center border border-emerald-800/15 bg-stone-50 transition-transform duration-300 group-hover:scale-105">
             <img 
               src="/lm_logo.png" 
               alt="Landscape Mastery Logo" 
-              style={{ height: `${logoSize || 36}px`, width: 'auto' }}
-              className="object-contain brightness-110 drop-shadow-md transition-all duration-300"
+              style={{ height: `${logoSize || 46}px`, width: `${logoSize || 46}px` }}
+              className="object-contain rounded-full transition-all duration-300"
             />
           </div>
 

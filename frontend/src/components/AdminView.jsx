@@ -352,18 +352,18 @@ export default function AdminView({ user, onNavigate, token }) {
                 min="28"
                 max="120"
                 value={siteSettings.logoSize}
-                onChange={(e) => setSiteSettings({ ...siteSettings, logoSize: int(e.target.value) })}
+                onChange={(e) => setSiteSettings({ ...siteSettings, logoSize: parseInt(e.target.value, 10) || 48 })}
                 className="w-full accent-emerald-500 cursor-pointer"
               />
 
               <div className="flex items-center gap-4 pt-2">
                 <span className="text-xs font-semibold text-slate-400">Live Header Preview:</span>
-                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center">
+                <div className="p-2 bg-stone-50 rounded-full border border-emerald-800/20 shadow-md flex items-center justify-center overflow-hidden">
                   <img
                     src={siteSettings.logoUrl || '/lm_logo.png'}
                     alt="Brand Logo"
-                    style={{ height: `${siteSettings.logoSize}px`, width: siteSettings.logoFitMode === 'auto' ? 'auto' : `${siteSettings.logoSize * 1.5}px` }}
-                    className="object-contain transition-all duration-200"
+                    style={{ height: `${siteSettings.logoSize}px`, width: `${siteSettings.logoSize}px` }}
+                    className="object-contain rounded-full transition-all duration-200"
                   />
                 </div>
               </div>
@@ -394,7 +394,7 @@ export default function AdminView({ user, onNavigate, token }) {
               <input
                 type="number"
                 value={siteSettings.coursePrice}
-                onChange={(e) => setSiteSettings({ ...siteSettings, coursePrice: float(e.target.value) })}
+                onChange={(e) => setSiteSettings({ ...siteSettings, coursePrice: parseFloat(e.target.value) || 499 })}
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white"
               />
             </div>

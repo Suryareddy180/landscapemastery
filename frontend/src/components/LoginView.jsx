@@ -66,11 +66,11 @@ export default function LoginView({ onNavigate, onLoginSuccess }) {
         className="glass-card rounded-2xl p-card-padding border border-white/80 w-full max-w-sm shadow-2xl z-10 relative"
       >
         <div className="flex justify-center mb-6">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-primary-container to-primary shadow-xl shadow-primary-container/20 border border-emerald-400/30 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-stone-50 shadow-xl border border-emerald-800/15 flex items-center justify-center overflow-hidden">
             <img 
               src="/lm_logo.png" 
               alt="Landscape Mastery Logo" 
-              className="h-12 w-auto object-contain brightness-110 drop-shadow-md"
+              className="w-full h-full object-contain rounded-full"
             />
           </div>
         </div>

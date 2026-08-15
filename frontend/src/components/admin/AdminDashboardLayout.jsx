@@ -35,12 +35,11 @@ export default function AdminDashboardLayout({
           {/* Brand Header */}
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 shadow-lg shadow-emerald-900/30">
+              <div className="w-10 h-10 rounded-full bg-stone-100 shadow-md border border-emerald-500/30 overflow-hidden flex items-center justify-center">
                 <img 
                   src={siteSettings?.logoUrl || '/lm_logo.png'} 
                   alt="Logo" 
-                  style={{ height: `${Math.min(siteSettings?.logoSize || 36, 42)}px` }}
-                  className="object-contain"
+                  className="w-full h-full object-contain rounded-full"
                 />
               </div>
               <div>
