@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function Header({ activeView, onNavigate }) {
+export default function Header({ activeView, onNavigate, logoSize = 48, user }) {
   return (
     <motion.header 
       initial={{ y: -20, opacity: 0 }}
@@ -23,7 +23,8 @@ export default function Header({ activeView, onNavigate }) {
             <img 
               src="/lm_logo.png" 
               alt="Landscape Mastery Logo" 
-              className="h-9 w-auto object-contain brightness-110 drop-shadow-md"
+              style={{ height: `${logoSize || 36}px`, width: 'auto' }}
+              className="object-contain brightness-110 drop-shadow-md transition-all duration-300"
             />
           </div>
 
@@ -32,20 +33,39 @@ export default function Header({ activeView, onNavigate }) {
           </span>
         </motion.button>
 
-        {/* Auth Action Button */}
-        <motion.button 
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className={`font-body-md text-sm font-semibold focus:outline-none cursor-pointer px-5 py-2.5 rounded-xl transition-all shadow-sm ${
-            activeView === 'v2'
-              ? 'bg-primary-container text-on-primary shadow-primary-container/20'
-              : 'btn-primary'
-          }`}
-          onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
-        >
-          {activeView === 'v2' ? 'Back Home' : 'Login'}
-        </motion.button>
+        {/* Header Navigation Actions */}
+        <div className="flex items-center gap-3">
+          {activeView === 'admin' ? (
+            <button
+              onClick={() => onNavigate('v3')}
+              className="font-body-md text-sm font-semibold px-4 py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container transition-all"
+            >
+              Student Portal
+            </button>
+          ) : (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="font-body-md text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-950/10 text-emerald-900 border border-emerald-800/20 hover:bg-emerald-950/20 transition-all flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+              Admin Portal
+            </button>
+          )}
+
+          <motion.button 
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className={`font-body-md text-sm font-semibold focus:outline-none cursor-pointer px-5 py-2.5 rounded-xl transition-all shadow-sm ${
+              activeView === 'v2'
+                ? 'bg-primary-container text-on-primary shadow-primary-container/20'
+                : 'btn-primary'
+            }`}
+            onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
+          >
+            {activeView === 'v2' ? 'Back Home' : activeView === 'admin' ? 'Logout' : 'Login'}
+          </motion.button>
+        </div>
       </div>
     </motion.header>
   );
