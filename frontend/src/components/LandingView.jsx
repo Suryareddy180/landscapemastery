@@ -249,7 +249,7 @@ export default function LandingView({ onNavigate, siteSettings }) {
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                    Phone Number <span className="text-stone-400">(Access Password)</span>
+                    Phone Number
                   </label>
                   <input
                     type="tel"
