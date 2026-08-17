@@ -41,7 +41,7 @@ class Usr(AbstractBaseUser, PermissionsMixin):
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=255)
 
 class Instructor(models.Model):
     name = models.CharField(max_length=100)
@@ -52,7 +52,7 @@ class Instructor(models.Model):
 class Course(models.Model):
     STATUS_CHOICES = (('DRAFT', 'Draft'), ('PUBLISHED', 'Published'), ('ARCHIVED', 'Archived'))
     title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=255)
     short_desc = models.TextField(blank=True, null=True)
     full_desc = models.TextField(blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
@@ -166,12 +166,15 @@ class SiteSetting(models.Model):
     site_name = models.CharField(max_length=100, default='Landscape Mastery')
     hero_title = models.CharField(max_length=255, default='Master the Art of Landscape Architecture')
     hero_subtitle = models.TextField(default='Elevate your architectural vision. Access industry-leading video modules, spatial planning frameworks, and achieve complete mastery.')
-    logo_url = models.CharField(max_length=500, default='/lm_logo.png')
+    logo_url = models.TextField(default='/lm_logo.png')
     logo_size = models.IntegerField(default=48)
     logo_fit_mode = models.CharField(max_length=20, default='auto')
     course_price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
     contact_email = models.EmailField(default='contact@landscapemastery.com')
     seo_meta_desc = models.TextField(default='Landscape Mastery - High-End Educational Architecture Portal')
+    curriculum_pdf_url = models.TextField(default='/media/Landscape_Architecture_Syllabus_2026.pdf')
+    curriculum_pdf_title = models.CharField(max_length=255, default='Landscape Architecture Masterclass Curriculum & Blueprint Guide 2026')
+    curriculum_pdf_size = models.CharField(max_length=50, default='4.2 MB')
 
 class AuditLog(models.Model):
     actor = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True)

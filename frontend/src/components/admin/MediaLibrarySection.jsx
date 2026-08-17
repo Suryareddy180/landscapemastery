@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function MediaLibrarySection({ token }) {
   const [filterType, setFilterType] = useState('all');
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  const [assets, setAssets] = useState([
-    { id: 1, title: 'Executive Spatial Masterclass (Full)', asset_type: 'long_video', duration: '2 hrs 45 mins', size: '1.8 GB', created_at: '2026-08-15' },
-    { id: 2, title: 'Hardscape Material Spec Sheet', asset_type: 'pdf', duration: '14 Pages PDF', size: '12.4 MB', created_at: '2026-08-14' },
-    { id: 3, title: 'Botanical Lighting Accent Technique', asset_type: 'short_video', duration: '8 mins', size: '145 MB', created_at: '2026-08-14' },
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [assets, setAssets] = useState([]);
+  const [message, setMessage] = useState(null);
 
   const [newAsset, setNewAsset] = useState({
     title: '',
@@ -17,26 +13,84 @@ export default function MediaLibrarySection({ token }) {
     duration: '2 hrs',
     url: ''
   });
+  const [fileObj, setFileObj] = useState(null);
 
-  const handleSimulatedUpload = (e) => {
+  useEffect(() => {
+    fetchMediaAssets();
+  }, [token]);
+
+  const fetchMediaAssets = async () => {
+    setLoading(true);
+    try {
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch('http://localhost:8000/api/admin/media/', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.assets) {
+          setAssets(data.assets);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch media assets:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Genuine Media Upload (BUG-013 / TC-ADM-009)
+  const handleUpload = async (e) => {
     e.preventDefault();
     if (!newAsset.title) return;
 
     setUploading(true);
-    setUploadProgress(0);
+    setMessage(null);
 
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          setAssets([{ id: Date.now(), ...newAsset, size: '240 MB', created_at: 'Just now' }, ...assets]);
-          setNewAsset({ title: '', asset_type: 'long_video', duration: '2 hrs', url: '' });
-          return 100;
-        }
-        return prev + 25;
+    try {
+      const formData = new FormData();
+      formData.append('title', newAsset.title);
+      formData.append('asset_type', newAsset.asset_type);
+      formData.append('duration', newAsset.duration);
+      if (newAsset.url) formData.append('url', newAsset.url);
+      if (fileObj) formData.append('file', fileObj);
+
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch('http://localhost:8000/api/admin/media/', {
+        method: 'POST',
+        headers,
+        body: formData
       });
-    }, 400);
+
+      if (res.ok) {
+        setNewAsset({ title: '', asset_type: 'long_video', duration: '2 hrs', url: '' });
+        setFileObj(null);
+        setMessage({ type: 'success', text: 'Media asset uploaded and saved to database!' });
+        fetchMediaAssets();
+      } else {
+        const err = await res.json();
+        setMessage({ type: 'error', text: err.error || 'Failed to upload asset.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Network error during upload.' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(`http://localhost:8000/api/admin/media/${id}/`, {
+        method: 'DELETE',
+        headers
+      });
+      if (res.ok) {
+        setAssets(assets.filter(a => a.id !== id));
+        setMessage({ type: 'success', text: 'Asset removed successfully.' });
+      }
+    } catch (e) {
+      console.error('Delete failed:', e);
+    }
   };
 
   const filteredAssets = filterType === 'all' 
@@ -44,7 +98,7 @@ export default function MediaLibrarySection({ token }) {
     : assets.filter(a => a.asset_type === filterType);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-body-md">
       {/* Upload Box Header */}
       <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5">
         <div className="flex justify-between items-center">
@@ -53,12 +107,22 @@ export default function MediaLibrarySection({ token }) {
               <span className="material-symbols-outlined text-emerald-700 text-2xl">folder_open</span>
               Centralized Content &amp; Media Asset Library
             </h1>
-            <p className="text-xs text-stone-500 mt-1">Upload and manage short videos (1-10m), long masterclasses (2h+), and PDF blueprint downloads.</p>
+            <p className="text-xs text-stone-500 mt-1">
+              Upload and manage short videos (1-10m), long masterclasses (2h+), and PDF blueprint downloads.
+            </p>
           </div>
         </div>
 
-        {/* Upload Form */}
-        <form onSubmit={handleSimulatedUpload} className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-stone-50 p-5 rounded-xl border border-stone-200">
+        {message && (
+          <div className={`p-3 rounded-xl text-xs font-semibold ${
+            message.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-rose-50 border border-rose-200 text-rose-900'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Genuine Upload Form (BUG-013) */}
+        <form onSubmit={handleUpload} className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-stone-50 p-5 rounded-xl border border-stone-200">
           <div>
             <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">Resource Title</label>
             <input
@@ -95,27 +159,40 @@ export default function MediaLibrarySection({ token }) {
             />
           </div>
 
+          <div className="md:col-span-2">
+            <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">Video Stream URL or Cloud Link</label>
+            <input
+              type="text"
+              placeholder="https://commondatastorage.googleapis.com/... or S3 URL"
+              value={newAsset.url}
+              onChange={(e) => setNewAsset({ ...newAsset, url: e.target.value })}
+              className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">Direct File Attachment (Optional)</label>
+            <input
+              type="file"
+              onChange={(e) => setFileObj(e.target.files[0])}
+              className="w-full text-xs text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100"
+            />
+          </div>
+
           <div className="md:col-span-3 flex justify-between items-center pt-2">
             <div className="text-xs text-stone-500 font-medium">
-              {uploading ? `Uploading & Encrypting Asset... ${uploadProgress}%` : 'Supports direct MP4, MOV, PDF up to 10 GB per file'}
+              {uploading ? 'Uploading & recording asset...' : 'Supports MP4, MOV, WebM, and PDF spec files'}
             </div>
 
             <button
               type="submit"
               disabled={uploading}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">cloud_upload</span>
-              {uploading ? 'Processing Upload...' : 'Upload Media Asset'}
+              {uploading ? 'Uploading Asset...' : 'Upload & Save Media Asset'}
             </button>
           </div>
-
-          {/* Progress Bar */}
-          {uploading && (
-            <div className="md:col-span-3 w-full bg-stone-200 h-2 rounded-full overflow-hidden">
-              <div className="bg-emerald-600 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
-            </div>
-          )}
         </form>
       </div>
 
@@ -127,7 +204,7 @@ export default function MediaLibrarySection({ token }) {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`text-xs font-semibold px-3.5 py-1.5 rounded-xl uppercase tracking-wider transition-all ${
+                className={`text-xs font-semibold px-3.5 py-1.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer ${
                   filterType === type 
                     ? 'bg-emerald-700 text-white shadow-sm' 
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
@@ -137,7 +214,7 @@ export default function MediaLibrarySection({ token }) {
               </button>
             ))}
           </div>
-          <span className="text-xs text-stone-500 font-semibold">{filteredAssets.length} Assets Listed</span>
+          <span className="text-xs text-stone-500 font-semibold">{filteredAssets.length} Assets Registered</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -146,8 +223,8 @@ export default function MediaLibrarySection({ token }) {
               <tr className="border-b border-stone-200 text-stone-500 uppercase font-semibold">
                 <th className="py-3 px-3">Asset Title</th>
                 <th className="py-3 px-3">Type</th>
-                <th className="py-3 px-3">Duration / Size</th>
-                <th className="py-3 px-3">Upload Date</th>
+                <th className="py-3 px-3">Duration</th>
+                <th className="py-3 px-3">Registered Date</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -164,14 +241,25 @@ export default function MediaLibrarySection({ token }) {
                       {asset.asset_type === 'long_video' ? 'Long Video (2h+)' : asset.asset_type === 'pdf' ? 'PDF Document' : 'Short Video'}
                     </span>
                   </td>
-                  <td className="py-4 px-3 text-stone-600">{asset.duration} • ({asset.size})</td>
+                  <td className="py-4 px-3 text-stone-600">{asset.duration}</td>
                   <td className="py-4 px-3 text-stone-500">{asset.created_at}</td>
                   <td className="py-4 px-3 text-right space-x-3">
-                    <button className="text-emerald-700 hover:underline font-semibold">Preview</button>
-                    <button onClick={() => setAssets(assets.filter(a => a.id !== asset.id))} className="text-rose-600 hover:underline font-semibold">Delete</button>
+                    <button 
+                      onClick={() => handleDelete(asset.id)} 
+                      className="text-rose-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
+              {filteredAssets.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center py-8 text-stone-400">
+                    {loading ? 'Loading registered assets...' : 'No media assets found in this category.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

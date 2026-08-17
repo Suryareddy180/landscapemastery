@@ -1,285 +1,526 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function DashboardView({ onNavigate }) {
+export default function DashboardView({ onNavigate, token, user, onLogout, logoUrl }) {
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [activeModuleId, setActiveModuleId] = useState(null);
+  const [activeAsset, setActiveAsset] = useState(null);
+  const [streamData, setStreamData] = useState(null);
+  const [streamLoading, setStreamLoading] = useState(false);
+  const [streamError, setStreamError] = useState(null);
+
+  const isAdmin = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
+
+  // Video Player State
+  const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [activeModule, setActiveModule] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [progress, setProgress] = useState(28); // percentage
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const playerContainerRef = useRef(null);
+  const lastProgressSaveRef = useRef(0);
 
-  const modules = [
-    { id: 1, title: "The Foundation of Space", duration: "45 mins", completed: true },
-    { id: 2, title: "Hardscape & Earthwork Layouts", duration: "38 mins", completed: false },
-    { id: 3, title: "Botanical Lighting & Shading", duration: "52 mins", completed: false },
-    { id: 4, title: "Water Features & Modern Hydro-Design", duration: "41 mins", completed: false },
-  ];
+  useEffect(() => {
+    fetchCourseData();
+  }, []);
+
+  const fetchCourseData = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/public/settings/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.courses && data.courses.length > 0) {
+          setCourses(data.courses);
+          const firstC = data.courses[0];
+          setSelectedCourse(firstC);
+          if (firstC.modules && firstC.modules.length > 0) {
+            const firstM = firstC.modules[0];
+            setActiveModuleId(firstM.id);
+            if (firstM.lessons && firstM.lessons.length > 0 && firstM.lessons[0].assets && firstM.lessons[0].assets.length > 0) {
+              selectAsset(firstM.lessons[0].assets[0]);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load courses:', e);
+    }
+  };
+
+  const selectAsset = async (asset) => {
+    setActiveAsset(asset);
+    setStreamLoading(true);
+    setStreamError(null);
+    setIsPlaying(false);
+
+    try {
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(`http://localhost:8000/api/video/stream/${asset.id}/`, { headers });
+      
+      if (res.ok) {
+        const sData = await res.json();
+        // Resolve stream URL
+        const playRes = await fetch(sData.streamUrl);
+        if (playRes.ok) {
+          const mediaInfo = await playRes.json();
+          setStreamData({
+            ...sData,
+            videoUrl: mediaInfo.url,
+            title: mediaInfo.title,
+            watermarkText: sData.watermark || `LICENSED TO: ${user?.email?.toUpperCase() || 'STUDENT'} • ID: LM-${user?.id || 'AUTH'}`
+          });
+
+          // Fetch saved progress (BUG-009 / TC-VID-005)
+          if (token) {
+            const progRes = await fetch(`http://localhost:8000/api/video/progress/${asset.id}/`, { headers });
+            if (progRes.ok) {
+              const pData = await progRes.json();
+              if (pData.last_position_sec && videoRef.current) {
+                videoRef.current.currentTime = pData.last_position_sec;
+                setCurrentTime(pData.last_position_sec);
+              }
+            }
+          }
+        } else {
+          setStreamError('Failed to initialize playback session.');
+        }
+      } else {
+        const errData = await res.json();
+        setStreamError(errData.error || 'Access restricted. Please verify your enrollment.');
+      }
+    } catch (err) {
+      setStreamError('Unable to connect to streaming server.');
+    } finally {
+      setStreamLoading(false);
+    }
+  };
+
+  // Video Event Handlers & Heartbeat (BUG-009)
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const current = videoRef.current.currentTime;
+    setCurrentTime(current);
+
+    // Save progress every 10 seconds
+    if (Math.abs(current - lastProgressSaveRef.current) > 10 && activeAsset && token) {
+      lastProgressSaveRef.current = current;
+      saveProgress(current, false);
+    }
+  };
+
+  const saveProgress = async (posSec, completed = false) => {
+    if (!activeAsset || !token) return;
+    try {
+      await fetch('http://localhost:8000/api/video/progress/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          asset_id: activeAsset.id,
+          last_position_sec: Math.floor(posSec),
+          watched_sec: Math.floor(posSec),
+          completed: completed
+        })
+      });
+    } catch (e) {
+      // Background save error
+    }
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      saveProgress(videoRef.current.currentTime, false);
+    } else {
+      videoRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (e) => {
+    if (!videoRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    const newTime = pos * duration;
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const toggleFullscreen = () => {
+    if (!playerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      playerContainerRef.current.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  const formatTime = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${mins}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const dynamicWatermark = user?.email
+    ? `ENROLLED STUDENT: ${user.email.toUpperCase()} • ID: LM-${user.id || 'AUTH'}`
+    : 'ENROLLED STUDENT: ARCHITECT • ENCRYPTED DRM STREAM';
 
   return (
-    <React.Fragment>
-      {/* Sidebar: Glassmorphic Navigation Panel */}
-      <aside className="w-80 h-full glass-panel flex flex-col pt-6 hidden md:flex flex-shrink-0 z-20 bg-white border-r border-stone-200 shadow-sm">
-        <div className="px-6 mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-stone-50 border border-emerald-800/15 shadow-sm overflow-hidden flex items-center justify-center">
-            <img 
-              src="/lm_logo.png" 
-              alt="Landscape Mastery Logo" 
-              className="w-full h-full object-contain rounded-full"
-            />
-          </div>
-          <div>
-            <div className="font-serif text-base font-bold text-emerald-950">Master Architect</div>
-            <div className="text-xs text-stone-500 flex items-center gap-1.5 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span className="font-semibold text-emerald-800">Tier: Lifetime Access</span>
+    <div className="flex w-full h-full bg-stone-100 text-stone-900 overflow-hidden font-body-md">
+      {/* SIDEBAR CURRICULUM NAVIGATION */}
+      <aside className="w-80 h-full bg-white border-r border-stone-200 flex flex-col flex-shrink-0 z-20 shadow-xs">
+        {/* Brand & User Status */}
+        <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 p-1 shadow-xs overflow-hidden flex items-center justify-center">
+              <img 
+                src={(logoUrl && (logoUrl.startsWith('/media/') ? `http://localhost:8000${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
+                alt="Logo" 
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
+                className="w-full h-full object-contain" 
+              />
+            </div>
+            <div>
+              <div className="font-serif text-sm font-bold text-stone-900">Landscape Mastery</div>
+              <div className={`text-[11px] font-semibold flex items-center gap-1.5 ${
+                isAdmin ? 'text-amber-700' : 'text-emerald-700'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isAdmin ? 'bg-amber-600 animate-pulse' : 'bg-emerald-600 animate-pulse'
+                }`} />
+                {isAdmin ? 'Admin Preview Mode' : 'Lifetime Enrollee'}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="px-4 mb-3">
-          <span className="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold px-2">
-            Course Curriculum
+        {/* User Identity Chip */}
+        <div className="px-5 py-2.5 bg-stone-50 border-b border-stone-200 flex items-center justify-between text-xs text-stone-600">
+          <span className="truncate max-w-[170px] font-medium">{user?.email || 'Student Portal'}</span>
+          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+            isAdmin 
+              ? 'bg-amber-100 text-amber-800 border border-amber-300' 
+              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+          }`}>
+            {isAdmin ? 'ADMIN PREVIEW' : 'PAID'}
           </span>
         </div>
 
-        <nav className="flex flex-col gap-1.5 px-3 flex-grow overflow-y-auto">
-          {modules.map((mod) => (
-            <motion.button
-              key={mod.id}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveModule(mod.id)}
-              className={`w-full text-left rounded-xl px-4 py-3.5 transition-all flex items-start gap-3 cursor-pointer ${
-                activeModule === mod.id
-                  ? 'bg-primary-container text-on-primary shadow-md'
-                  : 'text-on-surface-variant hover:bg-surface-container-high/60'
-              }`}
-            >
-              <span className="material-symbols-outlined text-xl mt-0.5">
-                {mod.completed ? 'check_circle' : activeModule === mod.id ? 'play_circle' : 'lock'}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className={`font-body-md text-sm font-semibold truncate ${activeModule === mod.id ? 'text-white' : 'text-on-surface'}`}>
-                  Module {mod.id}: {mod.title}
-                </div>
-                <div className={`font-label-sm text-xs mt-0.5 ${activeModule === mod.id ? 'text-on-primary-container' : 'text-on-surface-variant'}`}>
-                  {mod.duration}
-                </div>
-              </div>
-            </motion.button>
-          ))}
-        </nav>
+        {/* Modules & Lessons Accordion */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {selectedCourse?.modules && selectedCourse.modules.length > 0 ? (
+            selectedCourse.modules.map((mod) => (
+              <div key={mod.id} className="space-y-1">
+                <button
+                  onClick={() => setActiveModuleId(activeModuleId === mod.id ? null : mod.id)}
+                  className="w-full text-left font-semibold text-xs text-stone-800 hover:text-emerald-900 flex justify-between items-center py-2 px-2.5 rounded-xl hover:bg-stone-100 transition-colors"
+                >
+                  <span className="truncate">{mod.title}</span>
+                  <span className="material-symbols-outlined text-sm text-stone-400">
+                    {activeModuleId === mod.id ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
 
-        <div className="p-4 mb-4 border-t border-outline-variant/20">
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onNavigate('v1')} 
-            className="w-full text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 flex items-center gap-3 font-body-md text-body-md transition-colors text-left cursor-pointer"
+                {activeModuleId === mod.id && (
+                  <div className="space-y-1 pl-2.5 border-l-2 border-emerald-700/30 ml-2">
+                    {mod.lessons && mod.lessons.map((les) => (
+                      <div key={les.id} className="space-y-1">
+                        <div className="text-[11px] font-bold text-stone-500 px-2 py-1">{les.title}</div>
+                        {les.assets && les.assets.map((asset) => (
+                          <button
+                            key={asset.id}
+                            onClick={() => selectAsset(asset)}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 transition-all cursor-pointer ${
+                              activeAsset?.id === asset.id
+                                ? 'bg-emerald-800 text-white font-semibold shadow-xs'
+                                : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'
+                            }`}
+                          >
+                            <span className={`material-symbols-outlined text-base ${
+                              activeAsset?.id === asset.id ? 'text-white' : 'text-emerald-700'
+                            }`}>
+                              {asset.asset_type === 'pdf' ? 'picture_as_pdf' : 'play_circle'}
+                            </span>
+                            <span className="truncate flex-1">{asset.title}</span>
+                            <span className={`text-[10px] ${
+                              activeAsset?.id === asset.id ? 'text-emerald-100' : 'text-stone-400'
+                            }`}>{asset.duration}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 px-4 text-stone-500 text-xs">
+              <span className="material-symbols-outlined text-3xl text-stone-400 mb-2 block">auto_stories</span>
+              No curriculum modules published yet. Use the Admin Course Builder to create modules and upload masterclasses.
+            </div>
+          )}
+        </div>
+
+        {/* Exit & Logout Footer */}
+        <div className="p-4 border-t border-stone-200 bg-stone-50 space-y-1.5">
+          {isAdmin && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="w-full bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs mb-1"
+            >
+              <span className="material-symbols-outlined text-base text-emerald-200">admin_panel_settings</span>
+              <span>← Return to Admin Panel</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => onNavigate('v1')}
+            className="w-full text-stone-700 hover:text-stone-950 hover:bg-stone-200/70 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined">logout</span>
-            Exit Learning Portal
-          </motion.button>
+            <span className="material-symbols-outlined text-sm text-stone-500">home</span>
+            <span>Return to Landing Page</span>
+          </button>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full text-rose-700 hover:text-rose-800 hover:bg-rose-50 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm text-rose-500">logout</span>
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
       </aside>
 
-      {/* Main Area: Distraction-Free Cinematic Learning Environment */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto min-w-0 bg-stone-50">
-        {/* Executive Desktop & Mobile Top Bar */}
-        <header className="w-full bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-0 z-30 flex justify-between items-center px-6 py-3.5 shadow-sm">
+      {/* MAIN CINEMATIC PLAYER VIEW */}
+      <main className="flex-1 flex flex-col h-full overflow-y-auto bg-stone-50">
+        {/* Top Header */}
+        <header className="bg-white/95 backdrop-blur-md border-b border-stone-200 px-6 py-3.5 flex justify-between items-center z-10 sticky top-0 shadow-2xs">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-xs text-stone-700 hidden sm:inline">The Landscape Mastery</span>
-            <span className="text-stone-300 hidden sm:inline">/</span>
-            <span className="bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-lg">
-              Module {activeModule}: {modules.find(m => m.id === activeModule)?.title}
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              {activeAsset?.asset_type === 'pdf' ? 'PDF Document' : 'Masterclass Stream'}
             </span>
+            <span className="text-stone-400">/</span>
+            <h1 className="text-xs sm:text-sm font-bold text-stone-900 truncate max-w-md">
+              {activeAsset?.title || 'Select a Masterclass Lesson'}
+            </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-600 font-medium">
-              <span className="material-symbols-outlined text-emerald-700 text-sm">verified_user</span>
-              <span>DRM Active • Verified Stream</span>
-            </div>
+          <div className="flex items-center gap-2.5">
+            {isAdmin && (
+              <button
+                onClick={() => onNavigate('admin')}
+                className="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs mr-2"
+              >
+                <span className="material-symbols-outlined text-sm text-emerald-700">admin_panel_settings</span>
+                <span>Back to Admin Panel</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => onNavigate('v1')}
-              className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-stone-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">arrow_back</span>
-              Exit Portal
-            </button>
+            <span className="text-[10px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-2.5 py-1 rounded-full font-bold uppercase flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs text-emerald-700">lock</span>
+              <span>DRM Encrypted Stream</span>
+            </span>
           </div>
         </header>
 
-        <div className="p-margin-mobile md:p-margin-desktop max-w-6xl mx-auto w-full flex-1 flex flex-col justify-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-6 flex justify-between items-end"
+        {/* Video Player Container */}
+        <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full flex-1 flex flex-col justify-center space-y-6">
+          <div 
+            ref={playerContainerRef}
+            className="w-full aspect-video bg-black rounded-3xl overflow-hidden relative shadow-2xl border border-stone-300 group"
           >
-            <div>
-              <span className="bg-primary-container/10 border border-primary-container/20 text-primary-container font-label-sm text-label-sm px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block font-semibold">
-                Module {activeModule}
-              </span>
-              <h2 className="font-headline-lg text-3xl md:text-4xl text-on-surface font-semibold">
-                {modules.find(m => m.id === activeModule)?.title}
-              </h2>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs font-label-sm text-outline uppercase tracking-widest bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/30">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              Anti-Piracy DRM Active
-            </div>
-          </motion.div>
+            {streamLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-semibold text-stone-300">Generating Secure DRM Stream...</span>
+                </div>
+              </div>
+            )}
 
-          {/* Large Cinematic Video Player */}
-          <div className="w-full aspect-video bg-inverse-surface rounded-2xl overflow-hidden relative shadow-2xl group border border-surface-container-highest">
-            {/* Security Overlay: Faint anti-piracy watermark pattern diagonally across video */}
-            <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center overflow-hidden">
-              <div className="watermark text-white/10 font-bold select-none text-center">
-                LICENSED TO: ARCHITECT@EXAMPLE.COM <br />
-                ID: LM-98420-AP • NON-TRANSFERABLE
+            {streamError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30 p-6">
+                <div className="text-center space-y-3 max-w-md">
+                  <span className="material-symbols-outlined text-4xl text-rose-500">lock</span>
+                  <h3 className="font-bold text-sm text-white">Stream Access Restricted</h3>
+                  <p className="text-xs text-stone-400">{streamError}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Dynamic Anti-Piracy Watermark Overlay */}
+            <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden">
+              <div className="text-white/10 font-bold select-none text-center transform -rotate-12 tracking-widest text-xs sm:text-sm">
+                {dynamicWatermark} <br />
+                NON-TRANSFERABLE • ENCRYPTED SESSION
               </div>
             </div>
 
-            {/* Play Overlay Button */}
-            <AnimatePresence>
-              {!isPlaying && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-20"
-                >
-                  <motion.button 
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    onClick={() => setIsPlaying(true)}
-                    className="w-24 h-24 rounded-full bg-surface-container-lowest/90 backdrop-blur-md flex items-center justify-center text-primary-container shadow-2xl border border-white/80 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-5xl ml-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      play_arrow
-                    </span>
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Video Background Showcase */}
-            <img 
-              className="w-full h-full object-cover mix-blend-overlay opacity-60 transition-transform duration-700" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuClX9hWt0Mv1yYgVXYdtS7NjZoS9txXRlFDgeCVAqAAek2s0QErdVdxO2CVtmVZNhIzh1Z51Py_s-6FLvSLIx9ynOFKNdK3jkT2g8Elm2H8lSuHjWQgeQAII0l9U1O0WkA1_Sv7Z9uVogJZw7NilfPBiA-C1pzArayl_R4UQz6BZ490j6cMhi-rfYKFxJD79ZMsBcgXZuQqTLJpskvvp5Mv1QJtrpWcx9OcfTImFB9cBkZtdubqmE8D9Q" 
-              alt="Course lesson video backdrop"
-            />
-
-            {/* Minimalist Player Control Bar */}
-            <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col gap-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
-              {/* Interactive Timeline Bar */}
-              <div 
-                className="w-full h-1.5 bg-white/20 hover:h-2.5 rounded-full cursor-pointer relative transition-all"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const newPercent = Math.round((clickX / rect.width) * 100);
-                  setProgress(Math.max(0, Math.min(100, newPercent)));
+            {/* Genuine HTML5 Video Element */}
+            {streamData?.videoUrl ? (
+              <video
+                ref={videoRef}
+                src={streamData.videoUrl}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={() => {
+                  if (videoRef.current) {
+                    setDuration(videoRef.current.duration);
+                    videoRef.current.volume = volume;
+                  }
                 }}
-              >
-                <div 
-                  className="absolute top-0 left-0 h-full bg-primary-fixed rounded-full transition-all" 
-                  style={{ width: `${progress}%` }} 
-                />
-                <div 
-                  className="absolute top-1/2 w-4 h-4 bg-white rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-lg scale-0 group-hover:scale-100 transition-transform" 
-                  style={{ left: `${progress}%` }}
-                />
+                onEnded={() => {
+                  setIsPlaying(false);
+                  saveProgress(duration, true);
+                }}
+                className="w-full h-full object-contain cursor-pointer"
+                onClick={togglePlay}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-stone-900 text-stone-400 text-xs">
+                Select an asset from the curriculum on the left.
               </div>
+            )}
 
-              {/* Controls Row */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className="hover:text-primary-fixed transition-colors focus:outline-none cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-2xl">
-                      {isPlaying ? 'pause' : 'play_arrow'}
-                    </span>
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setIsMuted(!isMuted)}
-                      className="hover:text-primary-fixed transition-colors focus:outline-none cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-xl">
-                        {isMuted || volume === 0 ? 'volume_off' : 'volume_up'}
-                      </span>
-                    </button>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="1" 
-                      step="0.05"
-                      value={isMuted ? 0 : volume}
-                      onChange={(e) => {
-                        setVolume(parseFloat(e.target.value));
-                        if (isMuted) setIsMuted(false);
-                      }}
-                      className="w-20 accent-primary-fixed h-1 bg-white/30 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  <span className="font-label-sm text-xs tracking-wider text-white/80">
-                    12:45 / 45:20
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-label-sm text-white/60 uppercase tracking-widest hidden sm:inline-block">
-                    1080p HD • Encrypted
-                  </span>
-                  <button 
-                    className="hover:text-primary-fixed transition-colors focus:outline-none cursor-pointer"
-                    title="Fullscreen Toggle"
-                  >
-                    <span className="material-symbols-outlined text-xl">fullscreen</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bento Cards Row */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            <div className="glass-card p-card-padding rounded-2xl border border-white/80 shadow-lg">
-              <h3 className="font-headline-md text-headline-md text-on-surface mb-3 font-semibold">Lesson Overview</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                Understanding the spatial relationship between hardscape and softscape is paramount. Observe how retaining walls direct flow and establish natural sightlines.
-              </p>
-            </div>
-            <div className="glass-card p-card-padding rounded-2xl border border-white/80 shadow-lg">
-              <h3 className="font-headline-md text-headline-md text-on-surface mb-3 font-semibold">Next Up</h3>
-              <div 
-                onClick={() => setActiveModule(2)}
-                className="flex items-center gap-4 p-3 hover:bg-surface-container-low/80 rounded-xl transition-all cursor-pointer border border-transparent hover:border-outline-variant/30"
-              >
-                <div className="w-20 h-14 bg-surface-container-highest rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
-                  <img 
-                    className="w-full h-full object-cover" 
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkHh5sUpmvjRYMpkFMhtyBR9EE6FU82O0L0UODTBdTlCwDBa2AUV0RVMEaTzLHhFFj2Z5_STlN6smO2Fwst_KSYQaSWamY7tWZYxV1GDMZ_CiFgIQwuEH3h3CahBDMse8C5hhxTClhr9YCf79M7d2b84dDFy9HUk9haIZ_YGi1CtDUr64DvWRfiHH1pnzj9gMe8T-gYywZ7JfKSfhL2H9LobNMi4Koq_ocvap9UvcgByWwvuyfrS6ayQ" 
-                    alt="Module 2 thumbnail"
+            {/* Custom Video Control Bar */}
+            {streamData?.videoUrl && (
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col gap-2.5">
+                {/* Progress Bar */}
+                <div 
+                  onClick={handleSeek}
+                  className="w-full h-1.5 hover:h-2 bg-white/20 rounded-full cursor-pointer relative transition-all"
+                >
+                  <div 
+                    className="h-full bg-emerald-500 rounded-full relative" 
+                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
                   />
                 </div>
-                <div>
-                  <div className="font-body-md text-body-md font-semibold text-on-surface">Module 2: Hardscape &amp; Earthwork</div>
-                  <div className="font-label-sm text-xs text-on-surface-variant mt-0.5">38 mins • Up Next</div>
+
+                <div className="flex justify-between items-center text-xs text-white">
+                  <div className="flex items-center gap-3">
+                    <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors cursor-pointer">
+                      <span className="material-symbols-outlined text-2xl">
+                        {isPlaying ? 'pause' : 'play_arrow'}
+                      </span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => {
+                        if (videoRef.current) {
+                          videoRef.current.muted = !isMuted;
+                          setIsMuted(!isMuted);
+                        }
+                      }} className="cursor-pointer">
+                        <span className="material-symbols-outlined text-lg">
+                          {isMuted || volume === 0 ? 'volume_off' : 'volume_up'}
+                        </span>
+                      </button>
+                      <input 
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={isMuted ? 0 : volume}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          setVolume(v);
+                          if (videoRef.current) {
+                            videoRef.current.volume = v;
+                            videoRef.current.muted = false;
+                            setIsMuted(false);
+                          }
+                        }}
+                        className="w-16 accent-emerald-500 h-1 bg-white/30 rounded cursor-pointer"
+                      />
+                    </div>
+
+                    <span className="text-[11px] text-stone-300 font-mono">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Playback Speed Switcher */}
+                    <select
+                      value={playbackSpeed}
+                      onChange={(e) => {
+                        const spd = parseFloat(e.target.value);
+                        setPlaybackSpeed(spd);
+                        if (videoRef.current) videoRef.current.playbackRate = spd;
+                      }}
+                      className="bg-black/60 border border-stone-700 text-stone-200 text-[10px] rounded px-1.5 py-0.5 cursor-pointer"
+                    >
+                      <option value="0.75">0.75x</option>
+                      <option value="1">1.0x</option>
+                      <option value="1.25">1.25x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2.0x</option>
+                    </select>
+
+                    <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors cursor-pointer">
+                      <span className="material-symbols-outlined text-xl">
+                        {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Lesson Overview & Blueprint Downloads Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-2">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                <span className="material-symbols-outlined text-base">architecture</span>
+                <span>Spatial Framework &amp; Notes</span>
+              </div>
+              <h3 className="font-serif text-base font-bold text-stone-900">
+                {activeAsset?.title || 'Masterclass Overview'}
+              </h3>
+              <p className="text-xs text-stone-600 leading-relaxed">
+                Master complete spatial transitions, microclimate orientation, topographical grading, and architectural execution.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-3 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+                  <span className="material-symbols-outlined text-base">folder_zip</span>
+                  <span>CAD Blueprints &amp; Toolkits</span>
+                </div>
+                <h3 className="font-serif text-base font-bold text-stone-900 mt-1">
+                  Resource &amp; Material Specifications
+                </h3>
+                <p className="text-xs text-stone-600">
+                  Download structural vector prints, DWG details, and elevation cross-sections.
+                </p>
+              </div>
+              <div>
+                <a
+                  href="/media/Landscape_Architecture_Syllabus_2026.pdf"
+                  download="Landscape_Architecture_Syllabus_2026.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">download</span>
+                  <span>Download Blueprint Package (PDF)</span>
+                </a>
               </div>
             </div>
           </div>
         </div>
       </main>
-    </React.Fragment>
+    </div>
   );
 }

@@ -7,7 +7,8 @@ export default function AdminDashboardLayout({
   setActiveSection, 
   onNavigate,
   children,
-  siteSettings 
+  siteSettings,
+  onLogout
 }) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -42,8 +43,9 @@ export default function AdminDashboardLayout({
             >
               <div className="w-10 h-10 rounded-full bg-stone-50 border border-emerald-800/15 shadow-sm overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
                 <img 
-                  src={siteSettings?.logoUrl || '/lm_logo.png'} 
+                  src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `http://localhost:8000${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'} 
                   alt="Logo" 
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
                   className="w-full h-full object-contain rounded-full"
                 />
               </div>
@@ -218,7 +220,7 @@ export default function AdminDashboardLayout({
 
             {/* Logout Action Button */}
             <button
-              onClick={() => onNavigate('v1')}
+              onClick={onLogout || (() => onNavigate('v1'))}
               className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-stone-200 cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">logout</span>
