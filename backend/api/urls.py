@@ -12,6 +12,11 @@ urlpatterns = [
 
     # Public CMS & Settings
     path('public/settings/', views.public_settings),
+    path('public/courses/', views.public_courses),
+    path('public/courses/<slug:slug>/', views.public_course_detail),
+
+    # Student Enrollments
+    path('my/enrollments/', views.my_enrollments),
 
     # Signed Streaming & DRM Access
     path('video/stream/<int:pk>/', views.generate_signed_video_url),
@@ -31,6 +36,7 @@ urlpatterns = [
     # Admin Course Builder
     path('admin/courses/', views.admin_courses),
     path('admin/courses/<int:pk>/', views.admin_course_detail),
+    path('admin/courses/<int:pk>/upload-cover/', views.admin_upload_course_cover),
     path('admin/courses/<int:course_id>/modules/', views.admin_add_module),
     path('admin/modules/<int:module_id>/lessons/', views.admin_add_lesson),
     path('admin/lessons/<int:lesson_id>/assets/', views.admin_add_asset),

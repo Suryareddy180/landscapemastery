@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CourseCatalog from './CourseCatalog.jsx';
 
 export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -13,9 +14,45 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
   const [activeFaq, setActiveFaq] = useState(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
-  const basePrice = siteSettings?.coursePrice || 499;
+  // Multi-course state
+  const [catalogCourses, setCatalogCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
+
+  // Fetch course catalog on mount
+  useEffect(() => {
+    fetchCatalog();
+  }, []);
+
+  const fetchCatalog = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/public/courses/');
+      if (res.ok) {
+        const data = await res.json();
+        setCatalogCourses(data.courses || []);
+      }
+    } catch (e) {
+      console.log('Course catalog loaded with fallback');
+    }
+  };
+
+  const handleSelectCourse = (course) => {
+    setSelectedCourse(course);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponMessage(null);
+    setStatusMessage(null);
+    // Scroll to enrollment form
+    setTimeout(() => {
+      const el = document.getElementById('enroll-card');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
+  const basePrice = selectedCourse ? (selectedCourse.discount_price || selectedCourse.price) : (siteSettings?.coursePrice || 499);
   const discountPct = appliedCoupon?.discount_pct || 0;
   const price = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice;
+  const lowestCoursePrice = catalogCourses.length > 0 ? Math.min(...catalogCourses.map(c => c.discount_price || c.price)) : basePrice;
 
   const heroTitle = siteSettings?.heroTitle || 'Master the Art of Landscape Architecture';
   const heroSubtitle = siteSettings?.heroSubtitle || 'Elevate your spatial vision from topographical grading to botanical scenography. Access industry-grade video masterclasses, CAD blueprints, and construction execution frameworks.';
@@ -93,29 +130,6 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         lessons: (m.lessons || []).map(l => l.title)
       }))
     : defaultModules;
-
-  const features = [
-    {
-      icon: "architecture",
-      title: "Structured Video Masterclasses",
-      desc: "In-depth architectural studio lessons and real-world construction site masterclasses."
-    },
-    {
-      icon: "picture_as_pdf",
-      title: "CAD & PDF Spec Blueprints",
-      desc: "Downloadable structural cross-sections, CAD details, and material specification sheets."
-    },
-    {
-      icon: "water_drop",
-      title: "Hydro & Drainage Schematics",
-      desc: "Sub-surface hydrological engineering calculations and retention basin schematics."
-    },
-    {
-      icon: "construction",
-      title: "Construction-Ready Toolkits",
-      desc: "Full execution frameworks, material schedules, soil calculation formulas, and contractor briefing sheets."
-    }
-  ];
 
   const testimonials = siteSettings?.testimonials || [];
 
@@ -196,7 +210,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
       const response = await fetch('http://localhost:8000/api/checkout/session/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone })
+        body: JSON.stringify({ email, phone, course_id: selectedCourse?.id || null })
       });
 
       if (!response.ok) {
@@ -224,8 +238,12 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         amount: calculatedAmount,
         currency: 'INR',
         name: 'Landscape Mastery',
-        description: 'Executive Architecture Masterclass - Lifetime Access',
+        description: selectedCourse ? `${selectedCourse.title} - Lifetime Access` : 'Executive Architecture Masterclass - Lifetime Access',
         image: '/lm_logo.png',
+        notes: {
+          course_id: selectedCourse?.id || '',
+          course_title: selectedCourse?.title || 'Landscape Mastery'
+        },
         prefill: {
           email: email,
           contact: phone || ''
@@ -244,7 +262,8 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                 razorpay_payment_id: razorpayResponse.razorpay_payment_id,
                 razorpay_signature: razorpayResponse.razorpay_signature,
                 email: email,
-                phone: phone
+                phone: phone,
+                course_id: selectedCourse?.id || null
               })
             });
 
@@ -355,22 +374,12 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             className="flex flex-wrap justify-center items-center gap-4 pt-1"
           >
             <a 
-              href="#enroll-card"
+              href="#course-catalog"
               className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-xl shadow-emerald-950/25 transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
             >
-              <span>Enroll Now for ₹{price}</span>
+              <span>Explore Courses</span>
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </a>
-            <button 
-              onClick={() => {
-                const el = document.getElementById('course-curriculum');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-white/95 hover:bg-stone-100 text-stone-800 font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full transition-all border border-stone-300 shadow-xs cursor-pointer flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-lg text-rose-700">picture_as_pdf</span>
-              <span>Explore Full Syllabus (PDF)</span>
-            </button>
           </motion.div>
 
           {/* Trust Guarantees Strip */}
@@ -426,304 +435,18 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
           <button
             onClick={() => {
-              const el = document.getElementById('features');
+              const el = document.getElementById('course-catalog');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
             className="flex items-center gap-1 text-[11px] font-semibold text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer group mt-1"
           >
-            <span>Scroll to explore framework</span>
+            <span>Scroll to explore courses</span>
             <span className="material-symbols-outlined text-sm animate-bounce group-hover:text-emerald-700">keyboard_arrow_down</span>
           </button>
         </div>
       </section>
 
-      {/* 2. MASTERCLASS FRAMEWORK / FEATURES */}
-      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full">
-            The Masterclass Advantage
-          </span>
-          <h2 className="font-serif text-3xl sm:text-5xl font-bold text-emerald-950 tracking-tight">
-            Architectural Precision from Site Topography to Botanical Scenography
-          </h2>
-          <p className="text-sm sm:text-base text-stone-600 max-w-xl mx-auto">
-            A comprehensive, rigorous curriculum distilled from decades of award-winning exterior projects.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -6 }}
-              className="bg-white p-7 rounded-3xl border border-stone-200/90 shadow-sm hover:shadow-xl hover:border-emerald-700/40 transition-all duration-300 space-y-4"
-            >
-              <div className="w-13 h-13 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center shadow-inner">
-                <span className="material-symbols-outlined text-2xl">{f.icon}</span>
-              </div>
-              <h3 className="font-serif text-xl font-bold text-stone-900">{f.title}</h3>
-              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* 3. OFFICIAL CURRICULUM & SYLLABUS PDF DOCUMENT SHOWCASE */}
-      <section id="course-curriculum" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-b from-stone-50 via-white to-stone-50 rounded-3xl border border-stone-200 p-6 sm:p-10 lg:p-12 space-y-8 shadow-sm">
-          {/* Section Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-stone-200 pb-6">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full inline-block">
-                Official Syllabus &amp; Blueprint Specifications
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-emerald-950 pt-2">
-                Course Curriculum &amp; Field Blueprint Guide
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-600 max-w-2xl">
-                Review the comprehensive syllabus document uploaded by our faculty, covering complete masterclass modules, vector CAD specs, and technical construction toolkits.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-semibold text-emerald-900 bg-emerald-100/80 border border-emerald-300 px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                <span>Verified Faculty Release (2026)</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Editorial PDF Document Hero Card */}
-          <div className="bg-stone-900 text-stone-100 rounded-3xl p-6 sm:p-8 lg:p-10 border border-emerald-500/20 shadow-xl relative overflow-hidden">
-            {/* Ambient Green Glow */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-              {/* Left Details Column */}
-              <div className="lg:col-span-7 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center flex-shrink-0 shadow-inner">
-                    <span className="material-symbols-outlined text-2xl">picture_as_pdf</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 block">
-                      Curriculum Document • {curriculumPdfSize}
-                    </span>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-white leading-tight">
-                      {curriculumPdfTitle}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Key Syllabus Contents List */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-                  <div className="bg-stone-950/60 border border-stone-800 p-3.5 rounded-2xl space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                      <span className="material-symbols-outlined text-sm">architecture</span>
-                      <span>Vector CAD Blueprints</span>
-                    </div>
-                    <p className="text-[11px] text-stone-400">
-                      14 construction detail prints, retaining wall specs &amp; elevation sheets (.DWG &amp; PDF).
-                    </p>
-                  </div>
-
-                  <div className="bg-stone-950/60 border border-stone-800 p-3.5 rounded-2xl space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                      <span className="material-symbols-outlined text-sm">terrain</span>
-                      <span>Grading &amp; Soil Mechanics</span>
-                    </div>
-                    <p className="text-[11px] text-stone-400">
-                      Cut/fill volume calculators, contour slope interpolation, and microclimate formulas.
-                    </p>
-                  </div>
-
-                  <div className="bg-stone-950/60 border border-stone-800 p-3.5 rounded-2xl space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                      <span className="material-symbols-outlined text-sm">forest</span>
-                      <span>Botanical Plant Matrix</span>
-                    </div>
-                    <p className="text-[11px] text-stone-400">
-                      150+ drought-tolerant species, canopy layering schedules, and root depth formulas.
-                    </p>
-                  </div>
-
-                  <div className="bg-stone-950/60 border border-stone-800 p-3.5 rounded-2xl space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                      <span className="material-symbols-outlined text-sm">lightbulb</span>
-                      <span>Lighting &amp; Hydraulics</span>
-                    </div>
-                    <p className="text-[11px] text-stone-400">
-                      Low-voltage luminaire photometrics, reflection pool circulation &amp; water engineering.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Primary Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                  <a
-                    href={curriculumPdfUrl}
-                    download="Landscape_Architecture_Syllabus_2026.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer group"
-                  >
-                    <span className="material-symbols-outlined text-lg group-hover:-translate-y-0.5 transition-transform">download</span>
-                    <span>Download Official Syllabus (PDF)</span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => setPdfPreviewOpen(true)}
-                    className="bg-stone-800/90 hover:bg-stone-700 text-stone-200 font-semibold text-xs sm:text-sm px-5 py-3.5 rounded-xl transition-all border border-stone-700 flex items-center gap-2 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-lg text-emerald-400">visibility</span>
-                    <span>Preview Document in Browser</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Document Preview Graphic */}
-              <div className="lg:col-span-5 flex justify-center">
-                <div 
-                  onClick={() => setPdfPreviewOpen(true)}
-                  className="bg-stone-100 text-stone-900 rounded-2xl p-5 shadow-2xl border-4 border-stone-800 w-full max-w-sm cursor-pointer group hover:scale-[1.02] transition-all relative"
-                >
-                  <div className="flex justify-between items-center border-b border-stone-300 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-rose-500" />
-                      <div className="w-3 h-3 rounded-full bg-amber-500" />
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    </div>
-                    <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">SYLLABUS.PDF • 2026</span>
-                  </div>
-
-                  <div className="space-y-3 bg-white p-4 rounded-xl border border-stone-200">
-                    <div className="border-b border-stone-100 pb-2">
-                      <span className="text-[9px] font-bold text-emerald-800 uppercase tracking-widest block">LANDSCAPE MASTERY</span>
-                      <h4 className="font-serif font-bold text-xs text-stone-900 leading-tight mt-0.5">
-                        Architectural Masterclass &amp; Blueprint Guide
-                      </h4>
-                    </div>
-
-                    <div className="space-y-1.5 text-[10px] text-stone-600">
-                      <div className="flex justify-between py-1 border-b border-stone-100">
-                        <span className="font-semibold text-stone-800">Module 1: Topography &amp; Grading</span>
-                        <span className="font-mono text-stone-500">4 Lessons</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-stone-100">
-                        <span className="font-semibold text-stone-800">Module 2: Masonry &amp; Hardscapes</span>
-                        <span className="font-mono text-stone-500">3 Lessons</span>
-                      </div>
-                      <div className="flex justify-between py-1 border-b border-stone-100">
-                        <span className="font-semibold text-stone-800">Module 3: Botanical Palettes</span>
-                        <span className="font-mono text-stone-500">4 Lessons</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="font-semibold text-stone-800">Module 4: Lighting Scenography</span>
-                        <span className="font-mono text-stone-500">3 Lessons</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200 text-[10px] text-emerald-900 font-semibold flex items-center justify-between">
-                      <span>Vector CAD Blueprints Included</span>
-                      <span className="material-symbols-outlined text-xs">verified</span>
-                    </div>
-                  </div>
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-emerald-950/70 rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs">
-                    <span className="material-symbols-outlined text-3xl mb-1 text-emerald-300">fullscreen</span>
-                    <span className="text-xs font-bold">Click to View Syllabus Document</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SYLLABUS PDF PREVIEW MODAL */}
-      <AnimatePresence>
-        {pdfPreviewOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-stone-900 border border-stone-700 rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
-            >
-              {/* Modal Header */}
-              <div className="p-4 sm:px-6 bg-stone-950 border-b border-stone-800 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-white">{curriculumPdfTitle}</h3>
-                    <span className="text-[10px] text-stone-400 font-mono">Official PDF Syllabus • {curriculumPdfSize}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <a
-                    href={curriculumPdfUrl}
-                    download="Landscape_Architecture_Syllabus_2026.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">download</span>
-                    <span>Download PDF</span>
-                  </a>
-                  <button
-                    onClick={() => setPdfPreviewOpen(false)}
-                    className="text-stone-400 hover:text-white p-1.5 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xl">close</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal PDF Viewer */}
-              <div className="flex-1 bg-stone-950 p-2 sm:p-3 flex flex-col min-h-0">
-                <object
-                  data={curriculumPdfUrl}
-                  type="application/pdf"
-                  className="w-full h-full rounded-2xl bg-white border border-stone-800"
-                >
-                  <iframe
-                    src={curriculumPdfUrl}
-                    title="Curriculum Syllabus PDF Preview"
-                    className="w-full h-full rounded-2xl border border-stone-800 bg-white"
-                  >
-                    <div className="flex flex-col items-center justify-center h-full p-8 text-center text-white space-y-4 bg-stone-900 rounded-2xl">
-                      <div className="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-3xl">picture_as_pdf</span>
-                      </div>
-                      <h4 className="font-bold text-lg text-white">{curriculumPdfTitle}</h4>
-                      <p className="text-xs text-stone-400 max-w-md">
-                        The PDF syllabus is ready for download or direct browser viewing.
-                      </p>
-                      <a
-                        href={curriculumPdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-sm">open_in_new</span>
-                        <span>Open Document in Fullscreen</span>
-                      </a>
-                    </div>
-                  </iframe>
-                </object>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 4. ARCHITECTURAL TESTIMONIALS (Shown only if configured in Admin) */}
+      {/* 3. ARCHITECTURAL TESTIMONIALS (Shown only if configured in Admin) */}
       {testimonials && testimonials.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
@@ -758,6 +481,9 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         </section>
       )}
 
+      {/* 4.5. COURSE CATALOG */}
+      <CourseCatalog courses={catalogCourses} onSelectCourse={handleSelectCourse} enrolledCourseIds={enrolledCourseIds} />
+
       {/* 5. PRICING & INSTANT ENROLLMENT CARD */}
       <section id="enroll-card" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-br from-[#063327] via-[#022119] to-[#01140f] text-white rounded-3xl p-6 sm:p-10 lg:p-12 shadow-[0_24px_70px_-12px_rgba(2,44,33,0.5)] border border-emerald-500/25 relative overflow-hidden">
@@ -770,16 +496,21 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 bg-emerald-900/80 text-emerald-200 text-[11px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest border border-emerald-600/40 shadow-inner">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Executive Architectural Access • 2026 Pass</span>
+                <span>{selectedCourse ? selectedCourse.title : 'Executive Architectural Access • 2026 Pass'}</span>
               </div>
 
               <div className="space-y-2">
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-4.5xl font-bold text-white leading-[1.18] tracking-tight">
-                  Unlock Complete <br />
-                  <span className="italic font-normal text-emerald-300">Masterclass Access</span>
+                  {selectedCourse ? (
+                    <>{selectedCourse.title.split(' ').slice(0, 3).join(' ')} <br />
+                    <span className="italic font-normal text-emerald-300">{selectedCourse.title.split(' ').slice(3).join(' ') || 'Masterclass'}</span></>
+                  ) : (
+                    <>Unlock Complete <br />
+                    <span className="italic font-normal text-emerald-300">Masterclass Access</span></>
+                  )}
                 </h2>
                 <p className="text-xs sm:text-sm text-emerald-100/80 font-light leading-relaxed max-w-md">
-                  Comprehensive spatial design, CAD execution schematics, and botanical curation tailored for practitioners.
+                  {selectedCourse?.short_desc || 'Comprehensive spatial design, CAD execution schematics, and botanical curation tailored for practitioners.'}
                 </p>
               </div>
 
@@ -820,8 +551,8 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               {/* Price Display */}
               <div className="pt-4 border-t border-emerald-800/80 flex flex-wrap items-baseline gap-3.5">
                 <span className="text-4xl sm:text-5xl font-bold font-serif text-white tracking-tight">₹{price}</span>
-                {discountPct > 0 ? (
-                  <span className="text-lg line-through text-emerald-400/60 font-sans">₹{basePrice}</span>
+                {(discountPct > 0 || (selectedCourse && selectedCourse.discount_price < selectedCourse.price)) ? (
+                  <span className="text-lg line-through text-emerald-400/60 font-sans">₹{selectedCourse ? selectedCourse.price : basePrice}</span>
                 ) : null}
                 <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">One-Time Investment • Lifetime Access</span>
                 
@@ -837,8 +568,12 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             <div className="lg:col-span-5 bg-white text-stone-900 p-6 sm:p-8 rounded-3xl shadow-2xl border border-stone-100 space-y-4">
               <div className="flex justify-between items-start pb-2 border-b border-stone-100">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-stone-900">Instant Enrollment</h3>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Instant automated portal activation.</p>
+                  <h3 className="font-serif text-xl font-bold text-stone-900">
+                    {selectedCourse ? 'Enroll in Course' : 'Instant Enrollment'}
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    {selectedCourse ? selectedCourse.title : 'Select a course above or enroll directly.'}
+                  </p>
                 </div>
                 <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200">
                   <span className="material-symbols-outlined text-xs">lock</span>
@@ -922,11 +657,19 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                   )}
                 </div>
 
+                {/* Course Selection Prompt (if no course selected) */}
+                {!selectedCourse && catalogCourses.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 font-medium flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    <span>Please <a href="#course-catalog" className="underline font-bold">select a course</a> above to enroll.</span>
+                  </div>
+                )}
+
                 {/* Submit Checkout Button */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-emerald-900 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-xs sm:text-sm py-3.5 rounded-xl shadow-lg shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-3 btn-shine"
+                  disabled={loading || (!selectedCourse && catalogCourses.length > 0)}
+                  className="w-full bg-gradient-to-r from-emerald-900 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-xs sm:text-sm py-3.5 rounded-xl shadow-lg shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-3 btn-shine disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-base">lock</span>
                   <span>{loading ? 'Connecting Payment Gateway...' : `Proceed to Secure Payment • ₹${price}`}</span>

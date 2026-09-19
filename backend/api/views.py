@@ -52,8 +52,10 @@ def login(req):
         return Response({'error': 'Email and password required'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         usr = Usr.objects.get(email=email)
-        if usr.role == 'STUDENT' and not usr.paid:
-            return Response({'error': 'Payment required to access course content'}, status=status.HTTP_403_FORBIDDEN)
+        # Per-course enrollment check: students need at least one enrollment
+        enrollments = list(Enrollment.objects.filter(user=usr, status='ACTIVE').values_list('course_id', flat=True))
+        if usr.role == 'STUDENT' and not usr.paid and len(enrollments) == 0:
+            return Response({'error': 'No active course enrollments found. Please purchase a course first.'}, status=status.HTTP_403_FORBIDDEN)
         if usr.check_password(pwd):
             tok = get_tokens_for_user(usr)
             log_admin_action(usr, "USER_LOGIN", target=usr.email, details=f"Role: {usr.role}", ip=req.META.get('REMOTE_ADDR'))
@@ -63,8 +65,9 @@ def login(req):
                     'id': usr.id,
                     'email': usr.email,
                     'role': usr.role,
-                    'paid': usr.paid,
-                    'name': usr.full_name or usr.email.split('@')[0]
+                    'paid': usr.paid or len(enrollments) > 0,
+                    'name': usr.full_name or usr.email.split('@')[0],
+                    'enrollments': enrollments
                 }
             })
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -136,12 +139,25 @@ def reset_password(req):
 def checkout_session(req):
     email = req.data.get('email')
     phone = req.data.get('phone', '')
+    course_id = req.data.get('course_id')
     if not email:
         return Response({'error': 'Email required'}, status=status.HTTP_400_BAD_REQUEST)
     
-    setting, _ = SiteSetting.objects.get_or_create(id=1)
+    # Per-course pricing: look up specific course price, fallback to site setting
+    if course_id:
+        try:
+            course = Course.objects.get(pk=course_id, status='PUBLISHED')
+            price = float(course.discount_price or course.price)
+            course_title = course.title
+        except Course.DoesNotExist:
+            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        setting, _ = SiteSetting.objects.get_or_create(id=1)
+        price = float(setting.course_price)
+        course_title = 'Landscape Mastery Course'
+    
     order_id = 'order_' + str(int(time.time()))
-    amount = int(float(setting.course_price) * 100)
+    amount = int(price * 100)
     
     return Response({
         'success': True,
@@ -150,7 +166,9 @@ def checkout_session(req):
         'amount': amount,
         'currency': 'INR',
         'email': email,
-        'phone': phone
+        'phone': phone,
+        'courseId': course_id,
+        'courseTitle': course_title
     })
 
 @api_view(['POST'])
@@ -184,6 +202,7 @@ def checkout_verify(req):
         pass
 
     # Create/update paid user record
+    course_id = req.data.get('course_id')
     usr, created = Usr.objects.get_or_create(email=email, defaults={'phone': phone, 'role': 'STUDENT', 'paid': True})
     if phone:
         usr.phone = phone
@@ -191,24 +210,38 @@ def checkout_verify(req):
     usr.paid = True
     usr.save()
 
-    setting, _ = SiteSetting.objects.get_or_create(id=1)
+    # Resolve the specific course for this purchase
+    target_course = None
+    if course_id:
+        try:
+            target_course = Course.objects.get(pk=course_id, status='PUBLISHED')
+        except Course.DoesNotExist:
+            target_course = Course.objects.filter(status='PUBLISHED').first()
+    else:
+        target_course = Course.objects.filter(status='PUBLISHED').first()
+
+    payment_amount = float(target_course.discount_price or target_course.price) if target_course else 499.00
     PaymentRecord.objects.get_or_create(
         order_id=razorpay_order_id,
         defaults={
             'user': usr,
+            'course': target_course,
             'payment_id': razorpay_payment_id,
-            'amount': float(setting.course_price),
+            'amount': payment_amount,
             'status': 'SUCCESS'
         }
     )
     
-    first_course = Course.objects.filter(status='PUBLISHED').first()
-    Enrollment.objects.get_or_create(user=usr, defaults={'course': first_course, 'status': 'ACTIVE', 'access_type': 'PAID'})
+    # Per-course enrollment
+    if target_course:
+        Enrollment.objects.get_or_create(user=usr, course=target_course, defaults={'status': 'ACTIVE', 'access_type': 'PAID'})
     
     if usr.phone:
         sndMail(email, usr.phone)
-    log_admin_action(usr, "STUDENT_VERIFIED_PAYMENT", target=email, details=f"Order: {razorpay_order_id}")
+    log_admin_action(usr, "STUDENT_VERIFIED_PAYMENT", target=email, details=f"Order: {razorpay_order_id}, Course: {target_course.title if target_course else 'N/A'}")
 
+    # Return enrollments list
+    enrollments = list(Enrollment.objects.filter(user=usr, status='ACTIVE').values_list('course_id', flat=True))
     tok = get_tokens_for_user(usr)
     return Response({
         'success': True,
@@ -217,8 +250,9 @@ def checkout_verify(req):
             'id': usr.id,
             'email': usr.email,
             'role': usr.role,
-            'paid': usr.paid,
-            'name': usr.full_name or email.split('@')[0]
+            'paid': True,
+            'name': usr.full_name or email.split('@')[0],
+            'enrollments': enrollments
         }
     })
 
@@ -248,11 +282,23 @@ def razorpay_webhook(req):
             usr.paid = True
             usr.save()
 
-            PaymentRecord.objects.create(user=usr, order_id=order_id, payment_id=payment_id, amount=amount, status='SUCCESS')
-            first_course = Course.objects.filter(status='PUBLISHED').first()
-            Enrollment.objects.get_or_create(user=usr, defaults={'course': first_course, 'status': 'ACTIVE', 'access_type': 'PAID'})
+            # Extract course_id from Razorpay notes if available
+            notes = entity.get('notes', {})
+            webhook_course_id = notes.get('course_id')
+            target_course = None
+            if webhook_course_id:
+                try:
+                    target_course = Course.objects.get(pk=webhook_course_id, status='PUBLISHED')
+                except Course.DoesNotExist:
+                    target_course = Course.objects.filter(status='PUBLISHED').first()
+            else:
+                target_course = Course.objects.filter(status='PUBLISHED').first()
+
+            PaymentRecord.objects.create(user=usr, course=target_course, order_id=order_id, payment_id=payment_id, amount=amount, status='SUCCESS')
+            if target_course:
+                Enrollment.objects.get_or_create(user=usr, course=target_course, defaults={'status': 'ACTIVE', 'access_type': 'PAID'})
             sndMail(usrMail, phn)
-            log_admin_action(usr, "STUDENT_AUTO_ENROLLED", target=usrMail, details=f"Order ID: {order_id}")
+            log_admin_action(usr, "STUDENT_AUTO_ENROLLED", target=usrMail, details=f"Order ID: {order_id}, Course: {target_course.title if target_course else 'N/A'}")
     return Response({'status': 'ok'})
 
 # ---------------------------------------------------------
@@ -297,6 +343,8 @@ def public_settings(req):
             'discount_price': float(c.discount_price),
             'duration_hrs': c.duration_hrs,
             'level': c.level,
+            'thumbnail': c.thumbnail or '',
+            'banner': c.banner or '',
             'modules': modules_data
         })
 
@@ -318,6 +366,95 @@ def public_settings(req):
         'courses': enriched_courses if enriched_courses else courses
     })
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_courses(req):
+    """Returns all published courses as a catalog for the landing page."""
+    courses = []
+    for c in Course.objects.filter(status='PUBLISHED').order_by('id'):
+        module_count = c.modules.count()
+        lesson_count = sum(m.lessons.count() for m in c.modules.all())
+        courses.append({
+            'id': c.id,
+            'title': c.title,
+            'slug': c.slug,
+            'short_desc': c.short_desc or '',
+            'full_desc': c.full_desc or '',
+            'price': float(c.price),
+            'discount_price': float(c.discount_price),
+            'duration_hrs': c.duration_hrs,
+            'level': c.level,
+            'thumbnail': c.thumbnail or '',
+            'banner': c.banner or '',
+            'module_count': module_count,
+            'lesson_count': lesson_count
+        })
+    return Response({'courses': courses})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_course_detail(req, slug):
+    """Returns a single course detail page by slug with full curriculum breakdown."""
+    try:
+        c = Course.objects.get(slug=slug, status='PUBLISHED')
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    modules_data = []
+    for m in c.modules.all().order_by('order'):
+        lessons_data = []
+        for l in m.lessons.all().order_by('order'):
+            lessons_data.append({
+                'id': l.id,
+                'title': l.title,
+                'order': l.order,
+                'asset_count': l.assets.count()
+            })
+        modules_data.append({
+            'id': m.id,
+            'title': m.title,
+            'order': m.order,
+            'lessons': lessons_data
+        })
+    
+    return Response({
+        'id': c.id,
+        'title': c.title,
+        'slug': c.slug,
+        'short_desc': c.short_desc or '',
+        'full_desc': c.full_desc or '',
+        'price': float(c.price),
+        'discount_price': float(c.discount_price),
+        'duration_hrs': c.duration_hrs,
+        'level': c.level,
+        'thumbnail': c.thumbnail or '',
+        'banner': c.banner or '',
+        'modules': modules_data
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_enrollments(req):
+    """Returns all courses the current user is enrolled in."""
+    enrolled_courses = []
+    for enr in Enrollment.objects.filter(user=req.user, status='ACTIVE').select_related('course'):
+        if enr.course:
+            c = enr.course
+            enrolled_courses.append({
+                'id': c.id,
+                'title': c.title,
+                'slug': c.slug,
+                'short_desc': c.short_desc or '',
+                'price': float(c.price),
+                'discount_price': float(c.discount_price),
+                'duration_hrs': c.duration_hrs,
+                'level': c.level,
+                'thumbnail': c.thumbnail or '',
+                'enrolled_at': enr.enrolled_at.strftime('%Y-%m-%d') if enr.enrolled_at else 'N/A',
+                'access_type': enr.access_type
+            })
+    return Response({'enrollments': enrolled_courses})
+
 # ---------------------------------------------------------
 # DRM VIDEO STREAMING & PROGRESS TRACKING
 # ---------------------------------------------------------
@@ -325,8 +462,26 @@ def public_settings(req):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def generate_signed_video_url(req, pk):
-    if req.user.role == 'STUDENT' and not req.user.paid:
-        return Response({'error': 'Strict Access Denied: Payment required'}, status=status.HTTP_403_FORBIDDEN)
+    # Per-course enrollment check: verify user has access to the course containing this asset
+    if req.user.role == 'STUDENT':
+        # Find the course this asset belongs to
+        asset_course_ids = set()
+        from .models import MediaAsset as MA, ContentItem as CI
+        try:
+            asset = MA.objects.get(pk=pk)
+            if asset.lesson and asset.lesson.module:
+                asset_course_ids.add(asset.lesson.module.course_id)
+        except MA.DoesNotExist:
+            pass
+        
+        if asset_course_ids:
+            enrolled_course_ids = set(Enrollment.objects.filter(user=req.user, status='ACTIVE').values_list('course_id', flat=True))
+            if not asset_course_ids.intersection(enrolled_course_ids) and not req.user.paid:
+                return Response({'error': 'Access denied: You are not enrolled in this course'}, status=status.HTTP_403_FORBIDDEN)
+        elif not req.user.paid:
+            # Fallback for unattached assets — require at least one enrollment
+            if not Enrollment.objects.filter(user=req.user, status='ACTIVE').exists():
+                return Response({'error': 'Access denied: No active enrollment found'}, status=status.HTTP_403_FORBIDDEN)
     try:
         asset = MediaAsset.objects.get(pk=pk)
     except MediaAsset.DoesNotExist:
@@ -640,6 +795,8 @@ def admin_courses(req):
                 'slug': c.slug,
                 'price': float(c.price),
                 'status': c.status,
+                'thumbnail': c.thumbnail or '',
+                'banner': c.banner or '',
                 'modulesCount': c.modules.count()
             })
         return Response({'courses': courses})
@@ -658,11 +815,12 @@ def admin_courses(req):
         short_desc = req.data.get('short_desc', '')
         full_desc = req.data.get('full_desc', '')
         price = req.data.get('price', 499.00)
+        thumbnail = req.data.get('thumbnail', '')
         course = Course.objects.create(
-            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, status='PUBLISHED'
+            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, status='PUBLISHED', thumbnail=thumbnail
         )
         log_admin_action(req.user, "COURSE_CREATED", target=course.title, details=f"ID: {course.id}", ip=req.META.get('REMOTE_ADDR'))
-        return Response({'status': 'created', 'id': course.id, 'title': course.title, 'slug': course.slug, 'price': float(course.price)})
+        return Response({'status': 'created', 'id': course.id, 'title': course.title, 'slug': course.slug, 'price': float(course.price), 'thumbnail': course.thumbnail or ''})
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -681,7 +839,16 @@ def admin_course_detail(req, pk):
                 assets = list(l.assets.values('id', 'title', 'asset_type', 'duration', 'url'))
                 lessons.append({'id': l.id, 'title': l.title, 'order': l.order, 'assets': assets})
             modules.append({'id': m.id, 'title': m.title, 'order': m.order, 'lessons': lessons})
-        return Response({'id': course.id, 'title': course.title, 'slug': course.slug, 'price': float(course.price), 'status': course.status, 'modules': modules})
+        return Response({
+            'id': course.id,
+            'title': course.title,
+            'slug': course.slug,
+            'price': float(course.price),
+            'status': course.status,
+            'thumbnail': course.thumbnail or '',
+            'banner': course.banner or '',
+            'modules': modules
+        })
     elif req.method == 'DELETE':
         title = course.title
         course.delete()
@@ -691,6 +858,8 @@ def admin_course_detail(req, pk):
         if 'title' in req.data: course.title = req.data['title']
         if 'price' in req.data: course.price = req.data['price']
         if 'status' in req.data: course.status = req.data['status']
+        if 'thumbnail' in req.data: course.thumbnail = req.data['thumbnail']
+        if 'banner' in req.data: course.banner = req.data['banner']
         course.save()
         log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
@@ -700,9 +869,69 @@ def admin_course_detail(req, pk):
                 'title': course.title,
                 'slug': course.slug,
                 'price': float(course.price),
-                'status': course.status
+                'status': course.status,
+                'thumbnail': course.thumbnail or '',
+                'banner': course.banner or ''
             }
         })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_upload_course_cover(req, pk):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+        return Response({'error': 'Content Manager permission required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        course = Course.objects.get(pk=pk)
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    image_url = req.data.get('imageUrl')
+    data_url = req.data.get('dataUrl')
+    file_obj = req.FILES.get('file') or req.FILES.get('cover') or req.FILES.get('thumbnail')
+
+    if image_url:
+        course.thumbnail = image_url
+        course.save()
+        log_admin_action(req.user, "COURSE_COVER_UPDATED", target=course.title, details=f"URL: {image_url}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'updated', 'thumbnail': course.thumbnail})
+
+    elif data_url:
+        course.thumbnail = data_url
+        course.save()
+        log_admin_action(req.user, "COURSE_COVER_UPDATED", target=course.title, details="Data URL saved", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'updated', 'thumbnail': course.thumbnail})
+
+    elif file_obj:
+        import os
+        from pathlib import Path
+        file_ext = os.path.splitext(file_obj.name)[1].lower() or '.jpg'
+        allowed_exts = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.avif']
+        if file_ext not in allowed_exts:
+            return Response({'error': 'Unsupported file format. Please upload JPG, PNG, or WebP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = f"course_cover_{course.id}_{int(time.time())}{file_ext}"
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+        with open(file_path, 'wb+') as destination:
+            for chunk in file_obj.chunks():
+                destination.write(chunk)
+
+        # Also copy to frontend/public for static fallback
+        frontend_public = Path(settings.BASE_DIR).parent / 'frontend' / 'public'
+        if frontend_public.exists():
+            try:
+                import shutil
+                shutil.copyfile(file_path, frontend_public / filename)
+            except Exception:
+                pass
+
+        course.thumbnail = f"/media/{filename}"
+        course.save()
+        log_admin_action(req.user, "COURSE_COVER_UPLOADED", target=course.title, details=f"File: {filename}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'uploaded', 'thumbnail': course.thumbnail})
+
+    return Response({'error': 'No file or image URL provided'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

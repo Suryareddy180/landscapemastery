@@ -30,12 +30,37 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
   const fetchCourseData = async () => {
     try {
+      // Fetch enrolled course IDs for students
+      let enrolledIds = [];
+      if (token && !isAdmin) {
+        try {
+          const enrollRes = await fetch('http://localhost:8000/api/my/enrollments/', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (enrollRes.ok) {
+            const enrollData = await enrollRes.json();
+            enrolledIds = (enrollData.enrollments || []).map(e => e.id);
+          }
+        } catch (e) {
+          console.log('Enrollment check fallback');
+        }
+      }
+
+      // Fetch all published courses with full module/lesson data
       const res = await fetch('http://localhost:8000/api/public/settings/');
       if (res.ok) {
         const data = await res.json();
         if (data.courses && data.courses.length > 0) {
-          setCourses(data.courses);
-          const firstC = data.courses[0];
+          // Admins see all courses; students see only enrolled courses
+          let filteredCourses = data.courses;
+          if (!isAdmin && enrolledIds.length > 0) {
+            filteredCourses = data.courses.filter(c => enrolledIds.includes(c.id));
+            // Fallback to all if filtering yields nothing (backward compat for paid users)
+            if (filteredCourses.length === 0) filteredCourses = data.courses;
+          }
+          
+          setCourses(filteredCourses);
+          const firstC = filteredCourses[0];
           setSelectedCourse(firstC);
           if (firstC.modules && firstC.modules.length > 0) {
             const firstM = firstC.modules[0];
@@ -50,6 +75,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
       console.error('Failed to load courses:', e);
     }
   };
+
 
   const selectAsset = async (asset) => {
     setActiveAsset(asset);
@@ -214,6 +240,63 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             {isAdmin ? 'ADMIN PREVIEW' : 'PAID'}
           </span>
         </div>
+
+        {/* Course Switcher / Active Course Card with Cover Photo */}
+        {courses.length > 1 ? (
+          <div className="p-3 mx-3 mt-3 bg-stone-50 rounded-xl border border-stone-200/90 space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+              <span>Current Course</span>
+              <span className="text-stone-400 font-normal">{courses.length} courses</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-8 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
+                <img
+                  src={(selectedCourse?.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `http://localhost:8000${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
+                  alt=""
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <select
+                value={selectedCourse?.id || ''}
+                onChange={(e) => {
+                  const target = courses.find(c => String(c.id) === e.target.value);
+                  if (target) {
+                    setSelectedCourse(target);
+                    if (target.modules && target.modules.length > 0) {
+                      setActiveModuleId(target.modules[0].id);
+                      if (target.modules[0].lessons?.[0]?.assets?.[0]) {
+                        selectAsset(target.modules[0].lessons[0].assets[0]);
+                      }
+                    }
+                  }
+                }}
+                className="flex-1 bg-white border border-stone-300 rounded-lg text-xs font-semibold text-stone-800 px-2 py-1.5 focus:outline-none focus:border-emerald-600 truncate"
+              >
+                {courses.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : selectedCourse ? (
+          <div className="p-3 mx-3 mt-3 bg-stone-50 rounded-xl border border-stone-200/90 flex items-center gap-2.5">
+            <div className="w-12 h-9 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
+              <img
+                src={(selectedCourse.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `http://localhost:8000${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
+                alt=""
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">Active Course</span>
+              <span className="font-bold text-xs text-stone-900 truncate block">{selectedCourse.title}</span>
+            </div>
+          </div>
+        ) : null}
 
         {/* Modules & Lessons Accordion */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">

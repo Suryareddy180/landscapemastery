@@ -1,4 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+const PRESET_COVERS = [
+  { label: 'Landscape Masterclass', url: '/course_thumb_landscape.jpg' },
+  { label: 'Botanical Scenography', url: '/course_thumb_botanical.jpg' },
+  { label: 'Hardscape Engineering', url: '/course_thumb_hardscape.jpg' },
+  { label: 'Python & Software Tech', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Modern Minimalist', url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop&q=80' },
+];
+
+const resolveCoverUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/media/')) return `http://localhost:8000${url}`;
+  return url;
+};
 
 export default function CourseBuilderSection({ token }) {
   const [courses, setCourses] = useState([]);
@@ -14,8 +28,17 @@ export default function CourseBuilderSection({ token }) {
   const [activeLessonId, setActiveLessonId] = useState(null);
   const [mutationMessage, setMutationMessage] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [coverUpdating, setCoverUpdating] = useState(false);
+  const [coverUrlInput, setCoverUrlInput] = useState('');
+  const coverFileInputRef = useRef(null);
 
   const getAuthToken = () => token || localStorage.getItem('lm_auth_token') || '';
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setCoverUrlInput(selectedCourse.thumbnail || '');
+    }
+  }, [selectedCourse?.id, selectedCourse?.thumbnail]);
 
   useEffect(() => {
     fetchCourses();
@@ -143,6 +166,159 @@ export default function CourseBuilderSection({ token }) {
       setMutationMessage({ type: 'error', text: 'Network error while deleting course.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // COURSE COVER PHOTO MANAGEMENT
+  // ---------------------------------------------------------------------------
+  const handleCoverFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedCourse) return;
+
+    if (!file.type.startsWith('image/')) {
+      setMutationMessage({ type: 'error', text: 'Please select a valid image file (JPG, PNG, WebP).' });
+      return;
+    }
+
+    setCoverUpdating(true);
+    setMutationMessage(null);
+
+    try {
+      const authToken = getAuthToken();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/upload-cover/`, {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const newThumb = data.thumbnail;
+        setSelectedCourse(prev => prev ? { ...prev, thumbnail: newThumb } : null);
+        setCourses(prev => prev.map(c => c.id === selectedCourse.id ? { ...c, thumbnail: newThumb } : c));
+        setCoverUrlInput(newThumb || '');
+        setMutationMessage({ type: 'success', text: 'Course cover photo uploaded and updated successfully!' });
+      } else {
+        const err = await res.json();
+        setMutationMessage({ type: 'error', text: err.error || 'Failed to upload cover photo.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while uploading cover photo.' });
+    } finally {
+      setCoverUpdating(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveCoverUrl = async () => {
+    if (!selectedCourse) return;
+    const trimmed = coverUrlInput.trim();
+    setCoverUpdating(true);
+    setMutationMessage(null);
+
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ thumbnail: trimmed })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const updatedThumb = data.course?.thumbnail ?? trimmed;
+        setSelectedCourse(prev => prev ? { ...prev, thumbnail: updatedThumb } : null);
+        setCourses(prev => prev.map(c => c.id === selectedCourse.id ? { ...c, thumbnail: updatedThumb } : c));
+        setMutationMessage({ type: 'success', text: 'Course cover photo URL updated successfully!' });
+      } else {
+        const err = await res.json();
+        setMutationMessage({ type: 'error', text: err.error || 'Failed to update cover photo URL.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while updating cover photo.' });
+    } finally {
+      setCoverUpdating(false);
+    }
+  };
+
+  const handleApplyPresetCover = async (url) => {
+    if (!selectedCourse) return;
+    setCoverUpdating(true);
+    setMutationMessage(null);
+
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ thumbnail: url })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const updatedThumb = data.course?.thumbnail ?? url;
+        setSelectedCourse(prev => prev ? { ...prev, thumbnail: updatedThumb } : null);
+        setCourses(prev => prev.map(c => c.id === selectedCourse.id ? { ...c, thumbnail: updatedThumb } : c));
+        setCoverUrlInput(url);
+        setMutationMessage({ type: 'success', text: 'Preset cover photo applied successfully!' });
+      } else {
+        const err = await res.json();
+        setMutationMessage({ type: 'error', text: err.error || 'Failed to apply preset cover.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while applying preset cover.' });
+    } finally {
+      setCoverUpdating(false);
+    }
+  };
+
+  const handleRemoveCoverPhoto = async () => {
+    if (!selectedCourse) return;
+    setCoverUpdating(true);
+    setMutationMessage(null);
+
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ thumbnail: '' })
+      });
+
+      if (res.ok) {
+        setSelectedCourse(prev => prev ? { ...prev, thumbnail: '' } : null);
+        setCourses(prev => prev.map(c => c.id === selectedCourse.id ? { ...c, thumbnail: '' } : c));
+        setCoverUrlInput('');
+        setMutationMessage({ type: 'success', text: 'Course cover photo removed.' });
+      } else {
+        const err = await res.json();
+        setMutationMessage({ type: 'error', text: err.error || 'Failed to remove cover photo.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while removing cover photo.' });
+    } finally {
+      setCoverUpdating(false);
     }
   };
 
@@ -357,17 +533,29 @@ export default function CourseBuilderSection({ token }) {
                   <div
                     key={c.id}
                     onClick={() => loadCourseDetail(c.id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'bg-emerald-50/90 border-emerald-600 text-emerald-950 shadow-sm ring-1 ring-emerald-600'
                         : 'bg-stone-50/60 border-stone-200 text-stone-600 hover:bg-stone-100 hover:border-stone-300'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2 gap-2">
-                      <span className="font-bold text-xs leading-tight text-stone-900 line-clamp-2">{c.title}</span>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100/60 px-2 py-0.5 rounded flex-shrink-0">
-                        ₹{c.price}
-                      </span>
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="w-12 h-10 rounded-lg overflow-hidden bg-stone-900 flex-shrink-0 border border-stone-200 shadow-2xs">
+                        <img
+                          src={resolveCoverUrl(c.thumbnail) || '/course_thumb_landscape.jpg'}
+                          alt=""
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-1.5">
+                          <span className="font-bold text-xs leading-tight text-stone-900 line-clamp-2">{c.title}</span>
+                          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/60 px-1.5 py-0.5 rounded flex-shrink-0">
+                            ₹{c.price}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] pt-1">
@@ -493,6 +681,134 @@ export default function CourseBuilderSection({ token }) {
                   </button>
                 </div>
               )}
+
+              {/* Course Cover Photo Section */}
+              <div className="bg-gradient-to-br from-stone-50 via-white to-emerald-50/20 rounded-2xl p-5 border border-stone-200 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-lg">image</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-xs sm:text-sm text-stone-900 flex items-center gap-2">
+                        <span>Course Cover Photo</span>
+                        {selectedCourse.thumbnail && (
+                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                            Custom Photo Active
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-[11px] text-stone-500">
+                        Showcased across public catalog cards, student learning portal, and checkout
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <input
+                      type="file"
+                      ref={coverFileInputRef}
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleCoverFileUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => coverFileInputRef.current?.click()}
+                      disabled={coverUpdating}
+                      className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-sm">upload</span>
+                      <span>{coverUpdating ? 'Uploading...' : 'Upload Image'}</span>
+                    </button>
+
+                    {selectedCourse.thumbnail && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoverPhoto}
+                        disabled={coverUpdating}
+                        className="px-2.5 py-1.5 text-stone-600 hover:text-rose-700 hover:bg-rose-50 border border-stone-200 rounded-xl text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
+                        title="Remove cover photo and reset to default"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                  {/* 16:9 Cover Thumbnail Preview Card */}
+                  <div className="md:col-span-4 relative aspect-video rounded-xl overflow-hidden border border-stone-300 bg-stone-900 shadow-xs group">
+                    <img
+                      src={resolveCoverUrl(selectedCourse.thumbnail) || '/course_thumb_landscape.jpg'}
+                      alt={selectedCourse.title}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 text-[10px] text-white/90 font-mono font-medium bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded">
+                      16:9 Banner
+                    </span>
+                    {coverUpdating && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-white text-xs font-semibold">
+                        Updating...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* URL Input & Quick Preset Options */}
+                  <div className="md:col-span-8 space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        Image URL / Web Link:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="https://images.unsplash.com/... or /course_thumb_custom.jpg"
+                          value={coverUrlInput}
+                          onChange={(e) => setCoverUrlInput(e.target.value)}
+                          className="flex-1 bg-white border border-stone-300 rounded-xl px-3 py-1.5 text-xs text-stone-900 focus:border-emerald-700 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveCoverUrl}
+                          disabled={coverUpdating || !coverUrlInput.trim() || coverUrlInput.trim() === selectedCourse.thumbnail}
+                          className="px-3 py-1.5 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
+                        >
+                          Save URL
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                        Quick Preset Covers:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PRESET_COVERS.map((preset, pIdx) => {
+                          const isActive = selectedCourse.thumbnail === preset.url;
+                          return (
+                            <button
+                              key={pIdx}
+                              type="button"
+                              onClick={() => handleApplyPresetCover(preset.url)}
+                              disabled={coverUpdating}
+                              className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-400 font-bold ring-1 ring-emerald-500'
+                                  : 'bg-white hover:bg-emerald-50 hover:border-emerald-300 text-stone-700 hover:text-emerald-900 border-stone-200'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Add Module Form */}
               <form onSubmit={handleAddModule} className="flex gap-2">

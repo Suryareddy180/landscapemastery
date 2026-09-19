@@ -9,16 +9,10 @@ export default function Footer() {
         </span>
         <div className="flex gap-6 text-xs font-semibold">
           <a 
-            href="#course-curriculum" 
+            href="#course-catalog" 
             className="hover:text-emerald-800 transition-colors"
           >
-            Curriculum
-          </a>
-          <a 
-            href="#features" 
-            className="hover:text-emerald-800 transition-colors"
-          >
-            Framework
+            Courses
           </a>
           <a 
             href="#enroll-card" 

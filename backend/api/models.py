@@ -129,6 +129,7 @@ class VideoProgress(models.Model):
 
 class PaymentRecord(models.Model):
     user = models.ForeignKey(Usr, on_delete=models.CASCADE, null=True, blank=True)
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
     order_id = models.CharField(max_length=100, unique=True)
     payment_id = models.CharField(max_length=100, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)

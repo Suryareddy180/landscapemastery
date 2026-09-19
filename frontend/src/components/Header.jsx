@@ -58,16 +58,10 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
         {/* Central Navigation Anchor Links (Desktop) */}
         <nav className="hidden md:flex items-center gap-2 bg-stone-100/80 border border-stone-200/70 p-1.5 rounded-full shadow-inner">
           <button 
-            onClick={() => scrollToSection('course-curriculum')}
+            onClick={() => scrollToSection('course-catalog')}
             className="text-stone-700 hover:text-emerald-950 hover:bg-white text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-none hover:shadow-sm"
           >
-            Curriculum
-          </button>
-          <button 
-            onClick={() => scrollToSection('features')}
-            className="text-stone-700 hover:text-emerald-950 hover:bg-white text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-none hover:shadow-sm"
-          >
-            Framework
+            Courses
           </button>
           <button 
             onClick={() => scrollToSection('enroll-card')}
@@ -140,17 +134,10 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
           >
             <nav className="flex flex-col gap-2 text-sm font-semibold text-stone-700">
               <button 
-                onClick={() => scrollToSection('course-curriculum')}
+                onClick={() => scrollToSection('course-catalog')}
                 className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors"
               >
-                <span>Curriculum</span>
-                <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
-              </button>
-              <button 
-                onClick={() => scrollToSection('features')}
-                className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors"
-              >
-                <span>Masterclass Framework</span>
+                <span>Courses</span>
                 <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
               </button>
               <button 
