@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+
+// Landscape Mastery Components
 import Header from './components/Header.jsx';
 import LandingView from './components/LandingView.jsx';
 import LoginView from './components/LoginView.jsx';
@@ -6,10 +9,24 @@ import DashboardView from './components/DashboardView.jsx';
 import AdminView from './components/AdminView.jsx';
 import Footer from './components/Footer.jsx';
 
+// 3CAPSTECH Components
+import CompanyHome from './pages/CompanyHome.jsx';
+import AdminLayout from './admin/AdminLayout.jsx';
+import AdminLogin from './admin/AdminLogin.jsx';
+import AdminDashboard from './admin/AdminDashboard.jsx';
+
 export const ADMIN_ROLES = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'];
 
-export default function App() {
-  const [activeView, setActiveView] = useState('v1');
+function LandscapeApp({ initialView = 'v1' }) {
+  const [searchParams] = useSearchParams();
+  const [activeView, setActiveView] = useState(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
+      return viewParam;
+    }
+    return initialView;
+  });
+
   const [token, setToken] = useState(() => localStorage.getItem('lm_auth_token') || '');
   const [user, setUser] = useState(() => {
     try {
@@ -30,7 +47,14 @@ export default function App() {
 
   useEffect(() => {
     fetchSiteSettings();
-    // Auto-restore view if token exists
+    // Check if explicit view query parameter was provided
+    const viewParam = searchParams.get('view');
+    if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
+      setActiveView(viewParam);
+      return;
+    }
+
+    // Auto-restore view if token and user exist
     if (token && user) {
       if (ADMIN_ROLES.includes(user.role)) {
         setActiveView('admin');
@@ -38,7 +62,7 @@ export default function App() {
         setActiveView('v3');
       }
     }
-  }, []);
+  }, [searchParams]);
 
   const fetchSiteSettings = async () => {
     try {
@@ -118,5 +142,39 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Master Destination: Landscape Mastery Platform */}
+      <Route path="/" element={<LandscapeApp initialView="v1" />} />
+      <Route path="/login" element={<LandscapeApp initialView="v2" />} />
+      <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
+      <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
+
+      {/* Incorporated 3CAPSTECH Corporate Platform */}
+      <Route path="/company" element={<CompanyHome />} />
+
+      {/* Convenience Direct Aliases for 3CAPSTECH sections */}
+      <Route path="/services" element={<Navigate to="/company#services" replace />} />
+      <Route path="/about" element={<Navigate to="/company#about" replace />} />
+      <Route path="/solutions" element={<Navigate to="/company#solutions" replace />} />
+      <Route path="/products" element={<Navigate to="/company#products" replace />} />
+      <Route path="/process" element={<Navigate to="/company#process" replace />} />
+      <Route path="/why" element={<Navigate to="/company#why" replace />} />
+      <Route path="/contact" element={<Navigate to="/company#contact" replace />} />
+
+      {/* 3CAPSTECH Admin Console & Login */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+      </Route>
+      <Route path="/company/admin" element={<Navigate to="/admin" replace />} />
+
+      {/* Fallback Route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

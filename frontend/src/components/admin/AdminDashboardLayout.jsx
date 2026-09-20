@@ -117,6 +117,13 @@ export default function AdminDashboardLayout({
               <span className="material-symbols-outlined text-base text-stone-500">preview</span>
               Student Portal View
             </button>
+            <a
+              href="/admin"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 transition-all border border-emerald-200/60 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base text-emerald-700">admin_panel_settings</span>
+              3CAPSTECH Admin Console
+            </a>
             <button
               onClick={() => onNavigate('v1')}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"

@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Landscape Mastery Tokens
         "surface": "#fcf9f8",
         "surface-dim": "#dcd9d9",
         "surface-bright": "#fcf9f8",
@@ -54,7 +55,15 @@ export default {
         "on-tertiary-fixed-variant": "#454747",
         "background": "#fcf9f8",
         "on-background": "#1c1b1b",
-        "surface-variant": "#e5e2e1"
+        "surface-variant": "#e5e2e1",
+
+        // 3CAPSTECH Tokens
+        bg: "var(--bg)",
+        accent: "var(--accent)",
+        accent2: "var(--accent2)",
+        ink: "var(--text-primary)",
+        muted: "var(--text-secondary)",
+        line: "var(--border)",
       },
       borderRadius: {
         "DEFAULT": "0.25rem",
@@ -70,13 +79,44 @@ export default {
         "card-padding": "32px"
       },
       fontFamily: {
+        // Landscape Fonts
         "headline-lg-mobile": ["Montserrat", "sans-serif"],
         "body-md": ["Inter", "sans-serif"],
         "body-lg": ["Inter", "sans-serif"],
         "headline-lg": ["Montserrat", "sans-serif"],
         "display-lg": ["Montserrat", "sans-serif"],
         "label-sm": ["Inter", "sans-serif"],
-        "headline-md": ["Montserrat", "sans-serif"]
+        "headline-md": ["Montserrat", "sans-serif"],
+
+        // 3CAPSTECH Fonts
+        display: ['"Cabinet Grotesk"', "system-ui", "sans-serif"],
+        sans: ['"Satoshi"', "system-ui", "sans-serif"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+      },
+      letterSpacing: {
+        tightest: "-0.045em",
+      },
+      keyframes: {
+        floaty: {
+          "0%,100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-16px)" },
+        },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
+        spinslow: {
+          to: { transform: "rotate(360deg)" },
+        },
+        gradient: {
+          "0%,100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+      },
+      animation: {
+        floaty: "floaty 6s ease-in-out infinite",
+        shimmer: "shimmer 2s infinite",
+        spinslow: "spinslow 40s linear infinite",
+        gradient: "gradient 8s ease infinite",
       },
       fontSize: {
         "headline-lg-mobile": ["32px", { lineHeight: "1.2", fontWeight: "600" }],

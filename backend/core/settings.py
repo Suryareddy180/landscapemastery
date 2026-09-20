@@ -21,10 +21,12 @@ INSTALLED_APPS = [
     
     # 3rd Party Apps
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
 
     # Local Apps
     'api',
+    'company',
 ]
 
 AUTH_USER_MODEL = 'api.Usr'
@@ -32,6 +34,7 @@ AUTH_USER_MODEL = 'api.Usr'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'api.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
@@ -117,3 +120,26 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Landscape Mastery <noreply@landscapemastery.com>')
+
+# SimpleJWT Configuration for Company Admin
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# 3CAPSTECH Enterprise Brand Configuration
+BRAND_CONFIG = {
+    "name": "3CAPSTECH",
+    "email": "md.3capstech@gmail.com",
+    "phone": "+91 94409 99908",
+    "address": "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500085",
+    "primary_color": "#11A831",
+    "secondary_color": "#0549B1",
+    "text_primary_light": "#1E293B",
+    "text_secondary_light": "#64748B",
+    "accent_glow": "rgba(17, 168, 49, 0.25)",
+    "theme_mode": "dark-hybrid",
+}
+CONTACT_NOTIFICATION_EMAIL = os.environ.get("CONTACT_NOTIFICATION_EMAIL", "md.3capstech@gmail.com")

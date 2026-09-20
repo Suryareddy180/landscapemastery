@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl = '/lm_logo.png', user, onLogout }) {
@@ -69,6 +70,12 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
           >
             Pricing &amp; Access
           </button>
+          <Link 
+            to="/company"
+            className="text-stone-700 hover:text-emerald-950 hover:bg-white text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-none hover:shadow-sm"
+          >
+            3CAPSTECH
+          </Link>
         </nav>
 
         {/* Header Right Action & Mobile Toggle */}
@@ -147,6 +154,14 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
                 <span>Pricing &amp; Access</span>
                 <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
               </button>
+              <Link 
+                to="/company"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors text-stone-700 font-semibold"
+              >
+                <span>3CAPSTECH Company</span>
+                <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
+              </Link>
             </nav>
 
             <div className="pt-3 border-t border-stone-100 flex flex-col gap-2">
