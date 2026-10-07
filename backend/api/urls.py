@@ -2,6 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Health Check (Load balancers & uptime monitoring)
+    path('health/', views.health_check),
+
     # Auth & Webhooks
     path('login/', views.login),
     path('auth/forgot-password/', views.forgot_password),

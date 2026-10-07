@@ -1,5 +1,8 @@
-// Minimal fetch wrapper so we avoid extra deps.
-const BASE = process.env.REACT_APP_BACKEND_URL;
+// Centralized API base URL — set VITE_API_BASE_URL in your production env.
+// In development, Vite's proxy (vite.config.js) routes /api and /media to localhost:8000.
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+const BASE = BASE_URL;
 
 async function request(method, path, body) {
   const headers = {};

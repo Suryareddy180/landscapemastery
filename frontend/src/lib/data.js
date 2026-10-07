@@ -189,7 +189,7 @@ export const PRODUCTS = [
     desc: "A learning and knowledge platform focused on landscape design, gardening, plants, and practical landscape care.",
     icon: "Trees",
     image: "/lm_logo.png",
-    link: process.env.REACT_APP_LANDSCAPE_MASTERY_URL || "http://localhost:3000"
+    link: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LANDSCAPE_MASTERY_URL) || "/"
   },
   {
     id: "sub-program-1",

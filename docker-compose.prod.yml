@@ -1,0 +1,72 @@
+﻿services:
+  db:
+    image: postgres:16-alpine
+    container_name: landscapemastery_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: landscapemastery
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secure_password}
+    volumes:
+      - landscapemastery_postgres_data:/var/lib/postgresql/data
+    networks:
+      - landscapemastery_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d landscapemastery"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: landscapemastery_backend
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=landscapemastery
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres_secure_password}
+      - DB_HOST=db
+      - DB_PORT=5432
+    volumes:
+      - landscapemastery_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - landscapemastery_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=""
+    container_name: landscapemastery_frontend
+    restart: unless-stopped
+    ports:
+      # Exposes ONLY on host loopback port 8082 - prevents host port conflicts with existing web apps
+      - "127.0.0.1:8082:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - landscapemastery_net
+
+networks:
+  landscapemastery_net:
+    driver: bridge
+
+volumes:
+  landscapemastery_postgres_data:
+  landscapemastery_media:

@@ -1,21 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { BASE_URL } from './lib/api.js';
 
-// Landscape Mastery Components
+// Landscape Mastery Core Components (loaded immediately for instant first-contentful-paint)
 import Header from './components/Header.jsx';
 import LandingView from './components/LandingView.jsx';
 import LoginView from './components/LoginView.jsx';
-import DashboardView from './components/DashboardView.jsx';
-import AdminView from './components/AdminView.jsx';
 import Footer from './components/Footer.jsx';
 
-// 3CAPSTECH Components
-import CompanyHome from './pages/CompanyHome.jsx';
-import AdminLayout from './admin/AdminLayout.jsx';
-import AdminLogin from './admin/AdminLogin.jsx';
-import AdminDashboard from './admin/AdminDashboard.jsx';
+// Lazy-loaded Views for production performance optimization
+const DashboardView = lazy(() => import('./components/DashboardView.jsx'));
+const AdminView = lazy(() => import('./components/AdminView.jsx'));
+const CompanyHome = lazy(() => import('./pages/CompanyHome.jsx'));
+const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
+const AdminLogin = lazy(() => import('./admin/AdminLogin.jsx'));
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard.jsx'));
 
 export const ADMIN_ROLES = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'];
+
+const ViewLoader = () => (
+  <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 p-12">
+    <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+    <span className="text-xs uppercase tracking-widest text-stone-400 font-mono">Loading Interface...</span>
+  </div>
+);
 
 function LandscapeApp({ initialView = 'v1' }) {
   const [searchParams] = useSearchParams();
@@ -66,13 +74,13 @@ function LandscapeApp({ initialView = 'v1' }) {
 
   const fetchSiteSettings = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/public/settings/');
+      const res = await fetch(`${BASE_URL}/api/public/settings/`);
       if (res.ok) {
         const data = await res.json();
         setSiteSettings(data);
       }
     } catch (e) {
-      console.log('Public settings loaded with fallback configuration');
+      // Silently fall back to default settings
     }
   };
 
@@ -130,16 +138,20 @@ function LandscapeApp({ initialView = 'v1' }) {
 
       {/* Student Video Portal (Screen 3) */}
       {activeView === 'v3' && (
-        <div className="view-section active h-screen flex overflow-hidden bg-surface">
-          <DashboardView onNavigate={setActiveView} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} />
-        </div>
+        <Suspense fallback={<ViewLoader />}>
+          <div className="view-section active h-screen flex overflow-hidden bg-surface">
+            <DashboardView onNavigate={setActiveView} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} />
+          </div>
+        </Suspense>
       )}
 
       {/* Admin Operations Panel */}
       {activeView === 'admin' && (
-        <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
-          <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />
-        </div>
+        <Suspense fallback={<ViewLoader />}>
+          <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
+            <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />
+          </div>
+        </Suspense>
       )}
     </div>
   );
@@ -147,34 +159,36 @@ function LandscapeApp({ initialView = 'v1' }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Master Destination: Landscape Mastery Platform */}
-      <Route path="/" element={<LandscapeApp initialView="v1" />} />
-      <Route path="/login" element={<LandscapeApp initialView="v2" />} />
-      <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
-      <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
+    <Suspense fallback={<ViewLoader />}>
+      <Routes>
+        {/* Master Destination: Landscape Mastery Platform */}
+        <Route path="/" element={<LandscapeApp initialView="v1" />} />
+        <Route path="/login" element={<LandscapeApp initialView="v2" />} />
+        <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
+        <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
 
-      {/* Incorporated 3CAPSTECH Corporate Platform */}
-      <Route path="/company" element={<CompanyHome />} />
+        {/* Incorporated 3CAPSTECH Corporate Platform */}
+        <Route path="/company" element={<CompanyHome />} />
 
-      {/* Convenience Direct Aliases for 3CAPSTECH sections */}
-      <Route path="/services" element={<Navigate to="/company#services" replace />} />
-      <Route path="/about" element={<Navigate to="/company#about" replace />} />
-      <Route path="/solutions" element={<Navigate to="/company#solutions" replace />} />
-      <Route path="/products" element={<Navigate to="/company#products" replace />} />
-      <Route path="/process" element={<Navigate to="/company#process" replace />} />
-      <Route path="/why" element={<Navigate to="/company#why" replace />} />
-      <Route path="/contact" element={<Navigate to="/company#contact" replace />} />
+        {/* Convenience Direct Aliases for 3CAPSTECH sections */}
+        <Route path="/services" element={<Navigate to="/company#services" replace />} />
+        <Route path="/about" element={<Navigate to="/company#about" replace />} />
+        <Route path="/solutions" element={<Navigate to="/company#solutions" replace />} />
+        <Route path="/products" element={<Navigate to="/company#products" replace />} />
+        <Route path="/process" element={<Navigate to="/company#process" replace />} />
+        <Route path="/why" element={<Navigate to="/company#why" replace />} />
+        <Route path="/contact" element={<Navigate to="/company#contact" replace />} />
 
-      {/* 3CAPSTECH Admin Console & Login */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-      </Route>
-      <Route path="/company/admin" element={<Navigate to="/admin" replace />} />
+        {/* 3CAPSTECH Admin Console & Login */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+        </Route>
+        <Route path="/company/admin" element={<Navigate to="/admin" replace />} />
 
-      {/* Fallback Route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback Route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }

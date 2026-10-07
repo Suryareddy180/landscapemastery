@@ -4,7 +4,7 @@ import { Target, Eye, CheckCircle2, Linkedin, Twitter, Mail, Crown, User } from 
 import Reveal, { WordReveal } from "../components/Reveal";
 import { MISSION, VISION, MISSION_PILLARS, CORE_VALUES } from "../lib/data";
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+const BACKEND = import.meta.env.VITE_API_BASE_URL || '';
 
 const getPhotoSrc = (url) => {
   if (!url) return null;

@@ -18,7 +18,7 @@ from .email_service import sndMail
 from .signed_url_service import generate_signed_stream_token, verify_signed_stream_token
 from .audit_service import log_admin_action
 
-JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-landscape-mastery-executive-portal-key')
+JWT_SECRET = settings.SECRET_KEY
 
 def get_tokens_for_user(usr):
     payload = {
@@ -40,8 +40,29 @@ def check_admin_permission(usr, allowed_roles=None):
     return usr.role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'] or usr.is_staff
 
 # ---------------------------------------------------------
+# SYSTEM HEALTH CHECK (For Load Balancers & Monitoring)
+# ---------------------------------------------------------
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    db_ok = True
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception:
+        db_ok = False
+    status_code = status.HTTP_200_OK if db_ok else status.HTTP_503_SERVICE_UNAVAILABLE
+    return Response({
+        'status': 'healthy' if db_ok else 'degraded',
+        'database': 'connected' if db_ok else 'disconnected'
+    }, status=status_code)
+
+# ---------------------------------------------------------
 # AUTHENTICATION & PASSWORD RECOVERY
 # ---------------------------------------------------------
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -52,6 +73,8 @@ def login(req):
         return Response({'error': 'Email and password required'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         usr = Usr.objects.get(email=email)
+        if not usr.is_active:
+            return Response({'error': 'Account has been disabled. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
         # Per-course enrollment check: students need at least one enrollment
         enrollments = list(Enrollment.objects.filter(user=usr, status='ACTIVE').values_list('course_id', flat=True))
         if usr.role == 'STUDENT' and not usr.paid and len(enrollments) == 0:
@@ -97,7 +120,26 @@ def forgot_password(req):
         }
         reset_token = jwt.encode(reset_payload, JWT_SECRET, algorithm='HS256')
         log_admin_action(usr, "PASSWORD_RESET_REQUESTED", target=usr.email, ip=req.META.get('REMOTE_ADDR'))
-        # In production this sends via SMTP: sndMail(email, f"Reset Token: {reset_token}")
+        try:
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+            reset_link = f"{frontend_url}/login?reset_token={reset_token}&email={usr.email}"
+            from django.core.mail import send_mail
+            msg = (
+                f"Hello {usr.full_name or usr.email},\n\n"
+                f"A password reset was requested for your Landscape Mastery account.\n\n"
+                f"Click the link below or enter this token on the login page to set a new password:\n{reset_link}\n\n"
+                f"Reset Token: {reset_token}\n\n"
+                f"This token is valid for 30 minutes. If you did not request this, please ignore this email."
+            )
+            send_mail(
+                "Landscape Mastery - Password Reset Request",
+                msg,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@landscapemastery.com'),
+                [usr.email],
+                fail_silently=True
+            )
+        except Exception:
+            pass
         return Response(generic_response, status=status.HTTP_200_OK)
     except Usr.DoesNotExist:
         return Response(generic_response, status=status.HTTP_200_OK)
@@ -197,9 +239,8 @@ def checkout_verify(req):
 
         if not hmac.compare_digest(generated_signature, razorpay_signature):
             return Response({'error': 'Invalid cryptographic payment signature'}, status=status.HTTP_400_BAD_REQUEST)
-    elif not sec:
-        # Development fallback only if secret not configured in local testing
-        pass
+    elif not settings.DEBUG:
+        return Response({'error': 'Cryptographic payment signature required in production'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create/update paid user record
     course_id = req.data.get('course_id')
@@ -265,6 +306,8 @@ def razorpay_webhook(req):
         exp_sig = hmac.new(sec.encode('utf-8'), req.body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(exp_sig, sig):
             return Response({'error': 'Invalid signature'}, status=status.HTTP_400_BAD_REQUEST)
+    elif not settings.DEBUG:
+        return Response({'error': 'Webhook signature required in production'}, status=status.HTTP_400_BAD_REQUEST)
     body = req.data
     event = body.get('event')
     if event == 'payment.captured':
@@ -492,7 +535,7 @@ def generate_signed_video_url(req, pk):
                 'assetId': pk,
                 'signedToken': token,
                 'expiresAt': exp,
-                'streamUrl': f"http://localhost:8000/api/video/stream/{pk}/play/?token={token}",
+                'streamUrl': req.build_absolute_uri(f"/api/video/stream/{pk}/play/?token={token}"),
                 'watermark': f"ENROLLED STUDENT: {req.user.email.upper()} • ID: LM-{req.user.id}"
             })
         except ContentItem.DoesNotExist:
@@ -503,7 +546,7 @@ def generate_signed_video_url(req, pk):
         'assetId': asset.id,
         'signedToken': token,
         'expiresAt': exp,
-        'streamUrl': f"http://localhost:8000/api/video/stream/{asset.id}/play/?token={token}",
+        'streamUrl': req.build_absolute_uri(f"/api/video/stream/{asset.id}/play/?token={token}"),
         'watermark': f"ENROLLED STUDENT: {req.user.email.upper()} • ID: LM-{req.user.id}"
     })
 
@@ -770,7 +813,7 @@ def admin_upload_logo(req):
             except Exception:
                 pass
         
-        setting.logo_url = f"http://localhost:8000/media/{filename}"
+        setting.logo_url = f"/media/{filename}"
         setting.save()
         log_admin_action(req.user, "LOGO_UPLOADED", target="SiteSetting", details=f"File: {filename}", ip=req.META.get('REMOTE_ADDR'))
         return Response({'status': 'uploaded', 'logoUrl': setting.logo_url})

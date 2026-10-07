@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BASE_URL } from '../lib/api.js';
 
 export default function DashboardView({ onNavigate, token, user, onLogout, logoUrl }) {
   const [courses, setCourses] = useState([]);
@@ -34,7 +35,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
       let enrolledIds = [];
       if (token && !isAdmin) {
         try {
-          const enrollRes = await fetch('http://localhost:8000/api/my/enrollments/', {
+          const enrollRes = await fetch(`${BASE_URL}/api/my/enrollments/`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (enrollRes.ok) {
@@ -42,12 +43,12 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             enrolledIds = (enrollData.enrollments || []).map(e => e.id);
           }
         } catch (e) {
-          console.log('Enrollment check fallback');
+          // Enrollment fallback — proceed without enrollment filter
         }
       }
 
       // Fetch all published courses with full module/lesson data
-      const res = await fetch('http://localhost:8000/api/public/settings/');
+      const res = await fetch(`${BASE_URL}/api/public/settings/`);
       if (res.ok) {
         const data = await res.json();
         if (data.courses && data.courses.length > 0) {
@@ -85,7 +86,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
     try {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(`http://localhost:8000/api/video/stream/${asset.id}/`, { headers });
+      const res = await fetch(`${BASE_URL}/api/video/stream/${asset.id}/`, { headers });
       
       if (res.ok) {
         const sData = await res.json();
@@ -102,7 +103,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
           // Fetch saved progress (BUG-009 / TC-VID-005)
           if (token) {
-            const progRes = await fetch(`http://localhost:8000/api/video/progress/${asset.id}/`, { headers });
+            const progRes = await fetch(`${BASE_URL}/api/video/progress/${asset.id}/`, { headers });
             if (progRes.ok) {
               const pData = await progRes.json();
               if (pData.last_position_sec && videoRef.current) {
@@ -141,7 +142,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
   const saveProgress = async (posSec, completed = false) => {
     if (!activeAsset || !token) return;
     try {
-      await fetch('http://localhost:8000/api/video/progress/', {
+      await fetch(`${BASE_URL}/api/video/progress/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +210,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white border border-stone-200 p-1 shadow-xs overflow-hidden flex items-center justify-center">
               <img 
-                src={(logoUrl && (logoUrl.startsWith('/media/') ? `http://localhost:8000${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
+                src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
                 alt="Logo" 
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
                 className="w-full h-full object-contain" 
@@ -251,7 +252,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             <div className="flex items-center gap-2">
               <div className="w-10 h-8 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
                 <img
-                  src={(selectedCourse?.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `http://localhost:8000${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
+                  src={(selectedCourse?.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `${BASE_URL}${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
                   alt=""
                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
                   className="w-full h-full object-cover"
@@ -285,7 +286,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           <div className="p-3 mx-3 mt-3 bg-stone-50 rounded-xl border border-stone-200/90 flex items-center gap-2.5">
             <div className="w-12 h-9 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
               <img
-                src={(selectedCourse.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `http://localhost:8000${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
+                src={(selectedCourse.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `${BASE_URL}${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
                 alt=""
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
                 className="w-full h-full object-cover"

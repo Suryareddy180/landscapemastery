@@ -4,7 +4,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from .models import Usr
 
-JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-development-key-landscape-mastery-portal')
+JWT_SECRET = settings.SECRET_KEY
 
 class JWTAuthentication(BaseAuthentication):
     def authenticate(self, request):
@@ -25,6 +25,12 @@ class JWTAuthentication(BaseAuthentication):
             if not usr_id:
                 return None
             usr = Usr.objects.get(id=usr_id)
+            if not usr.is_active:
+                raise AuthenticationFailed('User account is disabled.')
             return (usr, token)
+        except Usr.DoesNotExist:
+            raise AuthenticationFailed('User not found.')
+        except AuthenticationFailed:
+            raise
         except Exception:
             raise AuthenticationFailed('Invalid or expired authentication token')

@@ -10,11 +10,18 @@ frontend/dist/assets/lm_logo*.png
 __pycache__/
 *.sqlite3
 
-# Environment & IDE
+# Environment & Secrets
 .env
+.env.*
+!.env*.example
+!.env.example
 **/.env
-.env.local
-**/.env.local
+**/.env.*
+!**/.env*.example
+!**/.env.example
+
+# IDE & OS
 .vscode/
 .idea/
 .DS_Store
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BASE_URL } from '../../lib/api.js';
 
 export default function MediaLibrarySection({ token }) {
   const [filterType, setFilterType] = useState('all');
@@ -23,7 +24,7 @@ export default function MediaLibrarySection({ token }) {
     setLoading(true);
     try {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch('http://localhost:8000/api/admin/media/', { headers });
+      const res = await fetch('${BASE_URL}/api/admin/media/', { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.assets) {
@@ -54,7 +55,7 @@ export default function MediaLibrarySection({ token }) {
       if (fileObj) formData.append('file', fileObj);
 
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch('http://localhost:8000/api/admin/media/', {
+      const res = await fetch('${BASE_URL}/api/admin/media/', {
         method: 'POST',
         headers,
         body: formData
@@ -80,7 +81,7 @@ export default function MediaLibrarySection({ token }) {
   const handleDelete = async (id) => {
     try {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(`http://localhost:8000/api/admin/media/${id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/media/${id}/`, {
         method: 'DELETE',
         headers
       });

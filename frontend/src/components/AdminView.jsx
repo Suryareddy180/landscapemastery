@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import AdminDashboardLayout from './admin/AdminDashboardLayout.jsx';
 import CourseBuilderSection from './admin/CourseBuilderSection.jsx';
 import MediaLibrarySection from './admin/MediaLibrarySection.jsx';
+import { BASE_URL } from '../lib/api.js';
 
 export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated }) {
   const [activeSection, setActiveSection] = useState('overview');
@@ -61,37 +62,37 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     const headers = { 'Authorization': `Bearer ${authToken}` };
 
     try {
-      const aRes = await fetch('http://localhost:8000/api/admin/analytics/', { headers });
+      const aRes = await fetch(`${BASE_URL}/api/admin/analytics/`, { headers });
       if (aRes.ok) setAnalytics(await aRes.json());
 
-      const sRes = await fetch('http://localhost:8000/api/admin/settings/', { headers });
+      const sRes = await fetch(`${BASE_URL}/api/admin/settings/`, { headers });
       if (sRes.ok) setSiteSettings(await sRes.json());
 
-      const stRes = await fetch('http://localhost:8000/api/admin/students/', { headers });
+      const stRes = await fetch(`${BASE_URL}/api/admin/students/`, { headers });
       if (stRes.ok) {
         const data = await stRes.json();
         if (data.students) setStudents(data.students);
       }
 
-      const logRes = await fetch('http://localhost:8000/api/admin/audit-logs/', { headers });
+      const logRes = await fetch(`${BASE_URL}/api/admin/audit-logs/`, { headers });
       if (logRes.ok) {
         const data = await logRes.json();
         if (data.logs) setAuditLogs(data.logs);
       }
 
-      const tRes = await fetch('http://localhost:8000/api/admin/testimonials/', { headers });
+      const tRes = await fetch(`${BASE_URL}/api/admin/testimonials/`, { headers });
       if (tRes.ok) {
         const data = await tRes.json();
         if (data.testimonials) setTestimonials(data.testimonials);
       }
 
-      const fRes = await fetch('http://localhost:8000/api/admin/faqs/', { headers });
+      const fRes = await fetch(`${BASE_URL}/api/admin/faqs/`, { headers });
       if (fRes.ok) {
         const data = await fRes.json();
         if (data.faqs) setFaqs(data.faqs);
       }
 
-      const cRes = await fetch('http://localhost:8000/api/admin/coupons/', { headers });
+      const cRes = await fetch(`${BASE_URL}/api/admin/coupons/`, { headers });
       if (cRes.ok) {
         const data = await cRes.json();
         if (data.coupons) setCoupons(data.coupons);
@@ -121,7 +122,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
         formData.append('file', file);
         formData.append('dataUrl', dataUrl);
 
-        const res = await fetch('http://localhost:8000/api/admin/upload-logo/', {
+        const res = await fetch('${BASE_URL}/api/admin/upload-logo/', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -136,7 +137,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
           if (onSettingsUpdated) onSettingsUpdated();
         } else {
           // Fallback: save settings with dataUrl
-          await fetch('http://localhost:8000/api/admin/settings/', {
+          await fetch('${BASE_URL}/api/admin/settings/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       formData.append('file', file);
       formData.append('title', siteSettings.curriculumPdfTitle || file.name.replace('.pdf', '').replace(/_/g, ' '));
 
-      const res = await fetch('http://localhost:8000/api/admin/upload-syllabus-pdf/', {
+      const res = await fetch('${BASE_URL}/api/admin/upload-syllabus-pdf/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -210,7 +211,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     setStatusMessage(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/admin/settings/', {
+      const res = await fetch('${BASE_URL}/api/admin/settings/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -236,7 +237,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
   // Authenticated CSV Export
   const handleExportCSV = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/admin/export/students/', {
+      const res = await fetch('${BASE_URL}/api/admin/export/students/', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -262,7 +263,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     e.preventDefault();
     if (!newTestimonial.student_name || !newTestimonial.content) return;
     try {
-      const res = await fetch('http://localhost:8000/api/admin/testimonials/', {
+      const res = await fetch('${BASE_URL}/api/admin/testimonials/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(newTestimonial)
@@ -278,7 +279,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
 
   const handleDeleteTestimonial = async (id) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/admin/testimonials/${id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/testimonials/${id}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -292,7 +293,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     e.preventDefault();
     if (!newFaq.question || !newFaq.answer) return;
     try {
-      const res = await fetch('http://localhost:8000/api/admin/faqs/', {
+      const res = await fetch('${BASE_URL}/api/admin/faqs/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(newFaq)
@@ -309,7 +310,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
   const handleDeleteFaq = async (id) => {
     try {
       const authToken = token || localStorage.getItem('lm_auth_token') || '';
-      const res = await fetch(`http://localhost:8000/api/admin/faqs/${id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/faqs/${id}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
@@ -325,7 +326,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     if (!newCoupon.code.trim()) return;
     try {
       const authToken = token || localStorage.getItem('lm_auth_token') || '';
-      const res = await fetch('http://localhost:8000/api/admin/coupons/', {
+      const res = await fetch('${BASE_URL}/api/admin/coupons/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({
@@ -346,7 +347,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
   const handleDeleteCoupon = async (id) => {
     try {
       const authToken = token || localStorage.getItem('lm_auth_token') || '';
-      const res = await fetch(`http://localhost:8000/api/admin/coupons/${id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/coupons/${id}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
@@ -359,7 +360,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
   const handleToggleCoupon = async (id, currentActive) => {
     try {
       const authToken = token || localStorage.getItem('lm_auth_token') || '';
-      const res = await fetch(`http://localhost:8000/api/admin/coupons/${id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/coupons/${id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ active: !currentActive })
@@ -593,7 +594,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
                   
                   <div className="p-2.5 bg-stone-50 rounded-2xl border border-emerald-800/20 shadow-sm flex items-center justify-center overflow-hidden min-h-[90px] min-w-[90px]">
                     <img
-                      src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `http://localhost:8000${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'}
+                      src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `${BASE_URL}${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'}
                       alt="Brand Logo Preview"
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
                       style={{ height: `${Math.max(siteSettings.logoSize || 48, 36)}px`, width: `${Math.max(siteSettings.logoSize || 48, 36)}px` }}
@@ -739,7 +740,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
                   </div>
 
                   <a
-                    href={siteSettings.curriculumPdfUrl ? (siteSettings.curriculumPdfUrl.startsWith('/media/') ? `http://localhost:8000${siteSettings.curriculumPdfUrl}` : siteSettings.curriculumPdfUrl) : '#'}
+                    href={siteSettings.curriculumPdfUrl ? (siteSettings.curriculumPdfUrl.startsWith('/media/') ? `${BASE_URL}${siteSettings.curriculumPdfUrl}` : siteSettings.curriculumPdfUrl) : '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"

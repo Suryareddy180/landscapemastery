@@ -6,7 +6,13 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "python backend/manage.py runserver 8000",
-    "build:frontend": "npm --prefix frontend run build"
+    "build": "npm --prefix frontend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:backend": "python backend/manage.py test api company",
+    "check:backend": "python backend/manage.py check --deploy",
+    "check:prod": "python backend/manage.py check_production",
+    "migrate:backend": "python backend/manage.py migrate",
+    "collectstatic:backend": "python backend/manage.py collectstatic --noinput"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

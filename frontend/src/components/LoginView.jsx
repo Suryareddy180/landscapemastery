@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MagneticButton from './MagneticButton.jsx';
+import { BASE_URL } from '../lib/api.js';
 
 export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
   const [email, setEmail] = useState('');
@@ -83,7 +84,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:8000/api/login/', {
+      const res = await fetch(`${BASE_URL}/api/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPwd })
@@ -104,7 +105,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
     } catch (err) {
       console.error('Authentication network error:', err);
       setLoading(false);
-      setError('Unable to connect to authentication server. Please ensure backend is running at http://localhost:8000.');
+      setError('Unable to connect to the authentication server. Please try again later.');
     }
   };
 
@@ -133,7 +134,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
     setResetMessage(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/auth/forgot-password/', {
+      const res = await fetch(`${BASE_URL}/api/auth/forgot-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail })
@@ -155,7 +156,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
     setResetMessage(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/auth/reset-password/', {
+      const res = await fetch(`${BASE_URL}/api/auth/reset-password/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail, new_password: newPassword, token: resetToken })
@@ -195,7 +196,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-stone-950 border border-stone-800 shadow-xl mb-2">
             <img 
-              src={(logoUrl && (logoUrl.startsWith('/media/') ? `http://localhost:8000${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
+              src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
               alt="Logo" 
               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
               className="w-12 h-12 object-contain" 

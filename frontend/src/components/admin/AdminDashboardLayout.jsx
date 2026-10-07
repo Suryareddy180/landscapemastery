@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BASE_URL } from '../../lib/api.js';
 
 export default function AdminDashboardLayout({ 
   user, 
@@ -43,7 +44,7 @@ export default function AdminDashboardLayout({
             >
               <div className="w-10 h-10 rounded-full bg-stone-50 border border-emerald-800/15 shadow-sm overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
                 <img 
-                  src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `http://localhost:8000${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'} 
+                  src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `${BASE_URL}${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'} 
                   alt="Logo" 
                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
                   className="w-full h-full object-contain rounded-full"

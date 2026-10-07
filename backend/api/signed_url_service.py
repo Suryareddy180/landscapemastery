@@ -4,7 +4,7 @@ import hashlib
 import jwt
 from django.conf import settings
 
-JWT_SECRET = getattr(settings, 'SECRET_KEY', 'django-insecure-development-key-landscape-mastery-portal')
+JWT_SECRET = settings.SECRET_KEY
 
 def generate_signed_stream_token(usr, asset_id, duration_sec=300):
     exp_time = int(time.time()) + duration_sec

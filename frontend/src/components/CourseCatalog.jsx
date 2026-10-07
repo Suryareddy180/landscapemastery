@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { BASE_URL } from '../lib/api.js';
 
 const defaultThumbnails = [
   '/course_thumb_landscape.jpg',
@@ -35,7 +36,7 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
         {courses.map((course, idx) => {
           const isEnrolled = enrolledCourseIds.includes(course.id);
           const rawThumb = course.thumbnail || defaultThumbnails[idx % defaultThumbnails.length];
-          const thumbnail = rawThumb.startsWith('/media/') ? `http://localhost:8000${rawThumb}` : rawThumb;
+          const thumbnail = rawThumb.startsWith('/media/') ? `${BASE_URL}${rawThumb}` : rawThumb;
           const displayPrice = course.discount_price || course.price;
           const hasDiscount = course.discount_price && course.discount_price < course.price;
 

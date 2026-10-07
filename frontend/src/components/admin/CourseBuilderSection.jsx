@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BASE_URL } from '../../lib/api.js';
 
 const PRESET_COVERS = [
   { label: 'Landscape Masterclass', url: '/course_thumb_landscape.jpg' },
@@ -10,7 +11,7 @@ const PRESET_COVERS = [
 
 const resolveCoverUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('/media/')) return `http://localhost:8000${url}`;
+  if (url.startsWith('/media/')) return `${BASE_URL}${url}`;
   return url;
 };
 
@@ -49,7 +50,7 @@ export default function CourseBuilderSection({ token }) {
     try {
       const authToken = getAuthToken();
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-      const res = await fetch('http://localhost:8000/api/admin/courses/', { headers });
+      const res = await fetch('${BASE_URL}/api/admin/courses/', { headers });
       if (res.ok) {
         const data = await res.json();
         const courseList = data.courses || [];
@@ -81,7 +82,7 @@ export default function CourseBuilderSection({ token }) {
     try {
       const authToken = getAuthToken();
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${courseId}/`, { headers });
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${courseId}/`, { headers });
       if (res.ok) {
         const data = await res.json();
         setSelectedCourse(data);
@@ -104,7 +105,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${courseId}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${courseId}/`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ status: newStatus })
@@ -147,7 +148,7 @@ export default function CourseBuilderSection({ token }) {
     try {
       const authToken = getAuthToken();
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${courseId}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${courseId}/`, {
         method: 'DELETE',
         headers
       });
@@ -190,7 +191,7 @@ export default function CourseBuilderSection({ token }) {
       formData.append('file', file);
 
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/upload-cover/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/upload-cover/`, {
         method: 'POST',
         headers,
         body: formData
@@ -228,7 +229,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ thumbnail: trimmed })
@@ -263,7 +264,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ thumbnail: url })
@@ -299,7 +300,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ thumbnail: '' })
@@ -338,7 +339,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch('http://localhost:8000/api/admin/courses/', {
+      const res = await fetch('${BASE_URL}/api/admin/courses/', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -376,7 +377,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/courses/${selectedCourse.id}/modules/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/modules/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ title: newModuleTitle.trim() })
@@ -406,7 +407,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/modules/${modId}/lessons/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/modules/${modId}/lessons/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ title: newLessonTitle.trim() })
@@ -437,7 +438,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch(`http://localhost:8000/api/admin/lessons/${lesId}/assets/`, {
+      const res = await fetch(`${BASE_URL}/api/admin/lessons/${lesId}/assets/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(newAsset)

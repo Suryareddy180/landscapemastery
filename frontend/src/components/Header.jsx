@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BASE_URL } from '../lib/api.js';
 
 export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl = '/lm_logo.png', user, onLogout }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,7 +39,7 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
         >
           <div className="relative rounded-2xl shadow-sm overflow-hidden flex items-center justify-center p-1.5 ring-1 ring-emerald-900/15 bg-stone-50 transition-all duration-300 group-hover:ring-emerald-700/50 group-hover:shadow-md">
             <img 
-              src={(logoUrl && (logoUrl.startsWith('/media/') ? `http://localhost:8000${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
+              src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
               alt="Landscape Mastery Logo" 
               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
               style={{ height: `${Math.max(logoSize || 46, 42)}px`, width: `${Math.max(logoSize || 46, 42)}px` }}

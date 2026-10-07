@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CourseCatalog from './CourseCatalog.jsx';
+import { BASE_URL } from '../lib/api.js';
 
 export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -26,13 +27,13 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
   const fetchCatalog = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/public/courses/');
+      const res = await fetch(`${BASE_URL}/api/public/courses/`);
       if (res.ok) {
         const data = await res.json();
         setCatalogCourses(data.courses || []);
       }
     } catch (e) {
-      console.log('Course catalog loaded with fallback');
+      // Silently fall back — catalog will be empty
     }
   };
 
@@ -59,9 +60,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
   const rawPdfUrl = siteSettings?.curriculumPdfUrl || '/media/Landscape_Architecture_Syllabus_2026.pdf';
   // Use relative path so Vite proxy routes to backend without cross-origin iframe refusal
-  const curriculumPdfUrl = rawPdfUrl.includes('localhost:8000')
-    ? rawPdfUrl.replace(/^http:\/\/localhost:8000/, '')
-    : rawPdfUrl;
+  const curriculumPdfUrl = rawPdfUrl.startsWith('http') ? rawPdfUrl : rawPdfUrl;
   const curriculumPdfTitle = siteSettings?.curriculumPdfTitle || 'Landscape Architecture Masterclass Curriculum & Blueprint Guide 2026';
   const curriculumPdfSize = siteSettings?.curriculumPdfSize || '4.2 MB';
 
@@ -173,7 +172,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
     setCouponMessage(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/checkout/coupon/', {
+      const res = await fetch(`${BASE_URL}/api/checkout/coupon/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: couponCode.trim().toUpperCase() })
@@ -207,7 +206,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
     setStatusMessage(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/checkout/session/', {
+      const response = await fetch(`${BASE_URL}/api/checkout/session/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, phone, course_id: selectedCourse?.id || null })
@@ -254,7 +253,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         handler: async function (razorpayResponse) {
           try {
             setStatusMessage({ type: 'info', text: 'Verifying payment with secure server...' });
-            const verifyRes = await fetch('http://localhost:8000/api/checkout/verify/', {
+            const verifyRes = await fetch(`${BASE_URL}/api/checkout/verify/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
