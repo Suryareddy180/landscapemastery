@@ -1,10 +1,11 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   backend-checks:
@@ -65,7 +66,7 @@ jobs:
           DB_PORT: 5432
         run: |
           cd backend
-          python manage.py test
+          python manage.py test api company
 
   frontend-build:
     name: Frontend Build & Bundle Verification
@@ -90,3 +91,40 @@ jobs:
         run: |
           cd frontend
           npm run build
+
+  deploy:
+    name: Deploy to Hostinger VPS
+    needs: [backend-checks, frontend-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote SSH Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "===> Pulling latest changes from GitHub main..."
+            cd /opt/3capstech
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "===> Building and launching production containers..."
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "===> Ensuring shared gateway connectivity..."
+            docker network connect shared-gateway landscapemastery_frontend || true
+
+            echo "===> Reloading gateway Nginx proxy..."
+            docker exec attendance_app-nginx-1 nginx -s reload || true
+
+            echo "===> Checking container status..."
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "===> Verifying internal health check..."
+            curl -f http://127.0.0.1:8082/api/health/ || exit 1
+
+            echo "===> Deployment successfully finished!"
