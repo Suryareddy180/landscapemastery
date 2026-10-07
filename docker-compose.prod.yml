@@ -1,4 +1,4 @@
-﻿services:
+services:
   db:
     image: postgres:16-alpine
     container_name: landscapemastery_db
@@ -62,10 +62,13 @@
         condition: service_healthy
     networks:
       - landscapemastery_net
+      - shared-gateway
 
 networks:
   landscapemastery_net:
     driver: bridge
+  shared-gateway:
+    external: true
 
 volumes:
   landscapemastery_postgres_data:
