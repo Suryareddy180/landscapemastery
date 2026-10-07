@@ -18,6 +18,7 @@ export default function CompanyHome() {
   const location = useLocation();
 
   useEffect(() => {
+    document.title = "3CAPSTECH | We Design Future Technology";
     if (location.hash) {
       const id = location.hash.replace("#", "");
       const timer = setTimeout(() => {

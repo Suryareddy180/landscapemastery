@@ -54,6 +54,7 @@ function LandscapeApp({ initialView = 'v1' }) {
   });
 
   useEffect(() => {
+    document.title = "Landscape Mastery | Architectural Masterclass";
     fetchSiteSettings();
     // Check if explicit view query parameter was provided
     const viewParam = searchParams.get('view');
