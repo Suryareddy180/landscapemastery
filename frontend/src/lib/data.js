@@ -185,33 +185,22 @@ export const ENTERPRISE_SOLUTIONS = [
 export const PRODUCTS = [
   {
     id: "landscape-mastery",
+    product_id: "landscape-mastery",
     title: "Landscape Mastery",
-    desc: "A learning and knowledge platform focused on landscape design, gardening, plants, and practical landscape care.",
+    tagline: "Architectural Masterclass & Spatial Learning Platform",
+    desc: "A premier learning and knowledge platform engineered by 3CAPSTECH, focused on professional landscape architecture, spatial planning, botanical selection, and practical environmental design.",
     icon: "Trees",
     image: "/lm_logo.png",
-    link: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LANDSCAPE_MASTERY_URL) || "/"
+    previewImage: "/course_thumb_landscape.jpg",
+    link: "/landscapemastery",
+    badge: "Flagship Product",
+    highlights: [
+      "Spatial & Architectural Blueprinting",
+      "DRM-Protected Masterclass Video Portal",
+      "Interactive Botanical & Plant Palettes",
+      "Enterprise Student Progress Tracking",
+    ],
   },
-  {
-    id: "sub-program-1",
-    title: "Sub Program Alpha",
-    desc: "Our leading sub program designed for enterprise scalability and performance.",
-    icon: "Rocket",
-    link: "https://alpha.3capstech.com"
-  },
-  {
-    id: "sub-program-2",
-    title: "Beta Website Initiative",
-    desc: "A specialized sub website focusing on next-gen AI capabilities.",
-    icon: "Cpu",
-    link: "https://beta.3capstech.com"
-  },
-  {
-    id: "sub-program-3",
-    title: "Gamma Internal Tools",
-    desc: "Suite of tools that streamline our company processes and operations.",
-    icon: "Wrench",
-    link: "https://tools.3capstech.com"
-  }
 ];
 
 export const DEVELOPMENT_PROCESS = [

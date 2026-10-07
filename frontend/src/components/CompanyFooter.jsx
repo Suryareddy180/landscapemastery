@@ -17,10 +17,12 @@ const COLS = [
     ],
   },
   {
-    title: "Products & Platforms",
+    title: "Flagship Product",
     links: [
       { label: "Landscape Mastery", to: "/landscapemastery" },
-      { label: "All Products", to: "/#products" },
+      { label: "Masterclass Curriculum", to: "/landscapemastery#courses" },
+      { label: "Student Login Portal", to: "/landscapemastery/login" },
+      { label: "Product Showcase", to: "/#products" },
     ],
   },
   {
