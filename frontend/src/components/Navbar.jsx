@@ -64,7 +64,8 @@ export default function Navbar() {
       setScrolled(scrollPos > 20);
 
       // Only perform section detection on company page
-      if (location.pathname !== "/company") {
+      const isCompanyPage = location.pathname === "/" || location.pathname === "/company";
+      if (!isCompanyPage) {
         setActiveSection("");
         return;
       }
@@ -95,15 +96,9 @@ export default function Navbar() {
 
   const go = (to) => {
     setOpen(false);
-    if (to === "/") {
-      navigate("/");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    if (to === "/company") {
-      if (location.pathname !== "/company") {
-        navigate("/company");
+    if (to === "/" || to === "/company") {
+      if (location.pathname !== "/" && location.pathname !== "/company") {
+        navigate("/");
         setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -114,10 +109,10 @@ export default function Navbar() {
 
     if (to.includes("#")) {
       const parts = to.split("#");
-      const targetPath = parts[0] || "/company";
+      const targetPath = parts[0] || "/";
       const id = parts[1];
       setActiveSection(id);
-      if (location.pathname !== targetPath) {
+      if (location.pathname !== targetPath && location.pathname !== "/" && location.pathname !== "/company") {
         navigate(targetPath + "#" + id);
         setTimeout(() => {
           document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -145,20 +140,19 @@ export default function Navbar() {
 
         <div className="mx-auto max-w-[1400px] h-full px-4 sm:px-6 flex items-center justify-between">
           {/* Brand Logo */}
-          <button onClick={() => go("/company")} data-testid="nav-home-logo" className="cursor-pointer text-left focus:outline-none">
+          <button onClick={() => go("/")} data-testid="nav-home-logo" className="cursor-pointer text-left focus:outline-none">
             <Logo />
           </button>
 
           {/* Central Navigation Dock */}
           <nav className="hidden lg:flex items-center gap-1 bg-slate-100/70 dark:bg-white/[0.04] p-1.5 rounded-full border border-slate-200/70 dark:border-white/10 shadow-inner backdrop-blur-md">
             {NAV.map((n) => {
+              const isCompanyHome = location.pathname === "/" || location.pathname === "/company";
               const isLinkActive =
-                n.to === "/company"
-                  ? location.pathname === "/company" && activeSection === "home"
-                  : n.to === "/"
-                  ? location.pathname === "/"
+                n.to === "/" || n.to === "/company"
+                  ? isCompanyHome && activeSection === "home"
                   : n.to.includes("#")
-                  ? location.pathname === "/company" && activeSection === n.to.split("#")[1]
+                  ? isCompanyHome && activeSection === n.to.split("#")[1]
                   : location.pathname === n.to;
 
               return (
@@ -246,13 +240,12 @@ export default function Navbar() {
 
                 <nav className="flex flex-col gap-1.5">
                   {NAV.map((n, i) => {
+                    const isCompanyHome = location.pathname === "/" || location.pathname === "/company";
                     const isLinkActive =
-                      n.to === "/company"
-                        ? location.pathname === "/company" && activeSection === "home"
-                        : n.to === "/"
-                        ? location.pathname === "/"
+                      n.to === "/" || n.to === "/company"
+                        ? isCompanyHome && activeSection === "home"
                         : n.to.includes("#")
-                        ? location.pathname === "/company" && activeSection === n.to.split("#")[1]
+                        ? isCompanyHome && activeSection === n.to.split("#")[1]
                         : location.pathname === n.to;
                     return (
                       <motion.button

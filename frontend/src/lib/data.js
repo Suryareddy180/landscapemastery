@@ -1,14 +1,14 @@
 // Central content for 3CAPSTECH experience
 
 export const NAV = [
-  { label: "Company", to: "/company" },
-  { label: "Landscape Mastery", to: "/" },
-  { label: "About", to: "/company#about" },
-  { label: "Services", to: "/company#services" },
-  { label: "Solutions", to: "/company#solutions" },
-  { label: "Products", to: "/company#products" },
-  { label: "Process", to: "/company#process" },
-  { label: "Contact", to: "/company#contact" },
+  { label: "Company", to: "/" },
+  { label: "Landscape Mastery", to: "/landscapemastery" },
+  { label: "About", to: "/#about" },
+  { label: "Services", to: "/#services" },
+  { label: "Solutions", to: "/#solutions" },
+  { label: "Products", to: "/#products" },
+  { label: "Process", to: "/#process" },
+  { label: "Contact", to: "/#contact" },
 ];
 
 export const HERO_WORDS = ["BUILD", "SCALE", "INNOVATE"];

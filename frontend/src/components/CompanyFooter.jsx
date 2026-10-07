@@ -19,8 +19,8 @@ const COLS = [
   {
     title: "Products & Platforms",
     links: [
-      { label: "Landscape Mastery", to: "/" },
-      { label: "All Products", to: "/company#products" },
+      { label: "Landscape Mastery", to: "/landscapemastery" },
+      { label: "All Products", to: "/#products" },
     ],
   },
   {

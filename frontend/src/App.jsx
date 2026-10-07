@@ -161,23 +161,30 @@ export default function App() {
   return (
     <Suspense fallback={<ViewLoader />}>
       <Routes>
-        {/* Master Destination: Landscape Mastery Platform */}
-        <Route path="/" element={<LandscapeApp initialView="v1" />} />
+        {/* Master Destination: 3CAPSTECH Corporate Platform (Photo 1) */}
+        <Route path="/" element={<CompanyHome />} />
+        <Route path="/company" element={<CompanyHome />} />
+
+        {/* Product: Landscape Mastery Architectural Masterclass & LMS (Photo 2) */}
+        <Route path="/landscapemastery" element={<LandscapeApp initialView="v1" />} />
+        <Route path="/landscapemastery/login" element={<LandscapeApp initialView="v2" />} />
+        <Route path="/landscapemastery/portal" element={<LandscapeApp initialView="v3" />} />
+        <Route path="/landscapemastery/dashboard" element={<LandscapeApp initialView="v3" />} />
+
+        {/* Shortcuts for Landscape Mastery */}
         <Route path="/login" element={<LandscapeApp initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
         <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
+        <Route path="/courses" element={<Navigate to="/landscapemastery#courses" replace />} />
 
-        {/* Incorporated 3CAPSTECH Corporate Platform */}
-        <Route path="/company" element={<CompanyHome />} />
-
-        {/* Convenience Direct Aliases for 3CAPSTECH sections */}
-        <Route path="/services" element={<Navigate to="/company#services" replace />} />
-        <Route path="/about" element={<Navigate to="/company#about" replace />} />
-        <Route path="/solutions" element={<Navigate to="/company#solutions" replace />} />
-        <Route path="/products" element={<Navigate to="/company#products" replace />} />
-        <Route path="/process" element={<Navigate to="/company#process" replace />} />
-        <Route path="/why" element={<Navigate to="/company#why" replace />} />
-        <Route path="/contact" element={<Navigate to="/company#contact" replace />} />
+        {/* Convenience Direct Aliases for 3CAPSTECH corporate sections */}
+        <Route path="/services" element={<Navigate to="/#services" replace />} />
+        <Route path="/about" element={<Navigate to="/#about" replace />} />
+        <Route path="/solutions" element={<Navigate to="/#solutions" replace />} />
+        <Route path="/products" element={<Navigate to="/#products" replace />} />
+        <Route path="/process" element={<Navigate to="/#process" replace />} />
+        <Route path="/why" element={<Navigate to="/#why" replace />} />
+        <Route path="/contact" element={<Navigate to="/#contact" replace />} />
 
         {/* 3CAPSTECH Admin Console & Login */}
         <Route path="/admin/login" element={<AdminLogin />} />
