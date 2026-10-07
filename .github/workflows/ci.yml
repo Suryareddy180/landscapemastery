@@ -101,9 +101,9 @@ jobs:
       - name: Execute Remote SSH Deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.VPS_HOST || '200.141.0.241' }}
+          username: ${{ secrets.VPS_USER || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY || secrets.SSH_KEY || secrets.SSH_PRIVATE_KEY }}
           port: 22
           script_stop: true
           script: |
