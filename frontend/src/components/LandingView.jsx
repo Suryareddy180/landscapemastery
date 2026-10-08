@@ -337,83 +337,172 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         <div className="absolute top-1/4 -right-24 w-[550px] h-[550px] bg-gradient-to-br from-emerald-400/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="absolute bottom-10 -left-24 w-[450px] h-[450px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* Centered Editorial Master Layout */}
-        <div className="w-full max-w-4xl mx-auto text-center space-y-6 sm:space-y-8 my-auto py-6 sm:py-10">
-          {/* Executive Badge Pill */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
-            <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
-              Executive Architectural Masterclass • 2026 Edition
-            </span>
-          </motion.div>
-
-          {/* Master Headline */}
-          <motion.h1 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-emerald-950 leading-[1.14] max-w-3xl mx-auto"
-          >
-            Master the Art of <br />
-            <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
-              Landscape Architecture
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-base sm:text-lg text-stone-600 leading-relaxed font-light max-w-2xl mx-auto"
-          >
-            {heroSubtitle}
-          </motion.p>
-
-          {/* Masterclass Architectural Focus Pillars */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.12 }}
-            className="flex flex-wrap items-center justify-center gap-2.5 pt-1 max-w-2xl mx-auto"
-          >
-            {['Maintenance & Positioning of Plants', 'Details of Landscape', 'Role of Softwares in Landscape', 'Hands-on Experience'].map((pillar, i) => (
-              <span 
-                key={i} 
-                className="text-xs font-medium font-sans px-3.5 py-1.5 rounded-full bg-emerald-950/5 text-emerald-950 border border-emerald-900/10"
-              >
-                {pillar}
+        {/* 12-Column Architectural Editorial Master Layout */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center my-auto py-4 sm:py-8">
+          {/* Left Column: Editorial Value & Masterclass Information (7 Cols) */}
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
+            {/* Executive Badge Pill */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
+              <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
+                Executive Architectural Masterclass • 2026 Edition
               </span>
-            ))}
-          </motion.div>
+            </motion.div>
 
-          {/* Primary Action Button Group */}
+            {/* Master Headline */}
+            <motion.h1 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="font-serif text-3xl sm:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-emerald-950 leading-[1.14]"
+            >
+              Master the Art of <br />
+              <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
+                Landscape Architecture
+              </span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-sm sm:text-base text-stone-600 leading-relaxed font-light max-w-xl"
+            >
+              {heroSubtitle}
+            </motion.p>
+
+            {/* Masterclass Syllabus Focus Grid (2x2 Structure) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.12 }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 max-w-xl"
+            >
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <span className="material-symbols-outlined text-lg">potted_plant</span>
+                </div>
+                <span className="text-xs font-semibold text-stone-900 leading-tight">
+                  Maintenance &amp; Positioning of Plants
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <span className="material-symbols-outlined text-lg">architecture</span>
+                </div>
+                <span className="text-xs font-semibold text-stone-900 leading-tight">
+                  Details of Landscape
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <span className="material-symbols-outlined text-lg">devices</span>
+                </div>
+                <span className="text-xs font-semibold text-stone-900 leading-tight">
+                  Role of Softwares in Landscape
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                  <span className="material-symbols-outlined text-lg">handyman</span>
+                </div>
+                <span className="text-xs font-semibold text-stone-900 leading-tight">
+                  Hands-on Experience
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Primary Action Button Group */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="flex flex-wrap items-center gap-3.5 sm:gap-4 pt-2"
+            >
+              <a 
+                href="#course-catalog"
+                className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-lg shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
+              >
+                <span>Explore Course Library</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </a>
+
+              <button
+                onClick={() => onNavigate('v2')}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
+                <span>Student Portal</span>
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Right Column: Genuine Architectural Project Visuals (5 Cols) */}
           <motion.div 
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 pt-3"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:col-span-5 space-y-3.5"
           >
-            <a 
-              href="#course-catalog"
-              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-4 rounded-full shadow-xl shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
-            >
-              <span>Explore Course Library</span>
-              <span className="material-symbols-outlined text-base">arrow_forward</span>
-            </a>
+            {/* Primary Master Plan Project Card */}
+            <div className="rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_16px_40px_-12px_rgba(6,78,59,0.12)] group">
+              <div className="relative aspect-[16/11] overflow-hidden bg-stone-950">
+                <img
+                  src="/course_thumb_landscape.jpg"
+                  alt="Landscape Architecture Master Plan"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4 text-white text-left">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold block">
+                    Spatial Master Plan
+                  </span>
+                  <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-sm">
+                    Topographical Grading &amp; Elevation Transitions
+                  </span>
+                </div>
+              </div>
+            </div>
 
-            <button
-              onClick={() => onNavigate('v2')}
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
-              <span>Student Portal</span>
-            </button>
+            {/* Companion Real Architectural Photos */}
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
+                <div className="relative aspect-[16/10] overflow-hidden bg-stone-950">
+                  <img
+                    src="/course_thumb_botanical.jpg"
+                    alt="Botanical Palettes & Living Scenography"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 to-transparent" />
+                  <span className="absolute bottom-2 left-2.5 right-2 text-[11px] font-semibold text-white truncate text-left block">
+                    Botanical Ecology
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
+                <div className="relative aspect-[16/10] overflow-hidden bg-stone-950">
+                  <img
+                    src="/course_thumb_hardscape.jpg"
+                    alt="Hardscape Masonry & Construction"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 to-transparent" />
+                  <span className="absolute bottom-2 left-2.5 right-2 text-[11px] font-semibold text-white truncate text-left block">
+                    Hardscape Masonry
+                  </span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
 
