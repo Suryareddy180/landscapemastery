@@ -446,59 +446,58 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             </motion.div>
           </div>
 
-          {/* Right Column: Genuine Architectural Project Visuals (5 Cols) */}
+          {/* Right Column: Authentic Architectural Masterclass Showcase (5 Cols) */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-5 space-y-3.5"
+            className="lg:col-span-5 space-y-4"
           >
-            {/* Primary Master Plan Project Card */}
-            <div className="rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_16px_40px_-12px_rgba(6,78,59,0.12)] group">
+            {/* Primary: Real-World Built Landscape Architecture */}
+            <div className="rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.16)] group">
               <div className="relative aspect-[16/11] overflow-hidden bg-stone-950">
                 <img
-                  src="/course_thumb_landscape.jpg"
-                  alt="Landscape Architecture Master Plan"
+                  src="/landscape_hero_showcase.jpg"
+                  alt="Modern Luxury Landscape Architecture Project"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4 text-white text-left">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold block">
-                    Spatial Master Plan
-                  </span>
-                  <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-sm">
-                    Topographical Grading &amp; Elevation Transitions
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/20 to-transparent" />
+                <div className="absolute bottom-3.5 left-4 right-4 text-white text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold bg-emerald-950/60 backdrop-blur-xs px-2 py-0.5 rounded border border-emerald-500/30">
+                      Real-World Execution
+                    </span>
+                    <span className="text-[10px] text-stone-300 font-sans">
+                      Field Project
+                    </span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-sm block leading-snug">
+                    Terraced Limestone Walls, Reflection Basin &amp; Living Ecology
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Companion Real Architectural Photos */}
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
-                <div className="relative aspect-[16/10] overflow-hidden bg-stone-950">
-                  <img
-                    src="/course_thumb_botanical.jpg"
-                    alt="Botanical Palettes & Living Scenography"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 to-transparent" />
-                  <span className="absolute bottom-2 left-2.5 right-2 text-[11px] font-semibold text-white truncate text-left block">
-                    Botanical Ecology
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
-                <div className="relative aspect-[16/10] overflow-hidden bg-stone-950">
-                  <img
-                    src="/course_thumb_hardscape.jpg"
-                    alt="Hardscape Masonry & Construction"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 to-transparent" />
-                  <span className="absolute bottom-2 left-2.5 right-2 text-[11px] font-semibold text-white truncate text-left block">
-                    Hardscape Masonry
+            {/* Secondary: Technical CAD & Topographical Drafting Studio */}
+            <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
+              <div className="relative aspect-[16/8] overflow-hidden bg-stone-950">
+                <img
+                  src="/landscape_blueprint_studio.jpg"
+                  alt="Landscape Architecture CAD Blueprint Drafting Studio"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/20 to-transparent" />
+                <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white flex items-end justify-between text-left">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold block">
+                      CAD &amp; Topographical Drafting
+                    </span>
+                    <span className="text-xs font-semibold text-white block">
+                      Grading Contours, Site Schematics &amp; Plant Schedules
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-stone-200 bg-black/60 px-2 py-0.5 rounded border border-white/10 hidden sm:inline-block">
+                    Plan T-102
                   </span>
                 </div>
               </div>
