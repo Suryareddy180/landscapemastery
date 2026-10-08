@@ -323,7 +323,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
   return (
     <div className="space-y-20 sm:space-y-28 pb-24 text-stone-900 overflow-hidden">
       {/* 1. LUXURY EDITORIAL HERO SECTION */}
-      <section className="relative flex flex-col justify-center items-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 sm:pt-4 sm:pb-6 overflow-hidden">
+      <section className="relative min-h-[calc(100vh-72px)] flex flex-col justify-center items-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 overflow-hidden">
         {/* Subtle Architectural Drafting Grid Canvas */}
         <div 
           className="absolute inset-0 pointer-events-none opacity-30 -z-10"
@@ -338,7 +338,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         <div className="absolute bottom-6 -left-24 w-[400px] h-[400px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
         {/* Executive Typographic Editorial Master Layout */}
-        <div className="w-full max-w-5xl mx-auto text-center space-y-3 sm:space-y-4 lg:space-y-4.5">
+        <div className="w-full max-w-5xl mx-auto text-center space-y-3.5 sm:space-y-4.5 lg:space-y-5 my-auto">
           {/* Executive Badge Pill */}
           <motion.div 
             initial={{ opacity: 0, y: 8 }}
@@ -357,7 +357,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.05 }}
-            className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.15rem] font-bold tracking-tight text-emerald-950 leading-[1.12] max-w-3xl mx-auto"
+            className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.2rem] font-bold tracking-tight text-emerald-950 leading-[1.12] max-w-3xl mx-auto"
           >
             Master the Art of <br />
             <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
@@ -511,7 +511,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         </div>
 
         {/* Scroll Cue */}
-        <div className="w-full flex justify-center pt-2 sm:pt-3">
+        <div className="w-full flex justify-center pt-2 pb-1">
           <button
             onClick={() => {
               const el = document.getElementById('course-catalog');
