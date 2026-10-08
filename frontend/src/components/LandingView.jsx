@@ -418,31 +418,6 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               </button>
             </motion.div>
 
-            {/* Social Proof & Credibility Indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="pt-4 flex flex-wrap items-center gap-4 sm:gap-6 border-t border-stone-200/60"
-            >
-              <div className="flex -space-x-2 overflow-hidden">
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="/course_thumb_landscape.jpg" alt="Student" />
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="/course_thumb_botanical.jpg" alt="Student" />
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="/course_thumb_hardscape.jpg" alt="Student" />
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-900 text-white text-[10px] font-bold ring-2 ring-white">
-                  +1k
-                </div>
-              </div>
-              <div className="text-xs text-stone-600">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-stone-900 text-xs">4.9/5 Rating</span>
-                  <div className="flex text-amber-500 text-xs">
-                    {"★".repeat(5)}
-                  </div>
-                </div>
-                <span className="text-[11px] text-stone-400">Architects, spatial planners & estate designers</span>
-              </div>
-            </motion.div>
           </div>
 
           {/* Right Column: Architectural Visual Mockup Window (5 Cols) */}
