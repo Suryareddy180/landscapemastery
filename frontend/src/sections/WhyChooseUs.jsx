@@ -1,37 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
+import React from "react";
 import * as Icons from "lucide-react";
 import { WordReveal } from "../components/Reveal";
-import { STATS, WHY_CHOOSE_US } from "../lib/data";
-
-function Counter({ value, suffix }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [n, setN] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    let raf;
-    const start = performance.now();
-    const dur = 1600;
-    const tick = (t) => {
-      const p = Math.min((t - start) / dur, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setN(Math.floor(eased * value));
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else setN(value);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, value]);
-
-  return (
-    <span ref={ref}>
-      {n.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
+import { WHY_CHOOSE_US } from "../lib/data";
 
 export default function WhyChooseUs() {
   return (
@@ -46,17 +16,6 @@ export default function WhyChooseUs() {
           <p className="mt-4 text-muted text-base sm:text-lg leading-relaxed">
             We combine strategic IT consulting, modern software engineering, and relentless support to deliver measurable business results.
           </p>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10" data-testid="why-counters">
-          {STATS.map((s) => (
-            <div key={s.label} className="glass rounded-3xl p-7 text-center hover:-translate-y-1 transition-transform border border-line">
-              <div className="display-md font-display font-black text-gradient">
-                <Counter value={s.value} suffix={s.suffix} />
-              </div>
-              <div className="label text-muted mt-2 text-[10px] font-medium">{s.label}</div>
-            </div>
-          ))}
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

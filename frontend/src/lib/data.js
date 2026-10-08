@@ -40,12 +40,6 @@ export const HERO_CHALLENGES = [
   },
 ];
 
-export const STATS = [
-  { value: 240, suffix: "+", label: "Projects Shipped" },
-  { value: 120, suffix: "+", label: "Enterprise Clients" },
-  { value: 50, suffix: "+", label: "Senior Engineers" },
-  { value: 23, suffix: "", label: "Countries Reached" },
-];
 
 export const SERVICES = [
   {
