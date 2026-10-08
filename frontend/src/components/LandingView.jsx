@@ -380,64 +380,16 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </a>
           </motion.div>
-
-          {/* Trust Guarantees Strip */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-wrap justify-center items-center gap-5 sm:gap-8 text-xs font-semibold text-stone-500 pt-1"
-          >
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-emerald-700 text-base">verified</span>
-              100% Lifetime Access
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-emerald-700 text-base">lock</span>
-              Secure &amp; DRM Encrypted
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-emerald-700 text-base">architecture</span>
-              Vector CAD Blueprints Included
-            </span>
-          </motion.div>
         </div>
 
-        {/* Bottom Feature Pill Strip & Scroll Cue */}
-        <div className="w-full flex flex-col items-center gap-3 pt-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="inline-flex flex-wrap justify-center items-center gap-3 sm:gap-6 bg-white/90 backdrop-blur-md border border-stone-200/90 py-2.5 px-6 rounded-full shadow-xs text-xs font-semibold text-stone-700"
-          >
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-700">auto_stories</span>
-              <span>4 Engineering Modules</span>
-            </span>
-            <span className="hidden sm:inline text-stone-300">•</span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-700">picture_as_pdf</span>
-              <span>14 CAD Blueprints</span>
-            </span>
-            <span className="hidden sm:inline text-stone-300">•</span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-700">movie</span>
-              <span>HD Video Masterclasses</span>
-            </span>
-            <span className="hidden sm:inline text-stone-300">•</span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-700">construction</span>
-              <span>Field Construction Toolkits</span>
-            </span>
-          </motion.div>
-
+        {/* Scroll Cue */}
+        <div className="w-full flex flex-col items-center gap-3 pt-4">
           <button
             onClick={() => {
               const el = document.getElementById('course-catalog');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-1 text-[11px] font-semibold text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer group mt-1"
+            className="flex items-center gap-1 text-[11px] font-semibold text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer group"
           >
             <span>Scroll to explore courses</span>
             <span className="material-symbols-outlined text-sm animate-bounce group-hover:text-emerald-700">keyboard_arrow_down</span>
