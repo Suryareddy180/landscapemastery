@@ -337,171 +337,176 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         <div className="absolute top-1/4 -right-24 w-[550px] h-[550px] bg-gradient-to-br from-emerald-400/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="absolute bottom-10 -left-24 w-[450px] h-[450px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* 12-Column Architectural Editorial Master Layout */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center my-auto py-4 sm:py-8">
-          {/* Left Column: Editorial Value & Masterclass Information (7 Cols) */}
-          <div className="lg:col-span-7 space-y-5 sm:space-y-6 text-left">
-            {/* Executive Badge Pill */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
+        {/* Executive Typographic Editorial Master Layout */}
+        <div className="w-full max-w-5xl mx-auto text-center space-y-7 sm:space-y-9 my-auto py-6 sm:py-12">
+          {/* Executive Badge Pill */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-5 rounded-full shadow-sm"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
+            <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-[0.2em] font-sans">
+              Executive Architectural Masterclass • 2026 Edition
+            </span>
+          </motion.div>
+
+          {/* Master Headline */}
+          <motion.h1 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="font-serif text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-950 leading-[1.08] max-w-4xl mx-auto"
+          >
+            Master the Art of <br />
+            <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
+              Landscape Architecture
+            </span>
+          </motion.h1>
+
+          {/* Subtitle / Architectural Manifesto */}
+          <motion.p 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-base sm:text-lg lg:text-xl text-stone-600 leading-relaxed font-light max-w-3xl mx-auto"
+          >
+            {heroSubtitle}
+          </motion.p>
+
+          {/* Primary Action Button Group */}
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="flex flex-wrap items-center justify-center gap-4 pt-1"
+          >
+            <a 
+              href="#course-catalog"
+              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-4 rounded-full shadow-xl shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
-              <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
-                Executive Architectural Masterclass • 2026 Edition
-              </span>
-            </motion.div>
+              <span>Explore Course Library</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </a>
 
-            {/* Master Headline */}
-            <motion.h1 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="font-serif text-3xl sm:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-emerald-950 leading-[1.14]"
+            <button
+              onClick={() => onNavigate('v2')}
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
             >
-              Master the Art of <br />
-              <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
-                Landscape Architecture
-              </span>
-            </motion.h1>
+              <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
+              <span>Student Portal</span>
+            </button>
+          </motion.div>
 
-            {/* Subtitle */}
-            <motion.p 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-sm sm:text-base text-stone-600 leading-relaxed font-light max-w-xl"
-            >
-              {heroSubtitle}
-            </motion.p>
-
-            {/* Masterclass Syllabus Focus Grid (2x2 Structure) */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.12 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 max-w-xl"
-            >
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-                  <span className="material-symbols-outlined text-lg">potted_plant</span>
-                </div>
-                <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  Maintenance &amp; Positioning of Plants
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-                  <span className="material-symbols-outlined text-lg">architecture</span>
-                </div>
-                <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  Details of Landscape
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-                  <span className="material-symbols-outlined text-lg">devices</span>
-                </div>
-                <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  Role of Softwares in Landscape
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/90 border border-stone-200/80 shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-                  <span className="material-symbols-outlined text-lg">handyman</span>
-                </div>
-                <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  Hands-on Experience
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Primary Action Button Group */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="flex flex-wrap items-center gap-3.5 sm:gap-4 pt-2"
-            >
-              <a 
-                href="#course-catalog"
-                className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-lg shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
-              >
-                <span>Explore Course Library</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
-              </a>
-
-              <button
-                onClick={() => onNavigate('v2')}
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
-                <span>Student Portal</span>
-              </button>
-            </motion.div>
-          </div>
-
-          {/* Right Column: Authentic Architectural Masterclass Showcase (5 Cols) */}
+          {/* 4-Column Architectural Syllabus Framework Deck */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-5 space-y-4"
+            className="pt-6 sm:pt-10 max-w-5xl mx-auto w-full"
           >
-            {/* Primary: Real-World Built Landscape Architecture */}
-            <div className="rounded-3xl overflow-hidden bg-white border border-stone-200/90 shadow-[0_20px_50px_-15px_rgba(6,78,59,0.16)] group">
-              <div className="relative aspect-[16/11] overflow-hidden bg-stone-950">
-                <img
-                  src="/landscape_hero_showcase.jpg"
-                  alt="Modern Luxury Landscape Architecture Project"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/20 to-transparent" />
-                <div className="absolute bottom-3.5 left-4 right-4 text-white text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold bg-emerald-950/60 backdrop-blur-xs px-2 py-0.5 rounded border border-emerald-500/30">
-                      Real-World Execution
-                    </span>
-                    <span className="text-[10px] text-stone-300 font-sans">
-                      Field Project
-                    </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-left">
+              {/* Pillar 01 */}
+              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">01</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-base">potted_plant</span>
                   </div>
-                  <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-sm block leading-snug">
-                    Terraced Limestone Walls, Reflection Basin &amp; Living Ecology
-                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                    Maintenance &amp; Positioning of Plants
+                  </div>
+                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
+                    Botanical growth zoning, sun exposure &amp; root care
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Secondary: Technical CAD & Topographical Drafting Studio */}
-            <div className="rounded-2xl overflow-hidden bg-white border border-stone-200/90 shadow-sm group">
-              <div className="relative aspect-[16/8] overflow-hidden bg-stone-950">
-                <img
-                  src="/landscape_blueprint_studio.jpg"
-                  alt="Landscape Architecture CAD Blueprint Drafting Studio"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/20 to-transparent" />
-                <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white flex items-end justify-between text-left">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300 font-semibold block">
-                      CAD &amp; Topographical Drafting
-                    </span>
-                    <span className="text-xs font-semibold text-white block">
-                      Grading Contours, Site Schematics &amp; Plant Schedules
-                    </span>
+              {/* Pillar 02 */}
+              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">02</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-base">architecture</span>
                   </div>
-                  <span className="text-[10px] font-mono text-stone-200 bg-black/60 px-2 py-0.5 rounded border border-white/10 hidden sm:inline-block">
-                    Plan T-102
-                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                    Details of Landscape
+                  </div>
+                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
+                    Site contour grading, drainage &amp; stonework masonry
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 03 */}
+              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">03</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-base">devices</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                    Role of Softwares in Landscape
+                  </div>
+                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
+                    AutoCAD drafting, 3D modeling &amp; spatial frameworks
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 04 */}
+              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">04</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-base">handyman</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                    Hands-on Experience
+                  </div>
+                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
+                    Field calculations, blueprint analysis &amp; execution plans
+                  </div>
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Architectural Specifications Ribbon */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="pt-6 max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-y-2 gap-x-5 text-[11px] font-mono text-stone-500 uppercase tracking-widest border-t border-stone-200/60"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              HD Video Modules
+            </span>
+            <span className="text-stone-300">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              CAD &amp; DWG Details
+            </span>
+            <span className="text-stone-300">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              Spatial Planning Frameworks
+            </span>
+            <span className="text-stone-300">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              Automated Lifetime Access
+            </span>
           </motion.div>
         </div>
 
