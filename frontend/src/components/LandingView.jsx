@@ -384,7 +384,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               transition={{ duration: 0.5, delay: 0.12 }}
               className="flex flex-wrap items-center gap-2 pt-0.5"
             >
-              {['Site Topography & Grading', 'Hardscape Masonry', 'Botanical Ecology', 'CAD Execution Details'].map((pillar, i) => (
+              {['Maintenance & Positioning of Plants', 'Details of Landscape', 'Role of Softwares in Landscape', 'Hands-on Experience'].map((pillar, i) => (
                 <span 
                   key={i} 
                   className="text-[11px] font-medium font-sans px-2.5 py-1 rounded-md bg-emerald-950/5 text-emerald-900 border border-emerald-900/10"
