@@ -12,7 +12,13 @@ export default function Products() {
   useEffect(() => {
     api.get("/api/products").then((res) => {
       if (res.products && res.products.length > 0) {
-        setProducts(res.products);
+        const lmOnly = res.products.filter(
+          (p) =>
+            p.id === "landscape-mastery" ||
+            p.product_id === "landscape-mastery" ||
+            p.title?.toLowerCase().includes("landscape")
+        );
+        setProducts(lmOnly.length > 0 ? lmOnly : FALLBACK_PRODUCTS);
       }
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
@@ -23,14 +29,14 @@ export default function Products() {
         <div className="text-center mb-16 sm:mb-20">
           <div className="label text-accent mb-5">// Our Products</div>
           <h2 className="display-md max-w-2xl mx-auto">
-            Explore our <span className="text-gradient">Products & Sub-Programs</span>
+            Explore our <span className="text-gradient">Featured Product</span>
           </h2>
           <p className="text-muted mt-5 max-w-xl mx-auto">
-            Discover our in-house initiatives, sub-programs, and specialized tools that drive innovation and efficiency across our ecosystem.
+            Discover our flagship learning and knowledge platform engineered for architectural excellence and digital innovation.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={`grid gap-6 ${products.length === 1 ? "max-w-xl mx-auto" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
           {products.map((product, i) => {
             const Icon = Icons[product.icon] || Icons.Code2;
             const productImage =
@@ -66,7 +72,7 @@ export default function Products() {
                 {product.link && (
                   (product.id === "landscape-mastery" || product.product_id === "landscape-mastery") ? (
                     <Link
-                      to="/"
+                      to="/landscapemastery"
                       aria-label={`Visit ${product.title} Platform`}
                       className="mt-6 inline-flex items-center text-sm font-medium text-accent hover:text-white transition-colors"
                     >

@@ -189,28 +189,7 @@ export const PRODUCTS = [
     desc: "A learning and knowledge platform focused on landscape design, gardening, plants, and practical landscape care.",
     icon: "Trees",
     image: "/lm_logo.png",
-    link: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LANDSCAPE_MASTERY_URL) || "/"
-  },
-  {
-    id: "sub-program-1",
-    title: "Sub Program Alpha",
-    desc: "Our leading sub program designed for enterprise scalability and performance.",
-    icon: "Rocket",
-    link: "https://alpha.3capstech.com"
-  },
-  {
-    id: "sub-program-2",
-    title: "Beta Website Initiative",
-    desc: "A specialized sub website focusing on next-gen AI capabilities.",
-    icon: "Cpu",
-    link: "https://beta.3capstech.com"
-  },
-  {
-    id: "sub-program-3",
-    title: "Gamma Internal Tools",
-    desc: "Suite of tools that streamline our company processes and operations.",
-    icon: "Wrench",
-    link: "https://tools.3capstech.com"
+    link: "/landscapemastery"
   }
 ];
 

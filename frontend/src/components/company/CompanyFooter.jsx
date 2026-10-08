@@ -17,11 +17,10 @@ const COLS = [
     ],
   },
   {
-    title: "Products",
+    title: "Products & Platforms",
     links: [
-      { label: "Sub Program Alpha", to: "/#products" },
-      { label: "Beta Initiative", to: "/#products" },
-      { label: "Internal Tools", to: "/#products" },
+      { label: "Landscape Mastery", to: "/landscapemastery" },
+      { label: "Student Login", to: "/landscapemastery/login" },
     ],
   },
   {

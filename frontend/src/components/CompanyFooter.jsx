@@ -20,7 +20,7 @@ const COLS = [
     title: "Products & Platforms",
     links: [
       { label: "Landscape Mastery", to: "/landscapemastery" },
-      { label: "All Products", to: "/#products" },
+      { label: "Student Login", to: "/landscapemastery/login" },
     ],
   },
   {
