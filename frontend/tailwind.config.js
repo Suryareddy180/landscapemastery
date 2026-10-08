@@ -80,6 +80,8 @@ export default {
       },
       fontFamily: {
         // Landscape Fonts
+        serif: ['"Playfair Display"', "Georgia", "serif"],
+        cinzel: ['"Cinzel"', "serif"],
         "headline-lg-mobile": ["Montserrat", "sans-serif"],
         "body-md": ["Inter", "sans-serif"],
         "body-lg": ["Inter", "sans-serif"],

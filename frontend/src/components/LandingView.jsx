@@ -346,7 +346,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2.5 bg-white/90 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-xs"
+              className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
               <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
@@ -359,7 +359,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="font-serif text-4xl sm:text-5.5xl lg:text-6xl font-bold tracking-tight text-emerald-950 leading-[1.12]"
+              className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-emerald-950 leading-[1.12]"
             >
               Master the Art of <br />
               <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
@@ -376,6 +376,23 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             >
               {heroSubtitle}
             </motion.p>
+
+            {/* Masterclass Architectural Pillars */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.12 }}
+              className="flex flex-wrap items-center gap-2 pt-0.5"
+            >
+              {['Site Topography & Grading', 'Hardscape Masonry', 'Botanical Ecology', 'CAD Execution Details'].map((pillar, i) => (
+                <span 
+                  key={i} 
+                  className="text-[11px] font-medium font-sans px-2.5 py-1 rounded-md bg-emerald-950/5 text-emerald-900 border border-emerald-900/10"
+                >
+                  {pillar}
+                </span>
+              ))}
+            </motion.div>
 
             {/* Primary Action Button Group */}
             <motion.div 
@@ -476,7 +493,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                 {/* Preview Overlay Floating Player Bar */}
                 <div className="absolute bottom-3 left-3 right-3 p-3.5 rounded-xl bg-white/95 backdrop-blur-md border border-stone-200/90 shadow-lg flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-900 text-white flex items-center justify-center shadow-xs">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-900 text-white flex items-center justify-center shadow-sm">
                       <span className="material-symbols-outlined text-lg">play_arrow</span>
                     </div>
                     <div>
