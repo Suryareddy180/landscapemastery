@@ -337,181 +337,83 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         <div className="absolute top-1/4 -right-24 w-[550px] h-[550px] bg-gradient-to-br from-emerald-400/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="absolute bottom-10 -left-24 w-[450px] h-[450px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* 12-Column Editorial Master Layout */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center my-auto">
-          {/* Left Column: Editorial Value & Masterclass Call-To-Action (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6 sm:space-y-7 text-left">
-            {/* Executive Badge Pill */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
-              <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
-                Executive Architectural Masterclass • 2026 Edition
-              </span>
-            </motion.div>
-
-            {/* Master Headline */}
-            <motion.h1 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-emerald-950 leading-[1.12]"
-            >
-              Master the Art of <br />
-              <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
-                Landscape Architecture
-              </span>
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-base sm:text-lg text-stone-600 leading-relaxed font-light max-w-xl"
-            >
-              {heroSubtitle}
-            </motion.p>
-
-            {/* Masterclass Architectural Pillars */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.12 }}
-              className="flex flex-wrap items-center gap-2 pt-0.5"
-            >
-              {['Maintenance & Positioning of Plants', 'Details of Landscape', 'Role of Softwares in Landscape', 'Hands-on Experience'].map((pillar, i) => (
-                <span 
-                  key={i} 
-                  className="text-[11px] font-medium font-sans px-2.5 py-1 rounded-md bg-emerald-950/5 text-emerald-900 border border-emerald-900/10"
-                >
-                  {pillar}
-                </span>
-              ))}
-            </motion.div>
-
-            {/* Primary Action Button Group */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="flex flex-wrap items-center gap-3.5 sm:gap-4 pt-1"
-            >
-              <a 
-                href="#course-catalog"
-                className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-4 rounded-full shadow-xl shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
-              >
-                <span>Explore Course Library</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
-              </a>
-
-              <button
-                onClick={() => onNavigate('v2')}
-                className="inline-flex items-center gap-2 px-6 py-4 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
-                <span>Student Portal</span>
-              </button>
-            </motion.div>
-
-          </div>
-
-          {/* Right Column: Architectural Visual Mockup Window (5 Cols) */}
+        {/* Centered Editorial Master Layout */}
+        <div className="w-full max-w-4xl mx-auto text-center space-y-6 sm:space-y-8 my-auto py-6 sm:py-10">
+          {/* Executive Badge Pill */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="lg:col-span-5 relative group"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-4 rounded-full shadow-sm"
           >
-            {/* Ambient Back Glow */}
-            <div className="absolute -inset-3 bg-gradient-to-tr from-emerald-600/20 via-teal-500/15 to-transparent rounded-[36px] blur-2xl group-hover:blur-3xl transition-all duration-500 opacity-80 -z-10" />
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
+            <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-widest font-sans">
+              Executive Architectural Masterclass • 2026 Edition
+            </span>
+          </motion.div>
 
-            {/* Luxury Mockup Device Window Frame */}
-            <div className="relative rounded-3xl bg-white/95 p-3.5 sm:p-4 border border-stone-200/90 shadow-[0_24px_70px_-15px_rgba(6,78,59,0.18)] overflow-hidden">
-              {/* Browser-style Top Bar */}
-              <div className="flex items-center justify-between pb-3 px-2 border-b border-stone-100 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                </div>
-                <div className="flex items-center gap-1 text-[11px] font-mono text-stone-500 bg-stone-100/80 px-3 py-0.5 rounded-md border border-stone-200/60">
-                  <span className="material-symbols-outlined text-xs text-emerald-700">lock</span>
-                  <span>landscapemastery.3capstech.com</span>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                  4K HDR
-                </span>
-              </div>
+          {/* Master Headline */}
+          <motion.h1 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-emerald-950 leading-[1.14] max-w-3xl mx-auto"
+          >
+            Master the Art of <br />
+            <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
+              Landscape Architecture
+            </span>
+          </motion.h1>
 
-              {/* Visual Preview Graphic */}
-              <div className="relative aspect-[16/11] rounded-2xl overflow-hidden mt-3 shadow-inner bg-stone-950 group/img">
-                <img
-                  src="/course_thumb_landscape.jpg"
-                  alt="Landscape Architectural Masterclass"
-                  className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/25 to-transparent" />
+          {/* Subtitle */}
+          <motion.p 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-base sm:text-lg text-stone-600 leading-relaxed font-light max-w-2xl mx-auto"
+          >
+            {heroSubtitle}
+          </motion.p>
 
-                {/* Floating Live Masterclass Tag */}
-                <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1.5 shadow-sm">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    LMS Curriculum Portal
-                  </span>
-                </div>
+          {/* Masterclass Architectural Focus Pillars */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.12 }}
+            className="flex flex-wrap items-center justify-center gap-2.5 pt-1 max-w-2xl mx-auto"
+          >
+            {['Maintenance & Positioning of Plants', 'Details of Landscape', 'Role of Softwares in Landscape', 'Hands-on Experience'].map((pillar, i) => (
+              <span 
+                key={i} 
+                className="text-xs font-medium font-sans px-3.5 py-1.5 rounded-full bg-emerald-950/5 text-emerald-950 border border-emerald-900/10"
+              >
+                {pillar}
+              </span>
+            ))}
+          </motion.div>
 
-                {/* Preview Overlay Floating Player Bar */}
-                <div className="absolute bottom-3 left-3 right-3 p-3.5 rounded-xl bg-white/95 backdrop-blur-md border border-stone-200/90 shadow-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-900 text-white flex items-center justify-center shadow-sm">
-                      <span className="material-symbols-outlined text-lg">play_arrow</span>
-                    </div>
-                    <div>
-                      <div className="text-stone-900 font-bold text-xs">Architectural Masterclass</div>
-                      <div className="text-[11px] text-stone-500">Grading, hardscape, spatial & planting modules</div>
-                    </div>
-                  </div>
-                  <a
-                    href="#course-catalog"
-                    className="text-xs font-bold text-emerald-900 hover:text-emerald-700 underline flex items-center gap-0.5"
-                  >
-                    View <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </a>
-                </div>
-              </div>
+          {/* Primary Action Button Group */}
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 pt-3"
+          >
+            <a 
+              href="#course-catalog"
+              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-4 rounded-full shadow-xl shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
+            >
+              <span>Explore Course Library</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </a>
 
-              {/* Specs Strip */}
-              <div className="grid grid-cols-3 divide-x divide-stone-100 text-center py-3 mt-1 text-[11px]">
-                <div>
-                  <span className="block text-stone-400 font-mono text-[10px]">VIDEO FORMAT</span>
-                  <strong className="text-stone-800 font-semibold">HD Masterclass</strong>
-                </div>
-                <div>
-                  <span className="block text-stone-400 font-mono text-[10px]">CURRICULUM</span>
-                  <strong className="text-stone-800 font-semibold">CAD & Spatial</strong>
-                </div>
-                <div>
-                  <span className="block text-stone-400 font-mono text-[10px]">ACCESS</span>
-                  <strong className="text-emerald-800 font-bold">Lifetime Portal</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Decorative Floating Blueprint Badge */}
-            <div className="hidden sm:flex absolute -bottom-4 -left-4 bg-white p-3 rounded-2xl shadow-xl border border-stone-200/80 items-center gap-2.5 z-20">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-200/80">
-                <span className="material-symbols-outlined text-base">architecture</span>
-              </div>
-              <div>
-                <div className="text-xs font-bold text-stone-900">Spatial Planning</div>
-                <div className="text-[10px] text-stone-500">Architect-grade precision</div>
-              </div>
-            </div>
+            <button
+              onClick={() => onNavigate('v2')}
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
+              <span>Student Portal</span>
+            </button>
           </motion.div>
         </div>
 
