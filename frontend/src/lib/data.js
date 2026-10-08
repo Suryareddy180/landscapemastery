@@ -116,6 +116,14 @@ export const SERVICES = [
   },
 ];
 
+export const CEO_PROFILE = {
+  name: "K B REDDY",
+  title: "Founder & Chief Executive Officer",
+  bio: "Visionary entrepreneur and Chief Executive Officer leading 3CAPSTECH Software. Dedicated to engineering scalable software architectures, mission-critical enterprise platforms, and pioneering technology solutions that drive lasting business transformation.",
+  photo_url: "/kb_reddy_ceo.jpg",
+  email: "md.3capstech@gmail.com",
+};
+
 export const VISION =
   "To become a trusted global technology partner by delivering innovative software solutions that help businesses accelerate their digital transformation.";
 

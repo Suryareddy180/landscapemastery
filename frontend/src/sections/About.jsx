@@ -2,28 +2,33 @@ import React, { useState, useEffect } from "react";
 import * as Icons from "lucide-react";
 import { Target, Eye, CheckCircle2, Linkedin, Twitter, Mail, Crown, User } from "lucide-react";
 import Reveal, { WordReveal } from "../components/Reveal";
-import { MISSION, VISION, MISSION_PILLARS, CORE_VALUES } from "../lib/data";
+import { MISSION, VISION, MISSION_PILLARS, CORE_VALUES, CEO_PROFILE } from "../lib/data";
 
 const BACKEND = import.meta.env.VITE_API_BASE_URL || '';
 
 const getPhotoSrc = (url) => {
-  if (!url) return null;
+  if (!url) return CEO_PROFILE.photo_url;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
+  if (url.startsWith("/")) return url;
   return `${BACKEND}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 export default function About() {
-  const [leaders, setLeaders] = useState([]);
+  const [leaders, setLeaders] = useState([CEO_PROFILE]);
 
   useEffect(() => {
     fetch(`${BACKEND}/api/leaders`)
       .then((r) => r.json())
-      .then((data) => setLeaders(data.leaders || []))
-      .catch(() => setLeaders([]));
+      .then((data) => {
+        if (data.leaders && data.leaders.length > 0) {
+          setLeaders(data.leaders);
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const ceo = leaders.length > 0 ? leaders[0] : null;
-  const photoSrc = ceo ? getPhotoSrc(ceo.photo_url) : null;
+  const ceo = leaders.length > 0 ? leaders[0] : CEO_PROFILE;
+  const photoSrc = ceo ? getPhotoSrc(ceo.photo_url || ceo.photo) : CEO_PROFILE.photo_url;
 
   return (
     <section id="about" className="relative py-24 sm:py-32 scroll-mt-24">
@@ -91,61 +96,67 @@ export default function About() {
             {ceo && (
               <Reveal delay={0.14}>
                 <div
-                  className="glass rounded-3xl relative overflow-hidden border border-line group hover:-translate-y-1 transition-all duration-500"
+                  className="glass rounded-3xl relative overflow-hidden border border-line group hover:-translate-y-1 transition-all duration-500 shadow-xl"
                   data-testid="about-ceo"
                 >
                   <div className="blob w-48 h-48 -top-12 -right-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" style={{ background: "var(--accent-glow)", filter: "blur(60px)" }} />
 
                   <div className="flex flex-col sm:flex-row relative">
                     {/* Photo */}
-                    <div className="sm:w-44 sm:min-h-full shrink-0 relative overflow-hidden bg-white/[0.02] flex items-center justify-center min-h-[160px] sm:min-h-0">
-                      {photoSrc ? (
-                        <img
-                          src={photoSrc}
-                          alt={ceo.name}
-                          className="w-full h-48 sm:h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-48 sm:h-full flex flex-col items-center justify-center p-6 text-muted/60">
-                          <User size={44} className="text-accent/60 mb-2" />
-                          <span className="text-[0.7rem] uppercase tracking-wider font-semibold text-muted/60">Leadership</span>
-                        </div>
-                      )}
-                      {/* Fade overlay on mobile (bottom) and desktop (right) */}
-                      {photoSrc && (
-                        <>
-                          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to top, var(--surface-glass) 0%, transparent 50%)" }} />
-                          <div className="absolute inset-0 hidden sm:block" style={{ background: "linear-gradient(to left, var(--surface-glass) 0%, transparent 50%)" }} />
-                        </>
-                      )}
+                    <div className="sm:w-56 shrink-0 relative overflow-hidden bg-slate-900/60 flex items-center justify-center min-h-[260px] sm:min-h-0">
+                      <img
+                        src={photoSrc}
+                        alt={`${ceo.name} — ${ceo.title}`}
+                        className="w-full h-full min-h-[260px] sm:min-h-[280px] object-cover object-[center_12%] group-hover:scale-105 transition-transform duration-700"
+                        loading="eager"
+                      />
+                      {/* Gradient blend */}
+                      <div className="absolute inset-0 sm:hidden bg-gradient-to-t from-[var(--bg)] via-transparent to-transparent opacity-80" />
+                      <div className="absolute inset-0 hidden sm:block bg-gradient-to-r from-transparent via-transparent to-[var(--bg)] opacity-30" />
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 sm:p-7 flex-1 relative">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.68rem] font-semibold text-accent border border-accent/20 bg-accent/5 mb-3">
-                        <Crown size={12} />
-                        {ceo.title}
+                    <div className="p-6 sm:p-8 flex-1 flex flex-col justify-center relative">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.7rem] font-semibold text-accent border border-accent/25 bg-accent/10 w-fit mb-3">
+                        <Crown size={13} className="text-accent" />
+                        <span>{ceo.title}</span>
                       </div>
-                      <h4 className="font-display font-bold text-xl text-text-primary">{ceo.name}</h4>
-                      <p className="mt-2 text-sm text-muted leading-relaxed">{ceo.bio}</p>
+                      <h4 className="font-display font-black text-2xl text-text-primary tracking-tight">{ceo.name}</h4>
+                      <p className="mt-3 text-sm text-muted leading-relaxed font-normal">{ceo.bio}</p>
 
-                      {/* Social links */}
-                      {(ceo.linkedin || ceo.twitter || ceo.email) && (
-                        <div className="mt-4 flex items-center gap-2.5">
+                      {/* Social & Contact links */}
+                      {(ceo.email || ceo.linkedin || ceo.twitter) && (
+                        <div className="mt-5 flex flex-wrap items-center gap-3">
+                          {ceo.email && (
+                            <a
+                              href={`mailto:${ceo.email}`}
+                              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl glass border border-line/60 text-xs text-muted hover:text-accent hover:border-accent/40 transition-all font-medium"
+                              aria-label={`Email ${ceo.name}`}
+                            >
+                              <Mail size={13} className="text-accent" />
+                              <span>{ceo.email}</span>
+                            </a>
+                          )}
                           {ceo.linkedin && (
-                            <a href={ceo.linkedin} target="_blank" rel="noopener noreferrer" className="h-8 w-8 grid place-items-center rounded-lg glass border border-line/50 text-muted hover:text-accent hover:border-accent/30 transition-colors" aria-label={`${ceo.name} LinkedIn`}>
+                            <a
+                              href={ceo.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-8 w-8 grid place-items-center rounded-xl glass border border-line/60 text-muted hover:text-accent hover:border-accent/40 transition-colors"
+                              aria-label={`${ceo.name} LinkedIn`}
+                            >
                               <Linkedin size={14} />
                             </a>
                           )}
                           {ceo.twitter && (
-                            <a href={ceo.twitter} target="_blank" rel="noopener noreferrer" className="h-8 w-8 grid place-items-center rounded-lg glass border border-line/50 text-muted hover:text-accent hover:border-accent/30 transition-colors" aria-label={`${ceo.name} Twitter`}>
+                            <a
+                              href={ceo.twitter}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-8 w-8 grid place-items-center rounded-xl glass border border-line/60 text-muted hover:text-accent hover:border-accent/40 transition-colors"
+                              aria-label={`${ceo.name} Twitter`}
+                            >
                               <Twitter size={14} />
-                            </a>
-                          )}
-                          {ceo.email && (
-                            <a href={`mailto:${ceo.email}`} className="h-8 w-8 grid place-items-center rounded-lg glass border border-line/50 text-muted hover:text-accent hover:border-accent/30 transition-colors" aria-label={`Email ${ceo.name}`}>
-                              <Mail size={14} />
                             </a>
                           )}
                         </div>
