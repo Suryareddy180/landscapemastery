@@ -323,10 +323,10 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
   return (
     <div className="space-y-20 sm:space-y-28 pb-24 text-stone-900 overflow-hidden">
       {/* 1. LUXURY EDITORIAL HERO SECTION */}
-      <section className="relative min-h-[calc(100vh-80px)] flex flex-col justify-center items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 overflow-hidden">
+      <section className="relative flex flex-col justify-center items-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 sm:pt-4 sm:pb-6 overflow-hidden">
         {/* Subtle Architectural Drafting Grid Canvas */}
         <div 
-          className="absolute inset-0 pointer-events-none opacity-40 -z-10"
+          className="absolute inset-0 pointer-events-none opacity-30 -z-10"
           style={{
             backgroundImage: "radial-gradient(rgba(6, 78, 59, 0.12) 1px, transparent 1px)",
             backgroundSize: "28px 28px"
@@ -334,30 +334,30 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         />
 
         {/* Ambient Organic Atmospheric Glows */}
-        <div className="absolute top-1/4 -right-24 w-[550px] h-[550px] bg-gradient-to-br from-emerald-400/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
-        <div className="absolute bottom-10 -left-24 w-[450px] h-[450px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute top-1/4 -right-24 w-[450px] h-[450px] bg-gradient-to-br from-emerald-400/10 via-teal-500/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute bottom-6 -left-24 w-[400px] h-[400px] bg-gradient-to-tr from-amber-500/10 via-emerald-600/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
         {/* Executive Typographic Editorial Master Layout */}
-        <div className="w-full max-w-5xl mx-auto text-center space-y-7 sm:space-y-9 my-auto py-6 sm:py-12">
+        <div className="w-full max-w-5xl mx-auto text-center space-y-3 sm:space-y-4 lg:space-y-4.5">
           {/* Executive Badge Pill */}
           <motion.div 
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2.5 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1.5 px-5 rounded-full shadow-sm"
+            className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1 px-3.5 rounded-full shadow-xs"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
-            <span className="text-[11px] font-bold text-emerald-950 uppercase tracking-[0.2em] font-sans">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
+            <span className="text-[10px] sm:text-[10.5px] font-bold text-emerald-950 uppercase tracking-[0.16em] font-sans">
               Executive Architectural Masterclass • 2026 Edition
             </span>
           </motion.div>
 
           {/* Master Headline */}
           <motion.h1 
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="font-serif text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-950 leading-[1.08] max-w-4xl mx-auto"
+            transition={{ duration: 0.45, delay: 0.05 }}
+            className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.15rem] font-bold tracking-tight text-emerald-950 leading-[1.12] max-w-3xl mx-auto"
           >
             Master the Art of <br />
             <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
@@ -367,24 +367,24 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
           {/* Subtitle / Architectural Manifesto */}
           <motion.p 
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-base sm:text-lg lg:text-xl text-stone-600 leading-relaxed font-light max-w-3xl mx-auto"
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="text-xs sm:text-[14px] text-stone-600 leading-relaxed font-light max-w-2xl mx-auto"
           >
             {heroSubtitle}
           </motion.p>
 
           {/* Primary Action Button Group */}
           <motion.div 
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="flex flex-wrap items-center justify-center gap-4 pt-1"
+            transition={{ duration: 0.45, delay: 0.15 }}
+            className="flex flex-wrap items-center justify-center gap-3 pt-0.5"
           >
             <a 
               href="#course-catalog"
-              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-sm sm:text-base px-8 py-4 rounded-full shadow-xl shadow-emerald-950/25 hover:shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2.5 cursor-pointer btn-shine"
+              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-emerald-950/20 hover:shadow-emerald-900/35 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer btn-shine"
             >
               <span>Explore Course Library</span>
               <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -392,7 +392,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
             <button
               onClick={() => onNavigate('v2')}
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200/90 hover:border-emerald-700/40 shadow-sm hover:shadow transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-xs sm:text-sm border border-stone-200/90 hover:border-emerald-700/40 shadow-xs hover:shadow-sm transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
               <span>Student Portal</span>
@@ -401,80 +401,80 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
           {/* 4-Column Architectural Syllabus Framework Deck */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="pt-6 sm:pt-10 max-w-5xl mx-auto w-full"
+            transition={{ duration: 0.45, delay: 0.2 }}
+            className="pt-1.5 sm:pt-2.5 max-w-5xl mx-auto w-full"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-left">
               {/* Pillar 01 */}
-              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">01</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">potted_plant</span>
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-xs hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 tracking-wider">01</span>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-xs">potted_plant</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                  <div className="text-xs sm:text-[12.5px] font-bold text-stone-900 leading-snug">
                     Maintenance &amp; Positioning of Plants
                   </div>
-                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
-                    Botanical growth zoning, sun exposure &amp; root care
+                  <div className="text-[10.5px] text-stone-500 font-light mt-0.5 leading-snug">
+                    Botanical growth zoning &amp; sun exposure
                   </div>
                 </div>
               </div>
 
               {/* Pillar 02 */}
-              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">02</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">architecture</span>
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-xs hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 tracking-wider">02</span>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-xs">architecture</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                  <div className="text-xs sm:text-[12.5px] font-bold text-stone-900 leading-snug">
                     Details of Landscape
                   </div>
-                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
-                    Site contour grading, drainage &amp; stonework masonry
+                  <div className="text-[10.5px] text-stone-500 font-light mt-0.5 leading-snug">
+                    Site contour grading &amp; stone masonry
                   </div>
                 </div>
               </div>
 
               {/* Pillar 03 */}
-              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">03</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">devices</span>
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-xs hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 tracking-wider">03</span>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-xs">devices</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                  <div className="text-xs sm:text-[12.5px] font-bold text-stone-900 leading-snug">
                     Role of Softwares in Landscape
                   </div>
-                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
-                    AutoCAD drafting, 3D modeling &amp; spatial frameworks
+                  <div className="text-[10.5px] text-stone-500 font-light mt-0.5 leading-snug">
+                    AutoCAD drafting &amp; 3D spatial models
                   </div>
                 </div>
               </div>
 
               {/* Pillar 04 */}
-              <div className="p-5 rounded-2xl bg-white/90 backdrop-blur-xs border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">04</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">handyman</span>
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white/95 backdrop-blur-xs border border-stone-200/90 shadow-xs hover:shadow-md hover:border-emerald-700/40 transition-all group flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 tracking-wider">04</span>
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-800 flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-900 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-xs">handyman</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-stone-900 leading-snug">
+                  <div className="text-xs sm:text-[12.5px] font-bold text-stone-900 leading-snug">
                     Hands-on Experience
                   </div>
-                  <div className="text-xs text-stone-500 font-light mt-1 leading-relaxed">
-                    Field calculations, blueprint analysis &amp; execution plans
+                  <div className="text-[10.5px] text-stone-500 font-light mt-0.5 leading-snug">
+                    Field calculations &amp; execution blueprints
                   </div>
                 </div>
               </div>
@@ -485,8 +485,8 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="pt-6 max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-y-2 gap-x-5 text-[11px] font-mono text-stone-500 uppercase tracking-widest border-t border-stone-200/60"
+            transition={{ duration: 0.45, delay: 0.25 }}
+            className="pt-2 max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-y-1 gap-x-4 text-[10px] sm:text-[10.5px] font-mono text-stone-500 uppercase tracking-wider border-t border-stone-200/60"
           >
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -511,16 +511,16 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         </div>
 
         {/* Scroll Cue */}
-        <div className="w-full flex justify-center pt-8">
+        <div className="w-full flex justify-center pt-2 sm:pt-3">
           <button
             onClick={() => {
               const el = document.getElementById('course-catalog');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer group"
+            className="flex items-center gap-1 text-[10.5px] font-medium text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer group"
           >
-            <span>Scroll to explore courses</span>
-            <span className="material-symbols-outlined text-base animate-bounce group-hover:text-emerald-700">keyboard_arrow_down</span>
+            <span>Explore Course Catalog</span>
+            <span className="material-symbols-outlined text-sm animate-bounce group-hover:text-emerald-700">keyboard_arrow_down</span>
           </button>
         </div>
       </section>
