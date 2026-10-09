@@ -19,10 +19,12 @@ export default function AdminDashboardLayout({
     { id: 'courses', label: 'Course Builder', icon: 'auto_stories', badge: 'Builder' },
     { id: 'library', label: 'Content & Media Library', icon: 'folder_open', badge: null },
     { id: 'students', label: 'Student Roster', icon: 'group', badge: null },
+    { id: 'users', label: 'User & Staff Governance', icon: 'admin_panel_settings', badge: 'Access' },
     { id: 'payments', label: 'Payments & Orders', icon: 'payments', badge: 'Live' },
     { id: 'cms', label: 'Landing CMS & Logo', icon: 'web', badge: 'CMS' },
     { id: 'coupons', label: 'Coupons & Offers', icon: 'local_offer', badge: null },
     { id: 'testimonials', label: 'Testimonials & FAQs', icon: 'chat_bubble_outline', badge: null },
+    { id: '3caps', label: '3CAPSTECH Configuration', icon: 'domain', badge: '3CAPS' },
     { id: 'audit', label: 'Security Audit Logs', icon: 'security', badge: 'Logs' },
     { id: 'settings', label: 'System Settings', icon: 'settings', badge: null }
   ];
@@ -71,7 +73,7 @@ export default function AdminDashboardLayout({
             <div className="overflow-hidden flex-1">
               <span className="text-xs font-semibold text-stone-900 block truncate">{user?.email || 'admin@landscapemastery.com'}</span>
               <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                {user?.role || 'SUPER_ADMIN'}
+                {user?.role === 'SUPER_ADMIN' ? 'PORTAL SUPER ADMIN (FULL RIGHTS)' : (user?.role || 'PORTAL ADMIN')}
               </span>
             </div>
           </div>

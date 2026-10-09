@@ -48,9 +48,9 @@ urlpatterns = [
     path("solutions", views.api_solutions),
     path("solutions/", views.api_solutions),
 
-    # SimpleJWT Authentication for Company Admin
-    path("admin/login", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("admin/login/", TokenObtainPairView.as_view(), name="token_obtain_pair_slash"),
+    # Authentication for Company Super Admin Console
+    path("admin/login", views.api_admin_login, name="admin_login"),
+    path("admin/login/", views.api_admin_login, name="admin_login_slash"),
     path("admin/refresh", TokenRefreshView.as_view(), name="token_refresh"),
     path("admin/refresh/", TokenRefreshView.as_view(), name="token_refresh_slash"),
     path("admin/summary", views.api_admin_summary, name="admin_summary"),

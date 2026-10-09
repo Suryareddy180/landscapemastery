@@ -89,6 +89,9 @@ function LandscapeApp({ initialView = 'v1' }) {
     if (data.token) {
       setToken(data.token);
       localStorage.setItem('lm_auth_token', data.token);
+      if (data.user && ADMIN_ROLES.includes(data.user.role)) {
+        localStorage.setItem('admin_token', data.token);
+      }
     }
     if (data.user) {
       setUser(data.user);
@@ -114,6 +117,7 @@ function LandscapeApp({ initialView = 'v1' }) {
     setToken('');
     setUser(null);
     localStorage.removeItem('lm_auth_token');
+    localStorage.removeItem('admin_token');
     localStorage.removeItem('lm_auth_user');
     setActiveView('v1');
   };
@@ -150,7 +154,34 @@ function LandscapeApp({ initialView = 'v1' }) {
       {activeView === 'admin' && (
         <Suspense fallback={<ViewLoader />}>
           <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
-            <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />
+            {(!token || !user || !ADMIN_ROLES.includes(user?.role)) ? (
+              <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#070D14] text-stone-100">
+                <div className="max-w-md w-full bg-stone-950/90 border border-stone-800 rounded-3xl p-8 shadow-2xl text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
+                  </div>
+                  <h2 className="text-xl font-bold font-serif text-white">Portal Admin Access Required</h2>
+                  <p className="text-xs text-stone-400 leading-relaxed">
+                    You must sign in with an authorized Landscape Mastery Portal Administrator account to access platform configuration, user governance, and 3CAPSTECH integration settings.
+                  </p>
+                  <button
+                    onClick={() => setActiveView('v2')}
+                    className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-base">login</span>
+                    <span>Go to Secure Portal Sign In</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveView('v1')}
+                    className="text-stone-500 hover:text-stone-300 text-xs transition-colors cursor-pointer"
+                  >
+                    Return to Landscape Mastery
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />
+            )}
           </div>
         </Suspense>
       )}
@@ -171,11 +202,14 @@ export default function App() {
         <Route path="/landscapemastery/login" element={<LandscapeApp initialView="v2" />} />
         <Route path="/landscapemastery/portal" element={<LandscapeApp initialView="v3" />} />
         <Route path="/landscapemastery/dashboard" element={<LandscapeApp initialView="v3" />} />
+        <Route path="/landscapemastery/admin" element={<LandscapeApp initialView="admin" />} />
 
         {/* Shortcuts for Landscape Mastery */}
         <Route path="/login" element={<LandscapeApp initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
         <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
+        <Route path="/portal/admin" element={<LandscapeApp initialView="admin" />} />
+        <Route path="/portal-admin" element={<LandscapeApp initialView="admin" />} />
         <Route path="/courses" element={<Navigate to="/landscapemastery#courses" replace />} />
 
         {/* Convenience Direct Aliases for 3CAPSTECH corporate sections */}

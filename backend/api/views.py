@@ -71,8 +71,11 @@ def login(req):
     pwd = req.data.get('password')
     if not email or not pwd:
         return Response({'error': 'Email and password required'}, status=status.HTTP_400_BAD_REQUEST)
+    cleaned_email = str(email).strip().lower()
+    usr = Usr.objects.filter(email__iexact=cleaned_email).first()
+    if not usr:
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     try:
-        usr = Usr.objects.get(email=email)
         if not usr.is_active:
             return Response({'error': 'Account has been disabled. Please contact support.'}, status=status.HTTP_403_FORBIDDEN)
         # Per-course enrollment check: students need at least one enrollment
@@ -1222,6 +1225,144 @@ def admin_student_detail(req, pk):
         usr.save()
         log_admin_action(req.user, "STUDENT_UPDATED", target=usr.email, details=f"Active: {usr.is_active}, Paid: {usr.paid}", ip=req.META.get('REMOTE_ADDR'))
         return Response({'status': 'updated'})
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_users(req):
+    """
+    PORTAL ADMIN USER & STAFF GOVERNANCE:
+    Full platform rights to list, filter, and create users and staff members
+    with specific role assignments.
+    """
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'ADMIN']):
+        return Response({'error': 'Portal Admin permission required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if req.method == 'GET':
+        users_list = []
+        for u in Usr.objects.all().order_by('-created_at'):
+            users_list.append({
+                'id': u.id,
+                'email': u.email,
+                'phone': u.phone or '',
+                'full_name': u.full_name or '',
+                'role': u.role,
+                'paid': u.paid,
+                'is_active': u.is_active,
+                'is_staff': u.is_staff,
+                'is_superuser': u.is_superuser,
+                'created_at': u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else 'N/A'
+            })
+        
+        counts = {
+            'total': Usr.objects.count(),
+            'super_admin': Usr.objects.filter(role='SUPER_ADMIN').count(),
+            'content_manager': Usr.objects.filter(role='CONTENT_MANAGER').count(),
+            'support_admin': Usr.objects.filter(role='SUPPORT_ADMIN').count(),
+            'students': Usr.objects.filter(role='STUDENT').count(),
+            'paid_students': Usr.objects.filter(role='STUDENT', paid=True).count(),
+        }
+        return Response({'users': users_list, 'counts': counts})
+
+    elif req.method == 'POST':
+        email = req.data.get('email', '').strip().lower()
+        password = req.data.get('password')
+        role = req.data.get('role', 'STUDENT')
+        full_name = req.data.get('full_name', '').strip()
+        phone = req.data.get('phone', '').strip()
+        paid = bool(req.data.get('paid', False))
+
+        if not email or not password:
+            return Response({'error': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if Usr.objects.filter(email=email).exists():
+            return Response({'error': 'User with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_roles = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
+        if role not in valid_roles:
+            role = 'STUDENT'
+
+        is_staff = role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
+        is_superuser = (role == 'SUPER_ADMIN')
+
+        new_user = Usr.objects.create(
+            email=email,
+            role=role,
+            full_name=full_name,
+            phone=phone,
+            paid=paid,
+            is_staff=is_staff,
+            is_superuser=is_superuser,
+            is_active=True
+        )
+        new_user.set_password(password)
+        new_user.save()
+
+        log_admin_action(req.user, "USER_CREATED", target=email, details=f"Role: {role}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({
+            'status': 'created',
+            'user': {
+                'id': new_user.id,
+                'email': new_user.email,
+                'full_name': new_user.full_name,
+                'role': new_user.role,
+                'paid': new_user.paid,
+                'is_active': new_user.is_active,
+                'is_staff': new_user.is_staff
+            }
+        }, status=status.HTTP_201_CREATED)
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_user_detail(req, pk):
+    """
+    PORTAL ADMIN USER MODIFICATION:
+    Change role, toggle paid/active status, reset password, or remove user.
+    """
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'ADMIN']):
+        return Response({'error': 'Portal Admin permission required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        target_usr = Usr.objects.get(pk=pk)
+    except Usr.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if req.method == 'DELETE':
+        if target_usr.id == req.user.id:
+            return Response({'error': 'Security restriction: You cannot delete your own account while logged in.'}, status=status.HTTP_400_BAD_REQUEST)
+        email = target_usr.email
+        target_usr.delete()
+        log_admin_action(req.user, "USER_DELETED", target=email, details=f"ID: {pk}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'deleted'})
+
+    elif req.method == 'PATCH':
+        if 'role' in req.data:
+            new_role = req.data['role']
+            valid_roles = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
+            if new_role in valid_roles:
+                target_usr.role = new_role
+                target_usr.is_staff = new_role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
+                if new_role == 'SUPER_ADMIN':
+                    target_usr.is_superuser = True
+        if 'is_active' in req.data:
+            target_usr.is_active = bool(req.data['is_active'])
+        if 'paid' in req.data:
+            target_usr.paid = bool(req.data['paid'])
+        if 'full_name' in req.data:
+            target_usr.full_name = req.data['full_name']
+        if 'phone' in req.data:
+            target_usr.phone = req.data['phone']
+        if 'password' in req.data and req.data['password']:
+            target_usr.set_password(req.data['password'])
+        target_usr.save()
+
+        log_admin_action(req.user, "USER_UPDATED", target=target_usr.email, details=f"Role: {target_usr.role}, Active: {target_usr.is_active}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'updated', 'user': {
+            'id': target_usr.id,
+            'email': target_usr.email,
+            'role': target_usr.role,
+            'paid': target_usr.paid,
+            'is_active': target_usr.is_active,
+            'full_name': target_usr.full_name
+        }})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

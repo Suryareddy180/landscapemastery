@@ -282,11 +282,12 @@ You should see:
 - `landscapemastery_backend` — Up (healthy)
 - `landscapemastery_frontend` — Up, `127.0.0.1:8082->80/tcp`
 
-### Step 4.1: Create Django Super Admin
+### Step 4.1: Provision Production Super Admin
+Run the automated command to ensure the primary production Super Admin (`md.3capstech@gmail.com`) is provisioned with full rights:
 ```bash
-docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
+docker compose -f docker-compose.prod.yml exec backend python manage.py create_production_admin
 ```
-Follow prompts to enter username, email, and password.
+*(Alternatively, create an interactive admin with `docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser`)*
 
 ### Step 4.2: Verify Internal Response Locally on the VPS
 Run a curl command on the VPS host to ensure the app answers on `127.0.0.1:8082`:

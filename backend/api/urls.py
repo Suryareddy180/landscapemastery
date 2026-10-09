@@ -49,6 +49,10 @@ urlpatterns = [
     path('admin/students/<int:pk>/', views.admin_student_detail),
     path('admin/export/students/', views.export_students_csv),
 
+    # Portal Admin User & Staff Governance
+    path('admin/users/', views.admin_users),
+    path('admin/users/<int:pk>/', views.admin_user_detail),
+
     # Admin Security Audit Logs
     path('admin/audit-logs/', views.admin_audit_logs),
 

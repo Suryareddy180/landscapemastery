@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import AdminDashboardLayout from './admin/AdminDashboardLayout.jsx';
 import CourseBuilderSection from './admin/CourseBuilderSection.jsx';
 import MediaLibrarySection from './admin/MediaLibrarySection.jsx';
+import UserGovernanceSection from './admin/UserGovernanceSection.jsx';
+import CompanyConfigSection from './admin/CompanyConfigSection.jsx';
 import { BASE_URL } from '../lib/api.js';
 
 export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated }) {
@@ -122,7 +124,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
         formData.append('file', file);
         formData.append('dataUrl', dataUrl);
 
-        const res = await fetch('${BASE_URL}/api/admin/upload-logo/', {
+        const res = await fetch(`${BASE_URL}/api/admin/upload-logo/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -137,7 +139,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
           if (onSettingsUpdated) onSettingsUpdated();
         } else {
           // Fallback: save settings with dataUrl
-          await fetch('${BASE_URL}/api/admin/settings/', {
+          await fetch(`${BASE_URL}/api/admin/settings/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -176,7 +178,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       formData.append('file', file);
       formData.append('title', siteSettings.curriculumPdfTitle || file.name.replace('.pdf', '').replace(/_/g, ' '));
 
-      const res = await fetch('${BASE_URL}/api/admin/upload-syllabus-pdf/', {
+      const res = await fetch(`${BASE_URL}/api/admin/upload-syllabus-pdf/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -211,7 +213,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     setStatusMessage(null);
 
     try {
-      const res = await fetch('${BASE_URL}/api/admin/settings/', {
+      const res = await fetch(`${BASE_URL}/api/admin/settings/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +239,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
   // Authenticated CSV Export
   const handleExportCSV = async () => {
     try {
-      const res = await fetch('${BASE_URL}/api/admin/export/students/', {
+      const res = await fetch(`${BASE_URL}/api/admin/export/students/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -263,7 +265,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     e.preventDefault();
     if (!newTestimonial.student_name || !newTestimonial.content) return;
     try {
-      const res = await fetch('${BASE_URL}/api/admin/testimonials/', {
+      const res = await fetch(`${BASE_URL}/api/admin/testimonials/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(newTestimonial)
@@ -293,7 +295,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     e.preventDefault();
     if (!newFaq.question || !newFaq.answer) return;
     try {
-      const res = await fetch('${BASE_URL}/api/admin/faqs/', {
+      const res = await fetch(`${BASE_URL}/api/admin/faqs/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(newFaq)
@@ -326,7 +328,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
     if (!newCoupon.code.trim()) return;
     try {
       const authToken = token || localStorage.getItem('lm_auth_token') || '';
-      const res = await fetch('${BASE_URL}/api/admin/coupons/', {
+      const res = await fetch(`${BASE_URL}/api/admin/coupons/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({
@@ -497,6 +499,11 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
             </table>
           </div>
         </div>
+      )}
+
+      {/* SECTION: USER & STAFF ROLE GOVERNANCE */}
+      {activeSection === 'users' && (
+        <UserGovernanceSection token={token} currentUser={user} />
       )}
 
       {/* SECTION 5: PAYMENTS & ORDERS */}
@@ -1075,6 +1082,11 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
             </table>
           </div>
         </div>
+      )}
+
+      {/* SECTION: 3CAPSTECH CONFIGURATION & GOVERNANCE */}
+      {activeSection === '3caps' && (
+        <CompanyConfigSection token={token} />
       )}
 
       {/* SECTION 9: AUDIT LOGS */}

@@ -11,7 +11,7 @@ async function request(method, path, body) {
     headers["Content-Type"] = "application/json";
   }
 
-  const token = localStorage.getItem("admin_token");
+  const token = localStorage.getItem("admin_token") || localStorage.getItem("lm_auth_token");
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -28,7 +28,7 @@ async function request(method, path, body) {
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem("admin_token");
-      if (window.location.pathname.startsWith("/admin")) {
+      if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
         window.location.href = "/admin/login";
       }
     }

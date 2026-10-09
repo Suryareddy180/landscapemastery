@@ -14,6 +14,7 @@ const COLS = [
       { label: "Solutions", to: "/company#solutions" },
       { label: "Why Us", to: "/company#why" },
       { label: "Contact", to: "/company#contact" },
+      { label: "Super Admin Portal", to: "/admin/login" },
     ],
   },
   {

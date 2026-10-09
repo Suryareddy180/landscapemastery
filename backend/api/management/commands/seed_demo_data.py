@@ -33,6 +33,26 @@ class Command(BaseCommand):
         # ---------------------------------------------------------------------
         demo_users = [
             {
+                'email': 'md.3capstech@gmail.com',
+                'password': os.environ.get('MD_ADMIN_PASSWORD', os.environ.get('ADMIN_PASSWORD', 'LandscapeAdmin2026!')),
+                'full_name': 'Managing Director (3CAPSTECH)',
+                'role': 'SUPER_ADMIN',
+                'paid': True,
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
+                'email': 'admin@3capstech.com',
+                'password': 'Admin@3capstech2026!',
+                'full_name': '3CAPSTECH Super Admin',
+                'role': 'SUPER_ADMIN',
+                'paid': True,
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
                 'email': 'admin@landscapemastery.com',
                 'password': 'Admin@Landscape2026!',
                 'full_name': 'Chief Architect & Director',
