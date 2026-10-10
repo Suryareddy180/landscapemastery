@@ -145,7 +145,7 @@ export default function Contact() {
               </a>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2.5">
+            <div className="mt-5 flex flex-wrap gap-2.5">
               <a
                 href={WHATSAPP}
                 target="_blank"
@@ -169,7 +169,7 @@ export default function Contact() {
             </div>
 
             {/* Interactive Office Location Map */}
-            <div className="mt-6 rounded-3xl overflow-hidden glass p-3 border border-line relative group shadow-lg">
+            <div className="mt-5 rounded-3xl overflow-hidden glass p-3 border border-line relative group shadow-lg">
               <div className="flex items-center justify-between px-1 mb-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
@@ -211,7 +211,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="relative rounded-2xl overflow-hidden h-44 sm:h-48 border border-line/60">
+              <div className="relative rounded-2xl overflow-hidden h-36 sm:h-40 border border-line/60">
                 <iframe
                   title="3CAPSTECH corporate office location"
                   src={MAPS_EMBED}
@@ -395,7 +395,7 @@ export default function Contact() {
                         value={form.message}
                         onChange={set("message")}
                         required
-                        rows={4}
+                        rows={5}
                         maxLength={4000}
                         data-testid="contact-message"
                         placeholder="Tell us about your project or goals..."
@@ -422,7 +422,7 @@ export default function Contact() {
                     type="submit"
                     disabled={status === "loading"}
                     data-testid="contact-submit"
-                    className="w-full rounded-2xl py-3.5 px-6 font-semibold text-sm text-white transition-all duration-300 shadow-[0_0_24px_rgba(17,168,49,0.35)] hover:shadow-[0_0_36px_rgba(17,168,49,0.55)] hover:scale-[1.008] active:scale-[0.992] bg-gradient-to-r from-[#11A831] via-[#0549B1] to-[#11A831] bg-[length:200%_auto] hover:bg-right cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed group mt-2"
+                    className="w-full rounded-2xl py-3.5 px-6 font-semibold text-sm text-white transition-all duration-300 shadow-[0_0_24px_rgba(17,168,49,0.35)] hover:shadow-[0_0_36px_rgba(17,168,49,0.55)] hover:scale-[1.008] active:scale-[0.992] bg-gradient-to-r from-[#11A831] via-[#0549B1] to-[#11A831] bg-[length:200%_auto] hover:bg-right cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed group mt-4"
                   >
                     {status === "loading" ? (
                       <>
