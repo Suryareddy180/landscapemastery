@@ -249,7 +249,7 @@ BRAND_CONFIG = {
     "name": "3CAPSTECH",
     "email": "md.3capstech@gmail.com",
     "phone": "+91 94409 99908",
-    "address": "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500085",
+    "address": "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500072",
     "primary_color": "#11A831",
     "secondary_color": "#0549B1",
     "text_primary_light": "#1E293B",

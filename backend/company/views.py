@@ -67,7 +67,7 @@ def api_brand_config(request):
         "name": "3CAPSTECH",
         "email": "md.3capstech@gmail.com",
         "phone": "+91 94409 99908",
-        "address": "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500085",
+        "address": "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500072",
         "primary_color": "#11A831",
         "secondary_color": "#0549B1",
         "text_primary_light": "#1E293B",
@@ -148,7 +148,7 @@ def api_contact(request):
             f"3CAPSTECH Team\n"
             f"Email: md.3capstech@gmail.com\n"
             f"Phone: +91 94409 99908\n"
-            f"Address: Phase 2, Shanthi Nilayam, Kukatpally, Hyderabad, Telangana 500085\n"
+            f"Address: Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500072\n"
         )
         send_mail(
             subject=user_subject,
