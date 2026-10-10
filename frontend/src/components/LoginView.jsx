@@ -30,7 +30,12 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
         body: JSON.stringify({ email: loginEmail.trim().toLowerCase(), password: loginPwd })
       });
 
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
       setLoading(false);
 
       if (res.ok && data.token) {
@@ -44,12 +49,18 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
           onNavigate(['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user?.role) ? 'admin' : 'v3');
         }
       } else {
-        setError(data.error || 'Invalid email address or password.');
+        if (res.status === 401 || res.status === 400) {
+          setError(data.error || data.detail || 'Invalid email address or password.');
+        } else if (res.status >= 500) {
+          setError('Authentication server is warming up or updating. Please retry in a few seconds.');
+        } else {
+          setError(data.error || data.detail || `Authentication failed (${res.status}). Please try again.`);
+        }
       }
     } catch (err) {
       console.error('Authentication network error:', err);
       setLoading(false);
-      setError('Unable to connect to the authentication server. Please verify your connection.');
+      setError('Unable to reach the authentication service. Please check your internet connection and try again.');
     }
   };
 
