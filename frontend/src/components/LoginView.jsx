@@ -24,11 +24,21 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
     setError('');
 
     try {
-      const res = await fetch(`${BASE_URL}/api/login/`, {
+      const cleanEmail = loginEmail.trim().toLowerCase();
+      let res = await fetch(`${BASE_URL}/api/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail.trim().toLowerCase(), password: loginPwd })
+        body: JSON.stringify({ email: cleanEmail, password: loginPwd })
       });
+
+      // If /api/login/ returns 405 or 404, seamlessly fall back to /api/admin/login
+      if (res.status === 405 || res.status === 404) {
+        res = await fetch(`${BASE_URL}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail, username: cleanEmail, password: loginPwd })
+        });
+      }
 
       let data = {};
       try {
@@ -38,13 +48,15 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       }
       setLoading(false);
 
-      if (res.ok && data.token) {
+      const authToken = data.token || data.access;
+      if (res.ok && authToken) {
         // Also persist admin_token for company admin sync
         if (data.user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user.role)) {
-          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_token', authToken);
         }
+        const authPayload = { ...data, token: authToken };
         if (onLoginSuccess) {
-          onLoginSuccess(data);
+          onLoginSuccess(authPayload);
         } else {
           onNavigate(['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user?.role) ? 'admin' : 'v3');
         }

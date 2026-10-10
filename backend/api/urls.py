@@ -6,11 +6,17 @@ urlpatterns = [
     path('health/', views.health_check),
 
     # Auth & Webhooks
+    path('login', views.login),
     path('login/', views.login),
+    path('auth/forgot-password', views.forgot_password),
     path('auth/forgot-password/', views.forgot_password),
+    path('auth/reset-password', views.reset_password),
     path('auth/reset-password/', views.reset_password),
+    path('webhook/razorpay', views.razorpay_webhook),
     path('webhook/razorpay/', views.razorpay_webhook),
+    path('checkout/session', views.checkout_session),
     path('checkout/session/', views.checkout_session),
+    path('checkout/verify', views.checkout_verify),
     path('checkout/verify/', views.checkout_verify),
 
     # Public CMS & Settings

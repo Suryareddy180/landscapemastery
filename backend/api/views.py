@@ -64,9 +64,11 @@ def health_check(request):
 # ---------------------------------------------------------
 
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([AllowAny])
 def login(req):
+    if req.method == 'GET':
+        return Response({'error': 'Authentication endpoint requires POST request.'}, status=status.HTTP_400_BAD_REQUEST)
     email = req.data.get('email')
     pwd = req.data.get('password')
     if not email or not pwd:
