@@ -19,8 +19,6 @@ import {
   Cloud,
   Compass,
   MessageSquare,
-  ShieldCheck,
-  Clock,
   ArrowRight,
   AlertCircle,
 } from "lucide-react";
@@ -107,95 +105,97 @@ export default function Contact() {
       <div className="blob w-[450px] h-[450px] bottom-0 right-[-140px] pointer-events-none" style={{ background: "var(--accent)", opacity: 0.15 }} />
 
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-stretch">
           {/* Left Column: Contact details & Location Map */}
-          <div>
-            <div className="inline-flex items-center gap-2 label text-accent mb-4 font-semibold px-3 py-1.5 rounded-full glass border border-line">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_#11A831]" />
-              // Let's Connect
-            </div>
-            <h2 className="display-lg">
-              <WordReveal text="Start something" /><br />
-              <WordReveal className="text-gradient" text="worth remembering." delay={0.15} />
-            </h2>
-            <p className="mt-6 text-muted text-base sm:text-lg leading-relaxed max-w-md">
-              Whether you're architecting an enterprise software ecosystem or scaling modern cloud infrastructure, our engineering leadership is ready to partner with you.
-            </p>
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <div className="inline-flex items-center gap-2 label text-accent mb-4 font-semibold px-3 py-1.5 rounded-full glass border border-line">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_#11A831]" />
+                // Let's Connect
+              </div>
+              <h2 className="display-lg">
+                <WordReveal text="Start something" /><br />
+                <WordReveal className="text-gradient" text="worth remembering." delay={0.15} />
+              </h2>
+              <p className="mt-6 text-muted text-base sm:text-lg leading-relaxed max-w-md">
+                Whether you're architecting an enterprise software ecosystem or scaling modern cloud infrastructure, our engineering leadership is ready to partner with you.
+              </p>
 
-            <div className="mt-8 space-y-4">
-              <a
-                href={`mailto:${CONTACT_INFO.email}`}
-                className="flex items-center gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
-                data-testid="contact-email-link"
-              >
-                <span className="h-11 w-11 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line">
-                  <Mail size={18} />
-                </span>
-                <div>
-                  <span className="text-xs font-mono text-muted block uppercase tracking-wider">Email Inquiry</span>
-                  <span className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{CONTACT_INFO.email}</span>
-                </div>
-              </a>
-
-              <a
-                href={`tel:${CONTACT_INFO.phoneRaw}`}
-                className="flex items-center gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
-                data-testid="contact-phone-link"
-              >
-                <span className="h-11 w-11 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line">
-                  <Phone size={18} />
-                </span>
-                <div>
-                  <span className="text-xs font-mono text-muted block uppercase tracking-wider">Direct Hotline</span>
-                  <span className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{CONTACT_INFO.phone}</span>
-                </div>
-              </a>
-
-              <a
-                href={MAPS_URL}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="contact-address-link"
-                className="flex items-start gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
-                title="Open office location in Google Maps"
-              >
-                <span className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line mt-0.5">
-                  <MapPin size={18} />
-                </span>
-                <div>
-                  <span className="text-xs font-mono text-muted block uppercase tracking-wider">Corporate Headquarters</span>
-                  <span className="text-sm leading-relaxed block text-text-primary group-hover:text-accent transition-colors font-medium">
-                    {CONTACT_INFO.address}
+              <div className="mt-8 space-y-4">
+                <a
+                  href={`mailto:${CONTACT_INFO.email}`}
+                  className="flex items-center gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
+                  data-testid="contact-email-link"
+                >
+                  <span className="h-11 w-11 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line">
+                    <Mail size={18} />
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs text-accent mt-1.5 font-mono">
-                    <span>Open location in Google Maps</span>
-                    <ExternalLink size={12} />
-                  </span>
-                </div>
-              </a>
-            </div>
+                  <div>
+                    <span className="text-xs font-mono text-muted block uppercase tracking-wider">Email Inquiry</span>
+                    <span className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{CONTACT_INFO.email}</span>
+                  </div>
+                </a>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href={WHATSAPP}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="contact-whatsapp"
-                className="inline-flex items-center gap-2 rounded-2xl glass px-5 py-3 text-sm font-medium text-text-primary hover:border-emerald-500/50 hover:text-emerald-400 transition-all border border-line shadow-sm"
-              >
-                <MessageCircle size={16} className="text-emerald-400" />
-                <span>Chat on WhatsApp</span>
-              </a>
-              <a
-                href={WHATSAPP}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="contact-book"
-                className="inline-flex items-center gap-2 rounded-2xl glass px-5 py-3 text-sm font-medium text-text-primary hover:border-accent hover:text-accent transition-all border border-line shadow-sm"
-              >
-                <Calendar size={16} className="text-accent" />
-                <span>Schedule a Call</span>
-              </a>
+                <a
+                  href={`tel:${CONTACT_INFO.phoneRaw}`}
+                  className="flex items-center gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
+                  data-testid="contact-phone-link"
+                >
+                  <span className="h-11 w-11 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line">
+                    <Phone size={18} />
+                  </span>
+                  <div>
+                    <span className="text-xs font-mono text-muted block uppercase tracking-wider">Direct Hotline</span>
+                    <span className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{CONTACT_INFO.phone}</span>
+                  </div>
+                </a>
+
+                <a
+                  href={MAPS_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="contact-address-link"
+                  className="flex items-start gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
+                  title="Open office location in Google Maps"
+                >
+                  <span className="h-11 w-11 shrink-0 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line mt-0.5">
+                    <MapPin size={18} />
+                  </span>
+                  <div>
+                    <span className="text-xs font-mono text-muted block uppercase tracking-wider">Corporate Headquarters</span>
+                    <span className="text-sm leading-relaxed block text-text-primary group-hover:text-accent transition-colors font-medium">
+                      {CONTACT_INFO.address}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs text-accent mt-1.5 font-mono">
+                      <span>Open location in Google Maps</span>
+                      <ExternalLink size={12} />
+                    </span>
+                  </div>
+                </a>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href={WHATSAPP}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="contact-whatsapp"
+                  className="inline-flex items-center gap-2 rounded-2xl glass px-5 py-3 text-sm font-medium text-text-primary hover:border-emerald-500/50 hover:text-emerald-400 transition-all border border-line shadow-sm"
+                >
+                  <MessageCircle size={16} className="text-emerald-400" />
+                  <span>Chat on WhatsApp</span>
+                </a>
+                <a
+                  href={WHATSAPP}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="contact-book"
+                  className="inline-flex items-center gap-2 rounded-2xl glass px-5 py-3 text-sm font-medium text-text-primary hover:border-accent hover:text-accent transition-all border border-line shadow-sm"
+                >
+                  <Calendar size={16} className="text-accent" />
+                  <span>Schedule a Call</span>
+                </a>
+              </div>
             </div>
 
             {/* Interactive Office Location Map */}
@@ -265,7 +265,7 @@ export default function Contact() {
           </div>
 
           {/* Right Column: Redesigned Enterprise Inquiry Form */}
-          <div className="glass rounded-3xl p-7 sm:p-9 border border-line relative overflow-hidden shadow-2xl">
+          <div className="glass rounded-3xl p-7 sm:p-9 border border-line relative overflow-hidden shadow-2xl flex flex-col justify-between h-full">
             {/* Ambient Corner Accent */}
             <div className="blob w-56 h-56 -top-20 -right-20 pointer-events-none" style={{ background: "var(--accent)", opacity: 0.16 }} />
 
@@ -290,7 +290,7 @@ export default function Contact() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="py-10 text-center flex flex-col items-center justify-center relative z-10"
+                  className="py-10 text-center flex-1 flex flex-col items-center justify-center relative z-10"
                   data-testid="contact-success"
                 >
                   <div className="h-16 w-16 rounded-3xl bg-accent/20 border border-accent/40 text-accent grid place-items-center mb-5 shadow-[0_0_30px_rgba(17,168,49,0.3)]">
@@ -339,107 +339,109 @@ export default function Contact() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onSubmit={submit}
-                  className="space-y-4 relative z-10"
+                  className="space-y-4 relative z-10 flex-1 flex flex-col justify-between"
                   data-testid="contact-form"
                 >
-                  {/* Row 1: Name & Email */}
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField
-                      label="Name"
-                      type="text"
-                      icon={User}
-                      value={form.name}
-                      onChange={set("name")}
-                      required
-                      placeholder="Alex Morgan"
-                      testid="contact-name"
-                    />
-                    <InputField
-                      label="Email"
-                      type="email"
-                      icon={Mail}
-                      value={form.email}
-                      onChange={set("email")}
-                      required
-                      placeholder="alex@company.com"
-                      testid="contact-email"
-                    />
-                  </div>
-
-                  {/* Row 2: Company & Phone */}
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField
-                      label="Company"
-                      type="text"
-                      icon={Building2}
-                      value={form.company}
-                      onChange={set("company")}
-                      placeholder="Company or Organization"
-                      testid="contact-company"
-                    />
-                    <InputField
-                      label="Phone / WhatsApp"
-                      type="tel"
-                      icon={Phone}
-                      value={form.phone}
-                      onChange={set("phone")}
-                      placeholder="+91 98765 43210"
-                      testid="contact-phone-input"
-                    />
-                  </div>
-
-                  {/* Service / Discipline Selector */}
-                  <div>
-                    <label className="block text-[11px] font-mono tracking-wider uppercase text-muted mb-2 font-semibold">
-                      Interested In <span className="text-accent">*</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2" data-testid="contact-interests">
-                      {SERVICES_OPTIONS.map((item) => {
-                        const Icon = item.icon;
-                        const isSelected = form.interest === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() => setForm((prev) => ({ ...prev, interest: item.id }))}
-                            className={`group rounded-xl px-3.5 py-2 text-xs font-medium transition-all duration-200 border flex items-center gap-2 cursor-pointer ${
-                              isSelected
-                                ? "bg-accent/20 border-accent text-accent shadow-[0_0_16px_rgba(17,168,49,0.3)] font-semibold"
-                                : "bg-[#060D1A]/70 border-white/10 text-slate-300 hover:text-white hover:border-accent/40 hover:bg-white/5"
-                            }`}
-                          >
-                            <Icon size={14} className={isSelected ? "text-accent" : "text-muted group-hover:text-accent transition-colors"} />
-                            <span>{item.label}</span>
-                            {isSelected && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Message Field */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] font-mono tracking-wider uppercase text-muted font-semibold flex items-center gap-1.5">
-                        <MessageSquare size={13} className="text-accent" />
-                        <span>Message</span>
-                        <span className="text-accent">*</span>
-                      </label>
-                      <span className="text-[10px] font-mono text-muted/60">{form.message.length}/4000</span>
-                    </div>
-                    <div className="relative rounded-2xl bg-[#060D1A]/70 border border-white/10 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all">
-                      <textarea
-                        value={form.message}
-                        onChange={set("message")}
+                  <div className="space-y-4">
+                    {/* Row 1: Name & Email */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <InputField
+                        label="Name"
+                        type="text"
+                        icon={User}
+                        value={form.name}
+                        onChange={set("name")}
                         required
-                        rows={4}
-                        maxLength={4000}
-                        data-testid="contact-message"
-                        placeholder="Tell us about your project or goals..."
-                        className="w-full bg-transparent px-4 py-3 outline-none resize-none text-sm text-text-primary placeholder:text-muted/50 font-sans leading-relaxed"
+                        placeholder="Alex Morgan"
+                        testid="contact-name"
                       />
+                      <InputField
+                        label="Email"
+                        type="email"
+                        icon={Mail}
+                        value={form.email}
+                        onChange={set("email")}
+                        required
+                        placeholder="alex@company.com"
+                        testid="contact-email"
+                      />
+                    </div>
+
+                    {/* Row 2: Company & Phone */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <InputField
+                        label="Company"
+                        type="text"
+                        icon={Building2}
+                        value={form.company}
+                        onChange={set("company")}
+                        placeholder="Company or Organization"
+                        testid="contact-company"
+                      />
+                      <InputField
+                        label="Phone / WhatsApp"
+                        type="tel"
+                        icon={Phone}
+                        value={form.phone}
+                        onChange={set("phone")}
+                        placeholder="+91 98765 43210"
+                        testid="contact-phone-input"
+                      />
+                    </div>
+
+                    {/* Service / Discipline Selector */}
+                    <div>
+                      <label className="block text-[11px] font-mono tracking-wider uppercase text-muted mb-2 font-semibold">
+                        Interested In <span className="text-accent">*</span>
+                      </label>
+                      <div className="flex flex-wrap gap-2" data-testid="contact-interests">
+                        {SERVICES_OPTIONS.map((item) => {
+                          const Icon = item.icon;
+                          const isSelected = form.interest === item.id;
+                          return (
+                            <button
+                              type="button"
+                              key={item.id}
+                              onClick={() => setForm((prev) => ({ ...prev, interest: item.id }))}
+                              className={`group rounded-xl px-3.5 py-2 text-xs font-medium transition-all duration-200 border flex items-center gap-2 cursor-pointer ${
+                                isSelected
+                                  ? "bg-accent/20 border-accent text-accent shadow-[0_0_16px_rgba(17,168,49,0.3)] font-semibold"
+                                  : "bg-[#060D1A]/70 border-white/10 text-slate-300 hover:text-white hover:border-accent/40 hover:bg-white/5"
+                              }`}
+                            >
+                              <Icon size={14} className={isSelected ? "text-accent" : "text-muted group-hover:text-accent transition-colors"} />
+                              <span>{item.label}</span>
+                              {isSelected && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Message Field */}
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-mono tracking-wider uppercase text-muted font-semibold flex items-center gap-1.5">
+                          <MessageSquare size={13} className="text-accent" />
+                          <span>Message</span>
+                          <span className="text-accent">*</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-muted/60">{form.message.length}/4000</span>
+                      </div>
+                      <div className="relative rounded-2xl bg-[#060D1A]/70 border border-white/10 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all flex flex-col">
+                        <textarea
+                          value={form.message}
+                          onChange={set("message")}
+                          required
+                          rows={4}
+                          maxLength={4000}
+                          data-testid="contact-message"
+                          placeholder="Tell us about your project or goals..."
+                          className="w-full bg-transparent px-4 py-3 outline-none resize-none text-sm text-text-primary placeholder:text-muted/50 font-sans leading-relaxed min-h-[110px]"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -475,18 +477,6 @@ export default function Contact() {
                       </>
                     )}
                   </button>
-
-                  {/* Trust Badges */}
-                  <div className="flex items-center justify-center gap-5 text-[11px] font-mono text-muted/80 pt-2 border-t border-line/40">
-                    <span className="flex items-center gap-1.5">
-                      <ShieldCheck size={13} className="text-accent" />
-                      Strict NDA Protected
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={13} className="text-accent" />
-                      24h Response SLA
-                    </span>
-                  </div>
                 </motion.form>
               )}
             </AnimatePresence>
