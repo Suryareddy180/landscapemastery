@@ -239,10 +239,18 @@ export const CONTACT_INFO = {
   email: "md.3capstech@gmail.com",
   phone: "+91 94409 99908",
   phoneRaw: "+919440999908",
-  address: "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500085",
-  shortAddress: "KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500085",
+  address: "Phase 2, Shanthi Nilayam, 15-25/648, Kukatpally Housing Board Colony, KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500072",
+  shortAddress: "KPHB Phase 2, Kukatpally, Hyderabad, Telangana 500072",
+  landmark: "Near eSeva Lane & Temple Bus Stop",
 };
 
 export const WHATSAPP = "https://wa.me/919440999908";
+
+export const MAPS_URL =
+  "https://www.google.com/maps/search/?api=1&query=Phase+2,+Shanthi+Nilayam,+15-25/648,+Kukatpally+Housing+Board+Colony,+KPHB+Phase+2,+Kukatpally,+Hyderabad,+Telangana+500072";
+
+export const MAPS_DIRECTIONS_URL =
+  "https://www.google.com/maps/dir/?api=1&destination=Phase+2,+Shanthi+Nilayam,+15-25/648,+Kukatpally+Housing+Board+Colony,+KPHB+Phase+2,+Kukatpally,+Hyderabad,+Telangana+500072";
+
 export const MAPS_EMBED =
-  "https://www.google.com/maps?q=Phase+2,+Shanthi+Nilayam,+15-25/648,+Kukatpally+Housing+Board+Colony,+KPHB+Phase+2,+Kukatpally,+Hyderabad,+Telangana+500085&output=embed";
+  "https://maps.google.com/maps?q=Phase+2,+Shanthi+Nilayam,+15-25/648,+Kukatpally+Housing+Board+Colony,+KPHB+Phase+2,+Kukatpally,+Hyderabad,+Telangana+500072&t=&z=16&ie=UTF8&iwloc=B&output=embed";

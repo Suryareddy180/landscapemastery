@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, MapPin, Phone, Send, Check, MessageCircle, Calendar } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Check, MessageCircle, Calendar, Navigation, ExternalLink, Copy, CheckCircle2 } from "lucide-react";
 import { WordReveal } from "../components/Reveal";
 import MagneticButton from "../components/MagneticButton";
-import { CONTACT_INFO, WHATSAPP, MAPS_EMBED } from "../lib/data";
+import { CONTACT_INFO, WHATSAPP, MAPS_EMBED, MAPS_URL, MAPS_DIRECTIONS_URL } from "../lib/data";
 import api from "../lib/api";
 
 const INTERESTS = ["Custom Software", "Enterprise Solutions", "AI & Automation", "Cloud & DevOps", "IT Consulting"];
@@ -12,6 +12,16 @@ export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", company: "", interest: "Custom Software", message: "" });
   const [status, setStatus] = useState("idle");
   const [resp, setResp] = useState("");
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
+  const handleCopyAddress = (e) => {
+    e.preventDefault();
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(CONTACT_INFO.address);
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    }
+  };
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -63,10 +73,27 @@ export default function Contact() {
                 <span className="text-sm font-medium">{CONTACT_INFO.phone}</span>
               </a>
 
-              <div className="flex items-start gap-3 text-muted">
-                <span className="h-10 w-10 shrink-0 grid place-items-center rounded-full glass text-accent mt-0.5"><MapPin size={17} /></span>
-                <span className="text-sm leading-relaxed">{CONTACT_INFO.address}</span>
-              </div>
+              <a
+                href={MAPS_URL}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="contact-address-link"
+                className="flex items-start gap-3 text-muted hover:text-accent transition-colors group cursor-pointer"
+                title="Open office location in Google Maps"
+              >
+                <span className="h-10 w-10 shrink-0 grid place-items-center rounded-full glass text-accent group-hover:scale-105 group-hover:bg-accent group-hover:text-white transition-all mt-0.5">
+                  <MapPin size={17} />
+                </span>
+                <div>
+                  <span className="text-sm leading-relaxed block text-text-primary group-hover:text-accent transition-colors font-medium">
+                    {CONTACT_INFO.address}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-accent mt-1 font-mono">
+                    <span>Open in Google Maps</span>
+                    <ExternalLink size={12} />
+                  </span>
+                </div>
+              </a>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -78,14 +105,69 @@ export default function Contact() {
               </a>
             </div>
 
-            <div className="mt-8 rounded-3xl overflow-hidden glass p-1.5">
-              <iframe
-                title="3CAPSTECH location"
-                src={MAPS_EMBED}
-                className="w-full h-56 rounded-2xl grayscale contrast-125 opacity-90"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+            {/* Interactive Office Location Map */}
+            <div className="mt-8 rounded-3xl overflow-hidden glass p-3 border border-line relative group">
+              <div className="flex items-center justify-between px-1 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
+                  <span className="font-mono text-xs font-semibold text-text-primary">
+                    3CAPSTECH Office Location
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyAddress}
+                    type="button"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono glass border border-line hover:border-accent text-muted hover:text-ink transition-colors cursor-pointer"
+                    title="Copy full address"
+                  >
+                    {copiedAddress ? (
+                      <>
+                        <CheckCircle2 size={12} className="text-accent" />
+                        <span className="text-accent">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={12} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+
+                  <a
+                    href={MAPS_DIRECTIONS_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="contact-directions-btn"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent text-white hover:bg-emerald-600 transition-all shadow-sm cursor-pointer"
+                  >
+                    <Navigation size={12} />
+                    <span>Get Directions</span>
+                  </a>
+                </div>
+              </div>
+
+              <div className="relative rounded-2xl overflow-hidden h-60 border border-line/60">
+                <iframe
+                  title="3CAPSTECH corporate office location"
+                  src={MAPS_EMBED}
+                  className="w-full h-full border-0 contrast-105 opacity-95"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+
+                <a
+                  href={MAPS_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="contact-map-overlay"
+                  className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950/85 hover:bg-accent text-white text-xs font-medium transition-all backdrop-blur-md border border-white/10 shadow-lg cursor-pointer"
+                >
+                  <span>Open in Google Maps</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
             </div>
           </div>
 
