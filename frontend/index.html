@@ -45,8 +45,15 @@
     <script>
       (function () {
         try {
-          var t = localStorage.getItem("3cap-theme");
-          if (t === "dark") document.documentElement.classList.add("dark");
+          var p = window.location.pathname || "";
+          var isLandscape = p.indexOf("/landscapemastery") === 0 || p === "/login" || p === "/portal" || p === "/dashboard" || p === "/courses" || p === "/portal-admin";
+          if (isLandscape) {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.classList.add("light");
+          } else {
+            document.documentElement.classList.add("dark");
+            document.documentElement.classList.remove("light");
+          }
         } catch (e) {}
       })();
     </script>

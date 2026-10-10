@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { BASE_URL } from './lib/api.js';
 
 // Landscape Mastery Core Components (loaded immediately for instant first-contentful-paint)
@@ -55,6 +55,8 @@ function LandscapeApp({ initialView = 'v1' }) {
 
   useEffect(() => {
     document.title = "Landscape Mastery | Architectural Masterclass";
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
     fetchSiteSettings();
     // Check if explicit view query parameter was provided
     const viewParam = searchParams.get('view');
@@ -190,6 +192,27 @@ function LandscapeApp({ initialView = 'v1' }) {
 }
 
 export default function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const isLandscape =
+      location.pathname.startsWith('/landscapemastery') ||
+      location.pathname === '/login' ||
+      location.pathname === '/portal' ||
+      location.pathname === '/dashboard' ||
+      location.pathname === '/courses' ||
+      location.pathname === '/portal-admin' ||
+      location.pathname === '/portal/admin';
+
+    if (isLandscape) {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  }, [location.pathname]);
+
   return (
     <Suspense fallback={<ViewLoader />}>
       <Routes>

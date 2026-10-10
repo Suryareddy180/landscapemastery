@@ -1,23 +1,38 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const ThemeContext = createContext({ theme: "dark", toggle: () => {} });
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "dark";
-    const stored = localStorage.getItem("3cap-theme");
-    if (stored) return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+  const location = useLocation();
+
+  const isLandscape =
+    location.pathname.startsWith("/landscapemastery") ||
+    location.pathname === "/login" ||
+    location.pathname === "/portal" ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/courses" ||
+    location.pathname === "/portal-admin" ||
+    location.pathname === "/portal/admin";
+
+  const [theme, setTheme] = useState(isLandscape ? "light" : "dark");
 
   useEffect(() => {
+    const activeTheme = isLandscape ? "light" : "dark";
+    setTheme(activeTheme);
     const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    localStorage.setItem("3cap-theme", theme);
-  }, [theme]);
+    if (activeTheme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    }
+  }, [location.pathname, isLandscape]);
 
-  const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  const toggle = () => {
+    // Retained for API compatibility if needed
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>

@@ -171,7 +171,6 @@ export default function Navbar() {
 
           {/* Right Action Cluster */}
           <div className="flex items-center gap-3">
-            <ThemeToggle />
 
             <MagneticButton
               onClick={() => go("/#contact")}

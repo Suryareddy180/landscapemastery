@@ -19,6 +19,8 @@ export default function CompanyHome() {
 
   useEffect(() => {
     document.title = "3CAPSTECH | We Design Future Technology";
+    document.documentElement.classList.add("dark");
+    document.documentElement.classList.remove("light");
     if (location.hash) {
       const id = location.hash.replace("#", "");
       const timer = setTimeout(() => {

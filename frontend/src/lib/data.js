@@ -1,13 +1,11 @@
 // Central content for 3CAPSTECH experience
 
 export const NAV = [
-  { label: "Company", to: "/" },
-  { label: "Landscape Mastery", to: "/landscapemastery" },
   { label: "About", to: "/#about" },
   { label: "Services", to: "/#services" },
   { label: "Solutions", to: "/#solutions" },
-  { label: "Products", to: "/#products" },
   { label: "Process", to: "/#process" },
+  { label: "Landscape Mastery", to: "/landscapemastery" },
   { label: "Contact", to: "/#contact" },
 ];
 

@@ -177,22 +177,10 @@ export default function Navbar() {
 
           {/* Right Action Cluster */}
           <div className="flex items-center gap-3">
-            <ThemeToggle />
-
-            <Link
-              to="/admin/login"
-              data-testid="nav-admin-link"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-white bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 transition-all shadow-sm"
-              title="Super Admin Portal"
-            >
-              <Shield size={13} className="text-emerald-500 dark:text-emerald-400" />
-              <span>Admin</span>
-            </Link>
-
             <MagneticButton
               onClick={() => go("/#contact")}
               data-testid="nav-cta-consult"
-              className="hidden sm:inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 shadow-[0_0_20px_rgba(17,168,49,0.35)] hover:shadow-[0_0_28px_rgba(17,168,49,0.55)] hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-[#11A831] via-[#0549B1] to-[#11A831] bg-[length:200%_auto] hover:bg-right"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 shadow-[0_0_20px_rgba(17,168,49,0.35)] hover:shadow-[0_0_28px_rgba(17,168,49,0.55)] hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-[#11A831] via-[#0549B1] to-[#11A831] bg-[length:200%_auto] hover:bg-right cursor-pointer"
             >
               <Sparkles size={14} className="text-emerald-200 animate-pulse" />
               <span>Book Consultation</span>
@@ -200,7 +188,7 @@ export default function Navbar() {
             </MagneticButton>
 
             <button
-              className="lg:hidden h-10 w-10 grid place-items-center rounded-full bg-white/70 dark:bg-white/[0.08] border border-slate-200 dark:border-white/15 text-slate-800 dark:text-slate-100 hover:text-emerald-500 transition-colors focus:outline-none"
+              className="lg:hidden h-10 w-10 grid place-items-center rounded-full bg-white/70 dark:bg-white/[0.08] border border-slate-200 dark:border-white/15 text-slate-800 dark:text-slate-100 hover:text-emerald-500 transition-colors focus:outline-none cursor-pointer"
               onClick={() => setOpen(true)}
               data-testid="nav-mobile-open"
               aria-label="Open menu"
@@ -302,15 +290,7 @@ export default function Navbar() {
                   </a>
                 </div>
 
-                <Link
-                  to="/admin/login"
-                  onClick={() => setOpen(false)}
-                  data-testid="nav-mobile-admin-link"
-                  className="w-full rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/40 text-slate-200 hover:text-white px-4 py-2.5 text-xs font-semibold text-center flex items-center justify-center gap-2 hover:bg-white/10 transition-colors"
-                >
-                  <Shield size={14} className="text-emerald-400" />
-                  <span>Super Admin Portal</span>
-                </Link>
+
 
                 <button
                   onClick={() => go("/company#contact")}
