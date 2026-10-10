@@ -3,8 +3,9 @@ import * as Icons from "lucide-react";
 import { Target, Eye, CheckCircle2, Linkedin, Twitter, Mail, Crown, User } from "lucide-react";
 import Reveal, { WordReveal } from "../components/Reveal";
 import { MISSION, VISION, MISSION_PILLARS, CORE_VALUES, CEO_PROFILE } from "../lib/data";
+import { BASE_URL } from "../lib/api";
 
-const BACKEND = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND = BASE_URL;
 
 const getPhotoSrc = (url) => {
   if (!url) return CEO_PROFILE.photo_url;

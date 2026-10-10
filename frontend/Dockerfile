@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 
 # Optional build-time API base URL (leave empty for same-origin / reverse proxy)
-ARG VITE_API_BASE_URL=""
+ARG VITE_API_BASE_URL=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build

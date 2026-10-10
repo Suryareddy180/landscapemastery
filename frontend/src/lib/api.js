@@ -1,6 +1,13 @@
 // Centralized API base URL — set VITE_API_BASE_URL in your production env.
 // In development, Vite's proxy (vite.config.js) routes /api and /media to localhost:8000.
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+function sanitizeBaseUrl(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+  if (s === '""' || s === "''" || s === 'undefined' || s === 'null' || s === '""/' || s === '/') return '';
+  return s.replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '');
+}
+
+export const BASE_URL = sanitizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 const BASE = BASE_URL;
 

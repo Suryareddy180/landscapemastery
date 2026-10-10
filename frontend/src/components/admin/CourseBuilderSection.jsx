@@ -50,7 +50,7 @@ export default function CourseBuilderSection({ token }) {
     try {
       const authToken = getAuthToken();
       const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
-      const res = await fetch('${BASE_URL}/api/admin/courses/', { headers });
+      const res = await fetch(`${BASE_URL}/api/admin/courses/`, { headers });
       if (res.ok) {
         const data = await res.json();
         const courseList = data.courses || [];
@@ -339,7 +339,7 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
-      const res = await fetch('${BASE_URL}/api/admin/courses/', {
+      const res = await fetch(`${BASE_URL}/api/admin/courses/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

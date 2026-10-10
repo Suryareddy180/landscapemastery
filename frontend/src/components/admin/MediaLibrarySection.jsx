@@ -24,7 +24,7 @@ export default function MediaLibrarySection({ token }) {
     setLoading(true);
     try {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch('${BASE_URL}/api/admin/media/', { headers });
+      const res = await fetch(`${BASE_URL}/api/admin/media/`, { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.assets) {
@@ -55,7 +55,7 @@ export default function MediaLibrarySection({ token }) {
       if (fileObj) formData.append('file', fileObj);
 
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch('${BASE_URL}/api/admin/media/', {
+      const res = await fetch(`${BASE_URL}/api/admin/media/`, {
         method: 'POST',
         headers,
         body: formData
