@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
-  MapPin,
   Phone,
   Send,
   Check,
@@ -142,29 +141,6 @@ export default function Contact() {
                 <div>
                   <span className="text-[11px] font-mono text-muted block uppercase tracking-wider">Direct Hotline</span>
                   <span className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">{CONTACT_INFO.phone}</span>
-                </div>
-              </a>
-
-              <a
-                href={MAPS_URL}
-                target="_blank"
-                rel="noreferrer"
-                data-testid="contact-address-link"
-                className="flex items-start gap-3.5 text-muted hover:text-accent transition-colors group cursor-pointer"
-                title="Open office location in Google Maps"
-              >
-                <span className="h-10 w-10 shrink-0 grid place-items-center rounded-2xl glass text-accent group-hover:bg-accent group-hover:text-white transition-all shadow-sm border border-line mt-0.5">
-                  <MapPin size={16} />
-                </span>
-                <div>
-                  <span className="text-[11px] font-mono text-muted block uppercase tracking-wider">Corporate Headquarters</span>
-                  <span className="text-xs sm:text-sm leading-relaxed block text-text-primary group-hover:text-accent transition-colors font-medium">
-                    {CONTACT_INFO.address}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-accent mt-1 font-mono">
-                    <span>Open location in Google Maps</span>
-                    <ExternalLink size={11} />
-                  </span>
                 </div>
               </a>
             </div>
