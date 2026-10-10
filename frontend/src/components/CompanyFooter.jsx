@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Github, Linkedin, Twitter, MessageCircle, ArrowUpRight, Send, Mail, Phone, MapPin } from "lucide-react";
+import { Github, Linkedin, Twitter, MessageCircle, ArrowUpRight, Mail, Phone, MapPin } from "lucide-react";
 import { CONTACT_INFO, WHATSAPP } from "../lib/data";
 import ParticleField from "./ParticleField";
-import axiosLess from "../lib/api";
 
 const COLS = [
   {
@@ -36,9 +35,6 @@ const COLS = [
 
 export default function Footer() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const go = (to) => {
     if (to === "/") {
@@ -58,22 +54,6 @@ export default function Footer() {
     } else {
       navigate(to);
       window.scrollTo({ top: 0 });
-    }
-  };
-
-  const subscribe = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-    setLoading(true);
-    setMsg("");
-    try {
-      const r = await axiosLess.post("/api/newsletter", { email });
-      setMsg(r.message || "Subscribed!");
-      setEmail("");
-    } catch (err) {
-      setMsg("Please enter a valid email.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -111,30 +91,6 @@ export default function Footer() {
                 <span>{CONTACT_INFO.address}</span>
               </div>
             </div>
-
-            <form onSubmit={subscribe} className="mt-6 max-w-sm" data-testid="newsletter-form">
-              <div className="label text-muted mb-2">Join the newsletter</div>
-              <div className="flex items-center glass rounded-full p-1.5 pl-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  data-testid="newsletter-email"
-                  className="flex-1 bg-transparent outline-none text-sm text-ink placeholder:text-muted min-w-0"
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  data-testid="newsletter-submit"
-                  className="h-9 w-9 grid place-items-center rounded-full bg-[var(--text-primary)] text-[var(--bg)] shrink-0 disabled:opacity-60"
-                  aria-label="Subscribe"
-                >
-                  <Send size={15} />
-                </button>
-              </div>
-              {msg && <div className="mt-2 text-xs text-accent" data-testid="newsletter-msg">{msg}</div>}
-            </form>
           </div>
 
           {COLS.map((col) => (
