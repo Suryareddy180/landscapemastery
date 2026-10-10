@@ -43,6 +43,10 @@ fi
 echo "===> Applying database migrations..."
 python manage.py migrate --noinput
 
+# Ensure production admin accounts exist
+echo "===> Ensuring production administrator accounts..."
+python manage.py create_production_admin || true
+
 # Run static files collection
 echo "===> Ensuring static files are collected..."
 python manage.py collectstatic --noinput

@@ -3,42 +3,77 @@ from django.core.management.base import BaseCommand
 from api.models import Usr
 
 class Command(BaseCommand):
-    help = 'Ensures the primary production Super Admin account exists with full permissions.'
+    help = 'Ensures production Super Admin accounts exist with full permissions.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--email', type=str, default=os.environ.get('ADMIN_EMAIL', 'md.3capstech@gmail.com'), help='Admin email address')
-        parser.add_argument('--password', type=str, default=os.environ.get('ADMIN_PASSWORD', ''), help='Admin password (optional if account already exists)')
-        parser.add_argument('--name', type=str, default='Managing Director (3CAPSTECH)', help='Full name')
+        parser.add_argument('--email', type=str, default='', help='Admin email address')
+        parser.add_argument('--password', type=str, default='', help='Admin password')
+        parser.add_argument('--name', type=str, default='', help='Full name')
         parser.add_argument('--phone', type=str, default='+91 94409 99908', help='Phone number')
 
     def handle(self, *args, **options):
-        email = options['email'].strip().lower()
-        password = options['password'] or os.environ.get('ADMIN_PASSWORD', '')
-        name = options['name']
-        phone = options['phone']
+        # Default production admins list
+        default_admins = [
+            {
+                'email': 'admin@landscapemastery.com',
+                'password': os.environ.get('LM_ADMIN_PASSWORD', 'Admin@Landscape2026!'),
+                'name': 'Chief Architect & Director',
+                'role': 'SUPER_ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
+                'email': 'md.3capstech@gmail.com',
+                'password': os.environ.get('MD_ADMIN_PASSWORD', os.environ.get('ADMIN_PASSWORD', 'LandscapeAdmin2026!')),
+                'name': 'Managing Director (3CAPSTECH)',
+                'role': 'SUPER_ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
+                'email': 'admin@3capstech.com',
+                'password': os.environ.get('CORP_ADMIN_PASSWORD', 'Admin@3capstech2026!'),
+                'name': '3CAPSTECH Super Admin',
+                'role': 'SUPER_ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            }
+        ]
 
-        user, created = Usr.objects.get_or_create(email=email)
-        if password:
-            user.set_password(password)
-        elif created:
-            default_fallback = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'LandscapeAdmin2026!')
-            user.set_password(default_fallback)
+        # If specific email passed via CLI
+        cli_email = options.get('email', '').strip().lower()
+        if cli_email:
+            cli_pwd = options.get('password') or os.environ.get('ADMIN_PASSWORD', 'LandscapeAdmin2026!')
+            cli_name = options.get('name') or 'Production Administrator'
+            default_admins.insert(0, {
+                'email': cli_email,
+                'password': cli_pwd,
+                'name': cli_name,
+                'role': 'SUPER_ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': options.get('phone', '+91 94409 99908')
+            })
 
-        user.role = 'SUPER_ADMIN'
-        user.is_staff = True
-        user.is_superuser = True
-        user.paid = True
-        user.is_active = True
-        user.full_name = name
-        user.phone = phone
-        user.save()
+        for adm in default_admins:
+            email = adm['email'].strip().lower()
+            user, created = Usr.objects.get_or_create(email=email)
+            if adm.get('password'):
+                user.set_password(adm['password'])
+            
+            user.role = adm.get('role', 'SUPER_ADMIN')
+            user.is_staff = adm.get('is_staff', True)
+            user.is_superuser = adm.get('is_superuser', True)
+            user.paid = True
+            user.is_active = True
+            user.full_name = adm.get('name', 'Admin')
+            user.phone = adm.get('phone', '+91 94409 99908')
+            user.save()
 
-        action = "Created new" if created else "Updated permissions for existing"
-        self.stdout.write(self.style.SUCCESS(
-            f"Successfully {action} production Super Admin:\n"
-            f"  Email: {user.email}\n"
-            f"  Role: {user.role}\n"
-            f"  Staff: {user.is_staff}\n"
-            f"  Superuser: {user.is_superuser}\n"
-            f"  Status: Active & Lifetime Paid"
-        ))
+            action = "Created new" if created else "Updated"
+            self.stdout.write(self.style.SUCCESS(
+                f"[{action}] Admin account: {user.email} (Role: {user.role}, Staff: {user.is_staff}, Superuser: {user.is_superuser})"
+            ))

@@ -157,29 +157,9 @@ function LandscapeApp({ initialView = 'v1' }) {
         <Suspense fallback={<ViewLoader />}>
           <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
             {(!token || !user || !ADMIN_ROLES.includes(user?.role)) ? (
-              <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3] text-stone-900">
-                <div className="max-w-md w-full bg-white/95 border border-stone-200/90 rounded-3xl p-8 shadow-2xl text-center space-y-4 ring-1 ring-stone-900/5">
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800">
-                    <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
-                  </div>
-                  <h2 className="text-xl font-bold font-serif text-stone-900">Portal Admin Access Required</h2>
-                  <p className="text-xs text-stone-500 leading-relaxed">
-                    You must sign in with an authorized Landscape Mastery Portal Administrator account to access platform configuration, user governance, and 3CAPSTECH integration settings.
-                  </p>
-                  <button
-                    onClick={() => setActiveView('v2')}
-                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-800 to-teal-800 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-base">login</span>
-                    <span>Go to Secure Portal Sign In</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveView('v1')}
-                    className="text-stone-500 hover:text-stone-800 text-xs transition-colors cursor-pointer"
-                  >
-                    Return to Landscape Mastery
-                  </button>
-                </div>
+              <div className="min-h-screen flex flex-col overflow-y-auto bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3]">
+                <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} />
+                <LoginView onNavigate={setActiveView} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} isAdminPortal={true} />
               </div>
             ) : (
               <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />

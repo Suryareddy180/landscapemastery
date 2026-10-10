@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MagneticButton from './MagneticButton.jsx';
 import { BASE_URL } from '../lib/api.js';
 
-export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
+export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdminPortal = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -120,7 +120,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3] text-stone-900 px-4 sm:px-6 lg:px-8 py-12 relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
+      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3] text-stone-900 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-h-[calc(100vh-80px)] relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
     >
       {/* Ambient Lighting Accents */}
       <div 
@@ -132,21 +132,33 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
         style={{ background: 'radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, transparent 70%)' }}
       />
 
-      <div className="max-w-md w-full z-10 space-y-6">
+      <div className="max-w-md w-full z-10 space-y-4 sm:space-y-5">
         {/* Header Branding */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-[0_8px_20px_rgba(28,25,23,0.06)] ring-1 ring-stone-900/5">
+        <div className="text-center space-y-2">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-white border border-stone-200/90 shadow-[0_4px_16px_rgba(28,25,23,0.06)] ring-1 ring-stone-900/5 flex items-center justify-center p-2 overflow-hidden">
             <img 
               src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
               alt="Landscape Mastery Logo" 
               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
-              className="w-13 h-13 object-contain" 
+              className="w-10 h-10 object-contain max-w-[40px] max-h-[40px]" 
             />
           </div>
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-              Landscape Mastery
-            </h1>
+            <div className="flex items-center justify-center gap-2 mb-0.5">
+              <h1 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
+                Landscape Mastery
+              </h1>
+              {isAdminPortal && (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Admin
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-stone-500">
+              {isAdminPortal 
+                ? 'Sign in with an authorized administrative account' 
+                : 'Architectural Masterclass & Student Portal'}
+            </p>
           </div>
         </div>
 
@@ -155,7 +167,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
           <motion.div 
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3.5 bg-rose-50 border border-rose-200/90 text-rose-800 text-xs font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2"
+            className="p-3 bg-rose-50 border border-rose-200/90 text-rose-800 text-xs font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-base text-rose-600">error</span>
             <span>{error}</span>
@@ -167,12 +179,16 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl }) {
           initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="bg-white/95 border border-stone-200/90 rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(28,25,23,0.07),0_1px_2px_rgba(28,25,23,0.04)] backdrop-blur-xl space-y-6 ring-1 ring-stone-900/[0.03]"
+          className="bg-white/95 border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(28,25,23,0.07),0_1px_2px_rgba(28,25,23,0.04)] backdrop-blur-xl space-y-5 ring-1 ring-stone-900/[0.03]"
         >
           <div>
-            <h2 className="font-serif text-xl font-bold text-stone-900">Sign In to Your Account</h2>
-            <p className="text-xs text-stone-500 mt-1.5 leading-relaxed">
-              Enter your credentials to access your masterclasses and platform operations.
+            <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
+              {isAdminPortal ? 'Administrator Sign In' : 'Sign In to Your Account'}
+            </h2>
+            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+              {isAdminPortal
+                ? 'Enter your director credentials to access masterclass configuration and governance.'
+                : 'Enter your credentials to access your masterclasses and learning modules.'}
             </p>
           </div>
 

@@ -134,6 +134,9 @@ jobs:
             echo "===> Checking container status..."
             docker compose -f docker-compose.prod.yml ps
 
+            echo "===> Ensuring production administrator accounts in database..."
+            docker exec landscapemastery_backend python manage.py create_production_admin || true
+
             echo "===> Verifying internal health check..."
             curl -f http://127.0.0.1:8082/api/health/ || exit 1
 
