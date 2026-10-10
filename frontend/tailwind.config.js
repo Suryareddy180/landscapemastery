@@ -64,6 +64,8 @@ export default {
         ink: "var(--text-primary)",
         muted: "var(--text-secondary)",
         line: "var(--border)",
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
       },
       borderRadius: {
         "DEFAULT": "0.25rem",

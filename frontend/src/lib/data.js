@@ -196,13 +196,70 @@ export const PRODUCTS = [
 ];
 
 export const DEVELOPMENT_PROCESS = [
-  { step: "01", title: "Requirement Analysis", desc: "In-depth discovery to map business requirements, project goals, and system specs." },
-  { step: "02", title: "Project Planning", desc: "Sprint roadmapping, architecture design, tech stack selection, and milestone targets." },
-  { step: "03", title: "UI / UX Design", desc: "Interactive wireframes, user flow mapping, and modern design system creation." },
-  { step: "04", title: "Software Development", desc: "Agile engineering using clean code standards across frontend, backend & database." },
-  { step: "05", title: "Testing & Quality Assurance", desc: "Rigorous unit testing, security audits, cross-device testing, and load optimization." },
-  { step: "06", title: "Deployment", desc: "Cloud server configuration, VPS setup, database migration, and production launch." },
-  { step: "07", title: "Maintenance & Support", desc: "24/7 system monitoring, security updates, bug fixes, and continuous enhancements." },
+  {
+    step: "01",
+    phase: "Discovery & Scope",
+    icon: "FileSearch",
+    title: "Requirement Analysis",
+    desc: "In-depth discovery to map business requirements, project scope, technical feasibility, and system specifications.",
+    tags: ["Scope Blueprint", "Tech Feasibility", "KPI Mapping"],
+  },
+  {
+    step: "02",
+    phase: "Architecture & Roadmap",
+    icon: "Layers",
+    title: "Project Planning",
+    desc: "Sprint roadmapping, database schema architecture, modern tech stack selection, and milestone delivery targets.",
+    tags: ["Sprint Roadmap", "System Architecture", "Tech Selection"],
+  },
+  {
+    step: "03",
+    phase: "Interactive Prototyping",
+    icon: "Palette",
+    title: "UI / UX Design",
+    desc: "Interactive wireframes, user flow mapping, modern design systems, and conversion-optimized digital interfaces.",
+    tags: ["Wireframes", "Design System", "Interactive Prototype"],
+  },
+  {
+    step: "04",
+    phase: "Full-Stack Build",
+    icon: "Code2",
+    title: "Software Development",
+    desc: "Agile engineering using clean code standards across modular frontends, secure backends, and resilient databases.",
+    tags: ["Clean Code", "REST & APIs", "Modular Architecture"],
+  },
+  {
+    step: "05",
+    phase: "Security & Auditing",
+    icon: "ShieldCheck",
+    title: "Testing & Quality Assurance",
+    desc: "Rigorous unit testing, vulnerability scans, cross-browser compatibility, and stress load optimization.",
+    tags: ["Automated Tests", "Security Audits", "Load Optimization"],
+  },
+  {
+    step: "06",
+    phase: "Production Launch",
+    icon: "Rocket",
+    title: "Deployment & CI/CD",
+    desc: "Cloud server configuration, VPS setup, automated CI/CD pipelines, database migrations, and zero-downtime launch.",
+    tags: ["VPS & Cloud Setup", "Automated CI/CD", "Zero-Downtime Rollout"],
+  },
+  {
+    step: "07",
+    phase: "Operational Care",
+    icon: "LifeBuoy",
+    title: "Maintenance & 24/7 Support",
+    desc: "Continuous system health monitoring, security patches, automated backups, and guaranteed SLA response times.",
+    tags: ["24/7 SLA Support", "Security Patches", "Backup Redundancy"],
+  },
+  {
+    step: "08",
+    phase: "Growth & Innovation",
+    icon: "TrendingUp",
+    title: "Continuous Evolution & Scale",
+    desc: "Performance tuning, feature iteration, AI integration, and long-term digital transformation roadmapping.",
+    tags: ["Performance Tuning", "Feature Iterations", "Elastic Scaling"],
+  },
 ];
 
 export const TECH = [
