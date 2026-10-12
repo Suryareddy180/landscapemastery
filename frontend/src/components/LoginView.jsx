@@ -380,25 +380,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
             </button>
           </div>
         </motion.div>
-
-        {/* Security & Accreditation Trust Badges */}
-        <div className="flex items-center justify-center gap-4 text-[11px] text-stone-500 font-medium pt-1 flex-wrap">
-          <div className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>256-Bit TLS Encryption</span>
-          </div>
-          <span className="text-stone-300">•</span>
-          <div className="inline-flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-            <span>{isAdmin ? 'Director-Gated Access' : 'Student Verified Access'}</span>
-          </div>
-          <span className="text-stone-300">•</span>
-          <div className="inline-flex items-center gap-1.5">
-            <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
-            <span>{isAdmin ? 'Operations Console' : 'Curriculum & Video Access'}</span>
-          </div>
-        </div>
-
       </div>
 
       {/* Forgot Password Recovery Modal */}

@@ -27,13 +27,23 @@ const ViewLoader = () => (
 
 function LandscapeApp({ initialView = 'v1' }) {
   const [searchParams] = useSearchParams();
-  const [activeView, setActiveView] = useState(() => {
+  const location = useLocation();
+
+  const getEffectiveView = () => {
+    if (location.pathname.endsWith('/admin') || location.pathname === '/admin' || initialView === 'admin') {
+      return 'admin';
+    }
+    if (location.pathname.endsWith('/login') || location.pathname === '/login' || initialView === 'v2') {
+      return 'v2';
+    }
     const viewParam = searchParams.get('view');
     if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
       return viewParam;
     }
     return initialView;
-  });
+  };
+
+  const [activeView, setActiveView] = useState(getEffectiveView);
 
   const [token, setToken] = useState(() => localStorage.getItem('lm_auth_token') || '');
   const [user, setUser] = useState(() => {
@@ -54,10 +64,25 @@ function LandscapeApp({ initialView = 'v1' }) {
   });
 
   useEffect(() => {
-    document.title = "Landscape Mastery | Architectural Masterclass";
+    document.title = activeView === 'admin'
+      ? "Landscape Mastery | Administrator Console"
+      : "Landscape Mastery | Architectural Masterclass";
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.add('light');
     fetchSiteSettings();
+
+    // Priority 1: Admin direct route
+    if (location.pathname.endsWith('/admin') || location.pathname === '/admin' || initialView === 'admin') {
+      setActiveView('admin');
+      return;
+    }
+
+    // Priority 2: Student Login route
+    if (location.pathname.endsWith('/login') || location.pathname === '/login' || initialView === 'v2') {
+      setActiveView('v2');
+      return;
+    }
+
     // Check if explicit view query parameter was provided
     const viewParam = searchParams.get('view');
     if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
@@ -73,7 +98,7 @@ function LandscapeApp({ initialView = 'v1' }) {
         setActiveView('v3');
       }
     }
-  }, [searchParams]);
+  }, [location.pathname, initialView, searchParams]);
 
   const fetchSiteSettings = async () => {
     try {
@@ -201,18 +226,18 @@ export default function App() {
         <Route path="/company" element={<CompanyHome />} />
 
         {/* Product: Landscape Mastery Architectural Masterclass & LMS (Photo 2) */}
-        <Route path="/landscapemastery" element={<LandscapeApp initialView="v1" />} />
-        <Route path="/landscapemastery/login" element={<LandscapeApp initialView="v2" />} />
-        <Route path="/landscapemastery/portal" element={<LandscapeApp initialView="v3" />} />
-        <Route path="/landscapemastery/dashboard" element={<LandscapeApp initialView="v3" />} />
-        <Route path="/landscapemastery/admin" element={<LandscapeApp initialView="admin" />} />
+        <Route path="/landscapemastery" element={<LandscapeApp key="lm-v1" initialView="v1" />} />
+        <Route path="/landscapemastery/login" element={<LandscapeApp key="lm-v2" initialView="v2" />} />
+        <Route path="/landscapemastery/portal" element={<LandscapeApp key="lm-v3" initialView="v3" />} />
+        <Route path="/landscapemastery/dashboard" element={<LandscapeApp key="lm-v3-dash" initialView="v3" />} />
+        <Route path="/landscapemastery/admin" element={<LandscapeApp key="lm-admin" initialView="admin" />} />
 
         {/* Shortcuts for Landscape Mastery */}
-        <Route path="/login" element={<LandscapeApp initialView="v2" />} />
-        <Route path="/portal" element={<LandscapeApp initialView="v3" />} />
-        <Route path="/dashboard" element={<LandscapeApp initialView="v3" />} />
-        <Route path="/portal/admin" element={<LandscapeApp initialView="admin" />} />
-        <Route path="/portal-admin" element={<LandscapeApp initialView="admin" />} />
+        <Route path="/login" element={<LandscapeApp key="short-v2" initialView="v2" />} />
+        <Route path="/portal" element={<LandscapeApp key="short-v3" initialView="v3" />} />
+        <Route path="/dashboard" element={<LandscapeApp key="short-v3-dash" initialView="v3" />} />
+        <Route path="/portal/admin" element={<LandscapeApp key="short-admin1" initialView="admin" />} />
+        <Route path="/portal-admin" element={<LandscapeApp key="short-admin2" initialView="admin" />} />
         <Route path="/courses" element={<Navigate to="/landscapemastery#courses" replace />} />
 
         {/* Convenience Direct Aliases for 3CAPSTECH corporate sections */}
