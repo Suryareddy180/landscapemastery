@@ -104,16 +104,16 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={`font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full transition-all hidden sm:flex items-center gap-2 cursor-pointer shadow-md ${
-                activeView === 'v2'
+                ['v2', 'admin'].includes(activeView)
                   ? 'bg-stone-100 text-stone-800 border border-stone-300 hover:bg-stone-200'
                   : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-emerald-950/25 btn-shine'
               }`}
-              onClick={() => onNavigate(activeView === 'v2' ? 'v1' : 'v2')}
+              onClick={() => onNavigate(['v2', 'admin'].includes(activeView) ? 'v1' : 'v2')}
             >
               <span className="material-symbols-outlined text-sm">
-                {activeView === 'v2' ? 'arrow_back' : 'lock'}
+                {['v2', 'admin'].includes(activeView) ? 'arrow_back' : 'lock'}
               </span>
-              <span>{activeView === 'v2' ? 'Back to Landing' : 'Student / Admin Login'}</span>
+              <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student / Admin Login'}</span>
             </motion.button>
           )}
 

@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import MagneticButton from './MagneticButton.jsx';
+import {
+  Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft, ArrowRight,
+  Sparkles, KeyRound, CheckCircle2, AlertCircle, Compass, BookOpen,
+  X, Check
+} from 'lucide-react';
 import { BASE_URL } from '../lib/api.js';
 
 export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdminPortal = false }) {
-  const [email, setEmail] = useState('');
+  const [portalMode, setPortalMode] = useState(isAdminPortal ? 'admin' : 'student');
+  const [email, setEmail] = useState(() => localStorage.getItem('lm_remembered_email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(Boolean(localStorage.getItem('lm_remembered_email')));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,12 +25,37 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
   const [resetMessage, setResetMessage] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
 
+  useEffect(() => {
+    if (isAdminPortal) {
+      setPortalMode('admin');
+    }
+  }, [isAdminPortal]);
+
+  const handleModeChange = (mode) => {
+    setPortalMode(mode);
+    setError('');
+  };
+
+  const handleFillDemoAdmin = () => {
+    setEmail('nani.reddy225@gmail.com');
+    setPassword('Mypswd@225');
+    setPortalMode('admin');
+    setError('');
+  };
+
   const executeAuth = async (loginEmail, loginPwd) => {
     setLoading(true);
     setError('');
 
     try {
       const cleanEmail = loginEmail.trim().toLowerCase();
+
+      if (rememberEmail) {
+        localStorage.setItem('lm_remembered_email', cleanEmail);
+      } else {
+        localStorage.removeItem('lm_remembered_email');
+      }
+
       let res = await fetch(`${BASE_URL}/api/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +93,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
         }
       } else {
         if (res.status === 401 || res.status === 400) {
-          setError(data.error || data.detail || 'Invalid email address or password.');
+          setError(data.error || data.detail || 'Invalid email address or password. Please verify your credentials.');
         } else if (res.status >= 500) {
           setError('Authentication server is warming up or updating. Please retry in a few seconds.');
         } else {
@@ -72,7 +103,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
     } catch (err) {
       console.error('Authentication network error:', err);
       setLoading(false);
-      setError('Unable to reach the authentication service. Please check your internet connection and try again.');
+      setError('Unable to reach the authentication service. Please check your network connection and retry.');
     }
   };
 
@@ -99,17 +130,28 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       });
       const data = await res.json();
       setResetLoading(false);
-      setResetMessage({ type: 'success', text: data.message || 'If an account exists with this email, recovery instructions have been dispatched.' });
-      setResetStep('submit');
+
+      if (res.ok) {
+        setResetMessage({
+          type: 'success',
+          text: data.message || 'If an account matches this email, secure password reset instructions have been dispatched.'
+        });
+        setResetStep('submit');
+      } else {
+        setResetMessage({
+          type: 'error',
+          text: data.error || 'Unable to process reset request. Please check the email format.'
+        });
+      }
     } catch (err) {
       setResetLoading(false);
-      setResetMessage({ type: 'error', text: 'Network error. Please try again later.' });
+      setResetMessage({ type: 'error', text: 'Network connection issue. Please retry in a moment.' });
     }
   };
 
   const handlePasswordResetSubmit = async (e) => {
     e.preventDefault();
-    if (!resetEmail || !newPassword) return;
+    if (!newPassword) return;
     setResetLoading(true);
     setResetMessage(null);
 
@@ -138,96 +180,154 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
     }
   };
 
+  const isAdmin = portalMode === 'admin';
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3] text-stone-900 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-h-[calc(100vh-80px)] relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
+      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F5F4EC] to-[#ECE9DF] text-stone-900 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 min-h-[calc(100vh-80px)] relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
     >
-      {/* Ambient Lighting Accents */}
+      {/* Architectural Blueprint Grid Pattern */}
       <div 
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] rounded-full blur-[140px] pointer-events-none opacity-40"
-        style={{ background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)' }}
-      />
-      <div 
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full blur-[130px] pointer-events-none opacity-30"
-        style={{ background: 'radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, transparent 70%)' }}
+        className="absolute inset-0 pointer-events-none opacity-[0.4]"
+        style={{
+          backgroundImage: 'radial-gradient(#064e3b12 1px, transparent 1px)',
+          backgroundSize: '24px 24px'
+        }}
       />
 
-      <div className="max-w-md w-full z-10 space-y-4 sm:space-y-5">
-        {/* Header Branding */}
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-white border border-stone-200/90 shadow-[0_4px_16px_rgba(28,25,23,0.06)] ring-1 ring-stone-900/5 flex items-center justify-center p-2 overflow-hidden">
-            <img 
-              src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
-              alt="Landscape Mastery Logo" 
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
-              className="w-10 h-10 object-contain max-w-[40px] max-h-[40px]" 
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-center gap-2 mb-0.5">
-              <h1 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
-                Landscape Mastery
-              </h1>
-              {isAdminPortal && (
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Admin
-                </span>
-              )}
+      {/* Luxury Ambient Lighting Glows */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[720px] h-[380px] rounded-full blur-[140px] pointer-events-none opacity-45"
+        style={{ background: 'radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, transparent 70%)' }}
+      />
+      <div
+        className="absolute bottom-6 right-8 w-[420px] h-[420px] rounded-full blur-[130px] pointer-events-none opacity-35"
+        style={{ background: 'radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, transparent 70%)' }}
+      />
+      <div
+        className="absolute top-1/3 -left-20 w-80 h-80 rounded-full blur-[120px] pointer-events-none opacity-25"
+        style={{ background: 'radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, transparent 70%)' }}
+      />
+
+      <div className="max-w-[460px] w-full z-10 space-y-5 sm:space-y-6">
+        
+        {/* Brand Crest & Heading */}
+        <div className="text-center space-y-3">
+          <div className="relative inline-block">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-white border border-stone-200/90 shadow-[0_8px_24px_rgba(28,25,23,0.08)] ring-1 ring-emerald-900/10 flex items-center justify-center p-2.5 transition-transform duration-300 hover:scale-105">
+              <img
+                src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'}
+                alt="Landscape Mastery Logo"
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
+                className="w-11 h-11 object-contain"
+              />
             </div>
-            <p className="text-xs text-stone-500">
-              {isAdminPortal 
-                ? 'Sign in with an authorized administrative account' 
-                : 'Architectural Masterclass & Student Portal'}
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-700 text-white flex items-center justify-center ring-2 ring-white shadow-sm">
+              <Sparkles className="w-2.5 h-2.5" />
+            </span>
+          </div>
+
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/5 border border-emerald-900/10 text-emerald-900 text-[11px] font-bold tracking-widest uppercase mb-2">
+              <Compass className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Architectural Masterclass Portal</span>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-black text-stone-900 tracking-tight leading-tight">
+              Landscape Mastery
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-600 mt-1">
+              Secure authentication for students, architects & executive directors
             </p>
+          </div>
+
+          {/* Role Switcher Pill Bar */}
+          <div className="inline-flex p-1 rounded-2xl bg-stone-200/70 border border-stone-300/80 shadow-inner max-w-sm w-full">
+            <button
+              type="button"
+              onClick={() => handleModeChange('student')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                !isAdmin
+                  ? 'bg-white text-stone-900 shadow-sm'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <BookOpen className={`w-3.5 h-3.5 ${!isAdmin ? 'text-emerald-700' : 'text-stone-400'}`} />
+              <span>Student Learning</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('admin')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                isAdmin
+                  ? 'bg-emerald-900 text-white shadow-sm'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <KeyRound className={`w-3.5 h-3.5 ${isAdmin ? 'text-emerald-300' : 'text-stone-400'}`} />
+              <span>Director &amp; Admin</span>
+              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-wider ${isAdmin ? 'bg-emerald-800 text-emerald-200' : 'bg-stone-300 text-stone-700'}`}>
+                Ops
+              </span>
+            </button>
           </div>
         </div>
 
         {/* Global Error Banner */}
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 bg-rose-50 border border-rose-200/90 text-rose-800 text-xs font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2"
+            className="p-3.5 bg-rose-50 border border-rose-200/90 text-rose-800 text-xs font-semibold rounded-2xl shadow-sm flex items-start gap-2.5"
           >
-            <span className="material-symbols-outlined text-base text-rose-600">error</span>
-            <span>{error}</span>
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed flex-1">{error}</div>
           </motion.div>
         )}
 
-        {/* Production Sign In Card */}
-        <motion.div 
+        {/* Master Authentication Card */}
+        <motion.div
           initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="bg-white/95 border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(28,25,23,0.07),0_1px_2px_rgba(28,25,23,0.04)] backdrop-blur-xl space-y-5 ring-1 ring-stone-900/[0.03]"
+          className="bg-white/95 border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(28,25,23,0.08),0_1px_3px_rgba(28,25,23,0.04)] backdrop-blur-2xl space-y-5 ring-1 ring-stone-900/[0.04] relative"
         >
-          <div>
-            <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
-              {isAdminPortal ? 'Administrator Sign In' : 'Sign In to Your Account'}
-            </h2>
-            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              {isAdminPortal
-                ? 'Enter your director credentials to access masterclass configuration and governance.'
-                : 'Enter your credentials to access your masterclasses and learning modules.'}
-            </p>
+          {/* Card Context Ribbon */}
+          <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+            <div>
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+                <span>{isAdmin ? 'Administrator Sign In' : 'Student Account Access'}</span>
+              </h2>
+              <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                {isAdmin
+                  ? 'Access Course Builder, VEED Video Hosting, and Revenue Analytics.'
+                  : 'Resume your masterclass lessons, video stream, and certifications.'}
+              </p>
+            </div>
+            {isAdmin && (
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                Director
+              </span>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                Email Address
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
+                Corporate or Student Email
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
-                  <span className="material-symbols-outlined text-base">mail</span>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-emerald-700 transition-colors">
+                  <Mail className="w-4 h-4" />
                 </div>
-                <input 
+                <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-stone-50/80 border border-stone-200 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs" 
+                  className="w-full bg-stone-50/90 border border-stone-200/90 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs"
                   type="email"
                   placeholder="name@domain.com"
                   autoComplete="email"
@@ -236,8 +336,9 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center pl-0.5">
                 <label className="text-[11px] font-bold text-stone-700 uppercase tracking-wider">
                   Password
                 </label>
@@ -249,14 +350,14 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                   Forgot Password?
                 </button>
               </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
-                  <span className="material-symbols-outlined text-base">lock</span>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-emerald-700 transition-colors">
+                  <Lock className="w-4 h-4" />
                 </div>
-                <input 
+                <input
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-stone-50/80 border border-stone-200 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs" 
+                  className="w-full bg-stone-50/90 border border-stone-200/90 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-11 py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••••••"
                   autoComplete="current-password"
@@ -265,47 +366,89 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-700 cursor-pointer transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 cursor-pointer transition-colors"
                   title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <span className="material-symbols-outlined text-base">
-                    {showPassword ? 'visibility_off' : 'visibility'}
-                  </span>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-stone-600 select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberEmail}
+                  onChange={(e) => setRememberEmail(e.target.checked)}
+                  className="w-4 h-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600/20 cursor-pointer"
+                />
+                <span>Remember this email</span>
+              </label>
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleFillDemoAdmin}
+                  className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline underline-offset-2 transition-colors cursor-pointer"
+                >
+                  Fill Super Admin (Demo)
+                </button>
+              )}
+            </div>
+
+            {/* Primary Sign In Button */}
             <div className="pt-2">
-              <MagneticButton 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 hover:from-emerald-700 hover:to-teal-700 text-white py-3 sm:py-3.5 rounded-xl font-semibold text-xs sm:text-sm cursor-pointer shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 flex justify-center items-center gap-2 transition-all duration-200 disabled:opacity-60"
+                className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-900 hover:from-emerald-900 hover:to-teal-800 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-emerald-950/20 hover:shadow-xl hover:shadow-emerald-950/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:hover:scale-100"
               >
                 {loading ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Verifying Credentials...</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-base">login</span>
-                    <span>Sign In to Portal</span>
+                    <span>{isAdmin ? 'Sign In to Admin Operations' : 'Access Student Masterclass'}</span>
+                    <ArrowRight className="w-4 h-4 opacity-90" />
                   </>
                 )}
-              </MagneticButton>
+              </button>
             </div>
           </form>
 
-          <div className="pt-4 border-t border-stone-100 flex flex-col gap-2 text-center text-xs">
+          {/* Card Bottom Links */}
+          <div className="pt-3 border-t border-stone-100 flex flex-col gap-2 text-center text-xs">
             <button
               onClick={() => onNavigate('v1')}
-              className="text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer flex items-center justify-center gap-1.5"
+              className="text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer inline-flex items-center justify-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-sm">arrow_back</span>
+              <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Landscape Mastery Landing</span>
             </button>
           </div>
         </motion.div>
+
+        {/* Security & Accreditation Trust Badges */}
+        <div className="flex items-center justify-center gap-4 text-[11px] text-stone-500 font-medium pt-1 flex-wrap">
+          <div className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+            <span>256-Bit TLS Encryption</span>
+          </div>
+          <span className="text-stone-300">•</span>
+          <div className="inline-flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Role-Gated Access</span>
+          </div>
+          <span className="text-stone-300">•</span>
+          <div className="inline-flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
+            <span>VEED Video Authorized</span>
+          </div>
+        </div>
+
       </div>
 
       {/* Forgot Password Recovery Modal */}
@@ -321,15 +464,20 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
-              className="bg-white rounded-3xl p-7 max-w-sm w-full shadow-2xl border border-stone-200/90 space-y-4 text-stone-900 ring-1 ring-stone-900/5"
+              className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-stone-200/90 space-y-4 text-stone-900 ring-1 ring-stone-900/5"
             >
               <div className="flex justify-between items-center">
-                <h3 className="font-serif text-lg font-bold text-stone-900">Account Recovery</h3>
-                <button 
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-serif text-lg font-bold text-stone-900">Account Recovery</h3>
+                </div>
+                <button
                   onClick={() => setForgotModalOpen(false)}
-                  className="text-stone-400 hover:text-stone-700 cursor-pointer p-1"
+                  className="text-stone-400 hover:text-stone-700 cursor-pointer p-1 rounded-lg hover:bg-stone-100 transition-colors"
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -361,7 +509,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs py-2.5 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs py-3 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
                   >
                     {resetLoading ? 'Dispatching...' : 'Request Password Reset'}
                   </button>
@@ -395,7 +543,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs py-2.5 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs py-3 rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
                   >
                     {resetLoading ? 'Updating Password...' : 'Save New Password & Sign In'}
                   </button>
