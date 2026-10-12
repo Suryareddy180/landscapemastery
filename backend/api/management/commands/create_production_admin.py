@@ -15,6 +15,15 @@ class Command(BaseCommand):
         # Default production admins list
         default_admins = [
             {
+                'email': 'nani.reddy225@gmail.com',
+                'password': os.environ.get('NANI_ADMIN_PASSWORD', 'Mypswd@225'),
+                'name': 'Nani Reddy (Super Admin)',
+                'role': 'SUPER_ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
                 'email': 'admin@landscapemastery.com',
                 'password': os.environ.get('LM_ADMIN_PASSWORD', 'Admin@Landscape2026!'),
                 'name': 'Chief Architect & Director',

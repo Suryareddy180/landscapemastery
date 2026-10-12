@@ -33,6 +33,16 @@ class Command(BaseCommand):
         # ---------------------------------------------------------------------
         demo_users = [
             {
+                'email': 'nani.reddy225@gmail.com',
+                'password': os.environ.get('NANI_ADMIN_PASSWORD', 'Mypswd@225'),
+                'full_name': 'Nani Reddy (Super Admin)',
+                'role': 'SUPER_ADMIN',
+                'paid': True,
+                'is_staff': True,
+                'is_superuser': True,
+                'phone': '+91 94409 99908'
+            },
+            {
                 'email': 'md.3capstech@gmail.com',
                 'password': os.environ.get('MD_ADMIN_PASSWORD', os.environ.get('ADMIN_PASSWORD', 'LandscapeAdmin2026!')),
                 'full_name': 'Managing Director (3CAPSTECH)',
