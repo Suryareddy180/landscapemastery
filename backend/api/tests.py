@@ -224,8 +224,16 @@ class VeedServiceUnitTests(TestCase):
     def test_normalize_veed_embed_url(self):
         normalized = normalize_veed_embed_url(self.valid_uuid)
         self.assertTrue(normalized.startswith(f"https://www.veed.io/embed/{self.valid_uuid}"))
-        self.assertIn("watermark=1", normalized)
-        self.assertIn("sharing=1", normalized)
+        # By default, watermark and sharing are disabled for student privacy and content security
+        self.assertIn("watermark=0", normalized)
+        self.assertIn("sharing=0", normalized)
+        self.assertIn("title=0", normalized)
+
+        # Explicit overrides test
+        explicit = normalize_veed_embed_url(self.valid_uuid, watermark=True, sharing=True, title=True)
+        self.assertIn("watermark=1", explicit)
+        self.assertIn("sharing=1", explicit)
+        self.assertIn("title=1", explicit)
 
     def test_validate_veed_source_success(self):
         is_valid, vid_id, norm_url, err = validate_veed_source(self.actual_veed_url)
