@@ -81,7 +81,11 @@ class LeaderProfileSerializer(serializers.ModelSerializer):
     def get_photo_url(self, obj):
         request = self.context.get('request')
         if obj.photo and request:
-            return request.build_absolute_uri(obj.photo.url)
+            url = request.build_absolute_uri(obj.photo.url)
+            if request.is_secure() or request.META.get('HTTP_X_FORWARDED_PROTO') == 'https':
+                if url.startswith('http://'):
+                    url = 'https://' + url[7:]
+            return url
         elif obj.photo:
             return obj.photo.url
         return None

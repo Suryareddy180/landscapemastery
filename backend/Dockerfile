@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source code
 COPY . /app/
+COPY media /app/seed_media
 
 # Collect static files
 RUN JWT_SECRET="build-time-static-collection-key-do-not-use-in-production-only" python manage.py collectstatic --noinput

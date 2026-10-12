@@ -47,6 +47,13 @@ python manage.py migrate --noinput
 echo "===> Ensuring production administrator accounts..."
 python manage.py create_production_admin || true
 
+# Ensure seed media assets (such as CEO photo) exist in persistent media volume
+if [ -d "/app/seed_media" ]; then
+    echo "===> Ensuring initial media assets in /app/media..."
+    mkdir -p /app/media
+    cp -rn /app/seed_media/* /app/media/ 2>/dev/null || true
+fi
+
 # Run static files collection
 echo "===> Ensuring static files are collected..."
 python manage.py collectstatic --noinput

@@ -4,11 +4,16 @@ import { Target, Eye, CheckCircle2, Linkedin, Twitter, Mail, Crown, User } from 
 import Reveal, { WordReveal } from "../components/Reveal";
 import { MISSION, VISION, MISSION_PILLARS, CORE_VALUES, CEO_PROFILE } from "../lib/data";
 import { BASE_URL } from "../lib/api";
+import defaultCeoPhoto from "../assets/kb_reddy_ceo.jpg";
 
 const BACKEND = BASE_URL;
 
 const getPhotoSrc = (url) => {
-  if (!url) return CEO_PROFILE.photo_url;
+  if (!url) return defaultCeoPhoto;
+  // Upgrade http:// to https:// when on a secure connection to avoid mixed content blocking
+  if (typeof window !== "undefined" && window.location.protocol === "https:" && url.startsWith("http://")) {
+    url = url.replace(/^http:\/\//, "https://");
+  }
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
   if (url.startsWith("/")) return url;
   return `${BACKEND}${url.startsWith("/") ? "" : "/"}${url}`;
@@ -16,6 +21,9 @@ const getPhotoSrc = (url) => {
 
 export default function About() {
   const [leaders, setLeaders] = useState([CEO_PROFILE]);
+  const ceo = leaders.length > 0 ? leaders[0] : CEO_PROFILE;
+  const initialPhoto = (ceo && (ceo.photo_url || ceo.photo)) ? getPhotoSrc(ceo.photo_url || ceo.photo) : defaultCeoPhoto;
+  const [photoSrc, setPhotoSrc] = useState(initialPhoto);
 
   useEffect(() => {
     fetch(`${BACKEND}/api/leaders`)
@@ -23,13 +31,12 @@ export default function About() {
       .then((data) => {
         if (data.leaders && data.leaders.length > 0) {
           setLeaders(data.leaders);
+          const first = data.leaders[0];
+          setPhotoSrc(getPhotoSrc(first.photo_url || first.photo));
         }
       })
       .catch(() => {});
   }, []);
-
-  const ceo = leaders.length > 0 ? leaders[0] : CEO_PROFILE;
-  const photoSrc = ceo ? getPhotoSrc(ceo.photo_url || ceo.photo) : CEO_PROFILE.photo_url;
 
   return (
     <section id="about" className="relative py-24 sm:py-32 scroll-mt-24">
@@ -106,8 +113,13 @@ export default function About() {
                     {/* Photo */}
                     <div className="sm:w-56 shrink-0 relative overflow-hidden bg-slate-900/60 flex items-center justify-center min-h-[260px] sm:min-h-0">
                       <img
-                        src={photoSrc}
+                        src={photoSrc || defaultCeoPhoto}
                         alt={`${ceo.name} — ${ceo.title}`}
+                        onError={() => {
+                          if (photoSrc !== defaultCeoPhoto) {
+                            setPhotoSrc(defaultCeoPhoto);
+                          }
+                        }}
                         className="w-full h-full min-h-[260px] sm:min-h-[280px] object-cover object-[center_12%] group-hover:scale-105 transition-transform duration-700"
                         loading="eager"
                       />
