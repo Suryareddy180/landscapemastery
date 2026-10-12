@@ -113,7 +113,7 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
               <span className="material-symbols-outlined text-sm">
                 {['v2', 'admin'].includes(activeView) ? 'arrow_back' : 'lock'}
               </span>
-              <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student / Admin Login'}</span>
+              <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student Login'}</span>
             </motion.button>
           )}
 
@@ -186,11 +186,13 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
                 </>
               ) : (
                 <button
-                  onClick={() => { setMobileMenuOpen(false); onNavigate(activeView === 'v2' ? 'v1' : 'v2'); }}
+                  onClick={() => { setMobileMenuOpen(false); onNavigate(['v2', 'admin'].includes(activeView) ? 'v1' : 'v2'); }}
                   className="w-full bg-emerald-900 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer btn-shine"
                 >
-                  <span className="material-symbols-outlined text-sm">lock</span>
-                  <span>{activeView === 'v2' ? 'Back to Landing' : 'Student / Admin Login'}</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {['v2', 'admin'].includes(activeView) ? 'arrow_back' : 'lock'}
+                  </span>
+                  <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student Login'}</span>
                 </button>
               )}
             </div>

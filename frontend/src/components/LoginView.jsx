@@ -8,7 +8,7 @@ import {
 import { BASE_URL } from '../lib/api.js';
 
 export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdminPortal = false }) {
-  const [portalMode, setPortalMode] = useState(isAdminPortal ? 'admin' : 'student');
+  const isAdmin = Boolean(isAdminPortal);
   const [email, setEmail] = useState(() => localStorage.getItem('lm_remembered_email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,24 +24,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
   const [resetStep, setResetStep] = useState('request'); // 'request' | 'submit'
   const [resetMessage, setResetMessage] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
-
-  useEffect(() => {
-    if (isAdminPortal) {
-      setPortalMode('admin');
-    }
-  }, [isAdminPortal]);
-
-  const handleModeChange = (mode) => {
-    setPortalMode(mode);
-    setError('');
-  };
-
-  const handleFillDemoAdmin = () => {
-    setEmail('nani.reddy225@gmail.com');
-    setPassword('Mypswd@225');
-    setPortalMode('admin');
-    setError('');
-  };
 
   const executeAuth = async (loginEmail, loginPwd) => {
     setLoading(true);
@@ -180,8 +162,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
     }
   };
 
-  const isAdmin = portalMode === 'admin';
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -232,46 +212,26 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
 
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/5 border border-emerald-900/10 text-emerald-900 text-[11px] font-bold tracking-widest uppercase mb-2">
-              <Compass className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Architectural Masterclass Portal</span>
+              {isAdmin ? (
+                <>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Executive Governance Console</span>
+                </>
+              ) : (
+                <>
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Student Learning Portal</span>
+                </>
+              )}
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-black text-stone-900 tracking-tight leading-tight">
-              Landscape Mastery
+              {isAdmin ? 'Administrator Sign In' : 'Landscape Mastery'}
             </h1>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
-              Secure authentication for students, architects & executive directors
+              {isAdmin
+                ? 'Authorized access for masterclass directors & system administrators'
+                : 'Sign in to access your architectural masterclass lessons & video streams'}
             </p>
-          </div>
-
-          {/* Role Switcher Pill Bar */}
-          <div className="inline-flex p-1 rounded-2xl bg-stone-200/70 border border-stone-300/80 shadow-inner max-w-sm w-full">
-            <button
-              type="button"
-              onClick={() => handleModeChange('student')}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                !isAdmin
-                  ? 'bg-white text-stone-900 shadow-sm'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <BookOpen className={`w-3.5 h-3.5 ${!isAdmin ? 'text-emerald-700' : 'text-stone-400'}`} />
-              <span>Student Learning</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange('admin')}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                isAdmin
-                  ? 'bg-emerald-900 text-white shadow-sm'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <KeyRound className={`w-3.5 h-3.5 ${isAdmin ? 'text-emerald-300' : 'text-stone-400'}`} />
-              <span>Director &amp; Admin</span>
-              <span className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-black tracking-wider ${isAdmin ? 'bg-emerald-800 text-emerald-200' : 'bg-stone-300 text-stone-700'}`}>
-                Ops
-              </span>
-            </button>
           </div>
         </div>
 
@@ -318,7 +278,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
             {/* Email Field */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Corporate or Student Email
+                {isAdmin ? 'Administrator Email' : 'Student Email Address'}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-emerald-700 transition-colors">
@@ -329,7 +289,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-stone-50/90 border border-stone-200/90 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs"
                   type="email"
-                  placeholder="name@domain.com"
+                  placeholder={isAdmin ? "admin@domain.com" : "student@domain.com"}
                   autoComplete="email"
                   required
                 />
@@ -385,16 +345,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                 />
                 <span>Remember this email</span>
               </label>
-
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={handleFillDemoAdmin}
-                  className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline underline-offset-2 transition-colors cursor-pointer"
-                >
-                  Fill Super Admin (Demo)
-                </button>
-              )}
             </div>
 
             {/* Primary Sign In Button */}
@@ -440,12 +390,12 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
           <span className="text-stone-300">•</span>
           <div className="inline-flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Role-Gated Access</span>
+            <span>{isAdmin ? 'Director-Gated Access' : 'Student Verified Access'}</span>
           </div>
           <span className="text-stone-300">•</span>
           <div className="inline-flex items-center gap-1.5">
             <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
-            <span>VEED Video Authorized</span>
+            <span>{isAdmin ? 'Operations Console' : 'Curriculum & Video Access'}</span>
           </div>
         </div>
 
