@@ -17,6 +17,7 @@ from .models import (
 from .email_service import sndMail
 from .signed_url_service import generate_signed_stream_token, verify_signed_stream_token
 from .audit_service import log_admin_action
+from .veed_service import extract_veed_video_id, normalize_veed_embed_url, validate_veed_source
 
 JWT_SECRET = settings.SECRET_KEY
 
@@ -366,13 +367,20 @@ def public_settings(req):
     enriched_courses = []
     for c in Course.objects.filter(status='PUBLISHED'):
         modules_data = []
-        for m in c.modules.all():
+        for m in c.modules.all().order_by('order'):
             lessons_data = []
-            for l in m.lessons.all():
+            for l in m.lessons.filter(is_published=True).order_by('order'):
                 lessons_data.append({
                     'id': l.id,
                     'title': l.title,
+                    'description': l.description or '',
+                    'duration': l.duration or '',
+                    'duration_seconds': l.duration_seconds,
                     'order': l.order,
+                    'is_free_preview': l.is_free_preview,
+                    'is_published': l.is_published,
+                    'video_provider': l.video_provider,
+                    'has_video': bool(l.video_id or l.video_url or l.assets.exists()),
                     'assets': list(l.assets.values('id', 'title', 'asset_type', 'duration'))
                 })
             modules_data.append({
@@ -451,12 +459,20 @@ def public_course_detail(req, slug):
     modules_data = []
     for m in c.modules.all().order_by('order'):
         lessons_data = []
-        for l in m.lessons.all().order_by('order'):
+        for l in m.lessons.filter(is_published=True).order_by('order'):
             lessons_data.append({
                 'id': l.id,
                 'title': l.title,
+                'description': l.description or '',
+                'duration': l.duration or '',
+                'duration_seconds': l.duration_seconds,
                 'order': l.order,
-                'asset_count': l.assets.count()
+                'is_free_preview': l.is_free_preview,
+                'is_published': l.is_published,
+                'video_provider': l.video_provider,
+                'has_video': bool(l.video_id or l.video_url or l.assets.exists()),
+                'asset_count': l.assets.count(),
+                'assets': list(l.assets.values('id', 'title', 'asset_type', 'duration'))
             })
         modules_data.append({
             'id': m.id,
@@ -885,7 +901,21 @@ def admin_course_detail(req, pk):
             lessons = []
             for l in m.lessons.all().order_by('order'):
                 assets = list(l.assets.values('id', 'title', 'asset_type', 'duration', 'url'))
-                lessons.append({'id': l.id, 'title': l.title, 'order': l.order, 'assets': assets})
+                lessons.append({
+                    'id': l.id,
+                    'module_id': m.id,
+                    'title': l.title,
+                    'description': l.description or '',
+                    'video_provider': l.video_provider or 'veed',
+                    'video_id': l.video_id or '',
+                    'video_url': l.video_url or '',
+                    'duration': l.duration or '',
+                    'duration_seconds': l.duration_seconds,
+                    'order': l.order,
+                    'is_free_preview': l.is_free_preview,
+                    'is_published': l.is_published,
+                    'assets': assets
+                })
             modules.append({'id': m.id, 'title': m.title, 'order': m.order, 'lessons': lessons})
         return Response({
             'id': course.id,
@@ -996,20 +1026,399 @@ def admin_add_module(req, course_id):
     log_admin_action(req.user, "MODULE_CREATED", target=title, details=f"Course ID: {course_id}")
     return Response({'status': 'created', 'module': {'id': mod.id, 'title': mod.title, 'order': mod.order, 'lessons': []}})
 
+def serialize_lesson_data(les, include_video_url=False):
+    data = {
+        'id': les.id,
+        'module_id': les.module_id,
+        'module_title': les.module.title if les.module else '',
+        'course_id': les.module.course_id if les.module else None,
+        'course_title': les.module.course.title if les.module and les.module.course else '',
+        'title': les.title,
+        'description': les.description or '',
+        'video_provider': les.video_provider or 'veed',
+        'duration': les.duration or '',
+        'duration_seconds': les.duration_seconds,
+        'order': les.order,
+        'is_free_preview': les.is_free_preview,
+        'is_published': les.is_published,
+        'has_video': bool(les.video_id or les.video_url or les.assets.exists()),
+        'created_at': les.created_at.strftime('%Y-%m-%d %H:%M') if les.created_at else None,
+        'updated_at': les.updated_at.strftime('%Y-%m-%d %H:%M') if les.updated_at else None,
+        'assets': list(les.assets.values('id', 'title', 'asset_type', 'duration', 'url'))
+    }
+    if include_video_url:
+        data['video_id'] = les.video_id or ''
+        data['video_url'] = les.video_url or ''
+    return data
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_add_lesson(req, module_id):
     if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
-        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'error': 'Permission denied: Super Admin or Content Manager role required'}, status=status.HTTP_403_FORBIDDEN)
     try:
-        module = Module.objects.get(pk=module_id)
+        module = Module.objects.select_related('course').get(pk=module_id)
     except Module.DoesNotExist:
         return Response({'error': 'Module not found'}, status=status.HTTP_404_NOT_FOUND)
-    title = req.data.get('title', 'New Lesson')
-    order = req.data.get('order', module.lessons.count() + 1)
-    les = Lesson.objects.create(module=module, title=title, order=order)
-    log_admin_action(req.user, "LESSON_CREATED", target=title, details=f"Module ID: {module_id}")
-    return Response({'status': 'created', 'lesson': {'id': les.id, 'title': les.title, 'order': les.order, 'assets': []}})
+
+    title = req.data.get('title', '').strip()
+    if not title:
+        return Response({'error': 'Lesson title is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    description = req.data.get('description', '').strip()
+    video_provider = req.data.get('video_provider', 'veed').strip().lower() or 'veed'
+    video_source = (req.data.get('video_url') or req.data.get('video_id') or req.data.get('embed_code') or '').strip()
+    duration = req.data.get('duration', '').strip()
+    duration_seconds = int(req.data.get('duration_seconds') or 0)
+    order = req.data.get('order') or (module.lessons.count() + 1)
+    is_free_preview = bool(req.data.get('is_free_preview', False))
+    is_published = bool(req.data.get('is_published', True))
+
+    video_id = ''
+    video_url = ''
+    if video_source:
+        is_valid, vid_id, norm_url, err = validate_veed_source(video_source)
+        if not is_valid:
+            return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+        video_id = vid_id or ''
+        video_url = norm_url or ''
+
+    les = Lesson.objects.create(
+        module=module,
+        title=title,
+        description=description,
+        video_provider=video_provider,
+        video_id=video_id,
+        video_url=video_url,
+        duration=duration,
+        duration_seconds=duration_seconds,
+        order=int(order),
+        is_free_preview=is_free_preview,
+        is_published=is_published,
+        created_by=req.user
+    )
+    log_admin_action(req.user, "LESSON_CREATED", target=title, details=f"Module ID: {module_id}, Video ID: {video_id or 'none'}")
+    return Response({'status': 'created', 'lesson': serialize_lesson_data(les, include_video_url=True)})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_course_lessons(req, course_id):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    lessons_list = []
+    for m in course.modules.all().order_by('order'):
+        for l in m.lessons.all().order_by('order'):
+            lessons_list.append(serialize_lesson_data(l, include_video_url=True))
+
+    return Response({'course_id': course.id, 'course_title': course.title, 'lessons': lessons_list})
+
+@api_view(['GET', 'PATCH', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_lesson_detail(req, pk):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        les = Lesson.objects.select_related('module__course').get(pk=pk)
+    except Lesson.DoesNotExist:
+        return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if req.method == 'GET':
+        return Response({'lesson': serialize_lesson_data(les, include_video_url=True)})
+
+    elif req.method == 'DELETE':
+        title = les.title
+        mod_id = les.module_id
+        les.delete()
+        log_admin_action(req.user, "LESSON_DELETED", target=title, details=f"Lesson ID: {pk}, Module ID: {mod_id}")
+        return Response({'status': 'deleted', 'message': f'Lesson "{title}" deleted successfully'})
+
+    elif req.method in ['PATCH', 'PUT']:
+        if 'title' in req.data:
+            t = str(req.data['title']).strip()
+            if not t:
+                return Response({'error': 'Lesson title cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+            les.title = t
+        if 'description' in req.data:
+            les.description = str(req.data['description']).strip()
+        if 'video_provider' in req.data:
+            les.video_provider = str(req.data['video_provider']).strip() or 'veed'
+        if 'duration' in req.data:
+            les.duration = str(req.data['duration']).strip()
+        if 'duration_seconds' in req.data:
+            les.duration_seconds = int(req.data['duration_seconds'] or 0)
+        if 'order' in req.data:
+            les.order = int(req.data['order'])
+        if 'is_free_preview' in req.data:
+            les.is_free_preview = bool(req.data['is_free_preview'])
+        if 'is_published' in req.data:
+            les.is_published = bool(req.data['is_published'])
+        if 'module_id' in req.data and req.data['module_id'] != les.module_id:
+            try:
+                new_mod = Module.objects.get(pk=req.data['module_id'])
+                les.module = new_mod
+            except Module.DoesNotExist:
+                return Response({'error': 'Target module not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Handle video reference updates
+        video_source_fields = ['video_url', 'video_id', 'embed_code']
+        has_video_input = any(f in req.data for f in video_source_fields)
+        if has_video_input:
+            video_input = (req.data.get('video_url') or req.data.get('video_id') or req.data.get('embed_code') or '').strip()
+            if video_input:
+                is_valid, vid_id, norm_url, err = validate_veed_source(video_input)
+                if not is_valid:
+                    return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+                les.video_id = vid_id or ''
+                les.video_url = norm_url or ''
+            else:
+                les.video_id = ''
+                les.video_url = ''
+
+        les.save()
+        log_admin_action(req.user, "LESSON_UPDATED", target=les.title, details=f"ID: {les.id}, Published: {les.is_published}, FreePreview: {les.is_free_preview}")
+        return Response({'status': 'updated', 'lesson': serialize_lesson_data(les, include_video_url=True)})
+
+@api_view(['PATCH', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_lesson_publish(req, pk):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        les = Lesson.objects.get(pk=pk)
+    except Lesson.DoesNotExist:
+        return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if 'is_published' in req.data:
+        les.is_published = bool(req.data['is_published'])
+    else:
+        # Toggle
+        les.is_published = not les.is_published
+
+    les.save()
+    action = "LESSON_PUBLISHED" if les.is_published else "LESSON_UNPUBLISHED"
+    log_admin_action(req.user, action, target=les.title, details=f"Lesson ID: {pk}")
+    return Response({'status': 'updated', 'is_published': les.is_published, 'lesson': serialize_lesson_data(les, include_video_url=True)})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_validate_veed(req):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    source = req.data.get('video_source') or req.data.get('url') or req.data.get('video_id') or ''
+    is_valid, video_id, norm_url, err = validate_veed_source(source)
+
+    if not is_valid:
+        return Response({
+            'valid': False,
+            'error': err
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'valid': True,
+        'video_id': video_id,
+        'embed_url': norm_url,
+        'provider': 'veed',
+        'notice': (
+            'VEED video identifier and embed URL format successfully verified. '
+            'Please ensure the video in your VEED workspace is set to allow embedding, '
+            'as provider-side privacy permissions determine whether playback is allowed by VEED.'
+        )
+    })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def course_curriculum(req, course_id):
+    """
+    Returns full curriculum of a course with modules and published lessons.
+    Enforces that unpublished lessons are hidden from regular students.
+    Includes lock status for paid lessons based on user's active enrollment.
+    """
+    try:
+        course = Course.objects.get(pk=course_id, status='PUBLISHED')
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    is_admin = check_admin_permission(req.user) if req.user and req.user.is_authenticated else False
+    is_enrolled = False
+
+    if req.user and req.user.is_authenticated:
+        if is_admin:
+            is_enrolled = True
+        else:
+            is_enrolled = (
+                Enrollment.objects.filter(user=req.user, course=course, status='ACTIVE').exists()
+                or getattr(req.user, 'paid', False)
+            )
+
+    completed_lesson_ids = set()
+    if req.user and req.user.is_authenticated:
+        completed_lesson_ids = set(
+            LessonProgress.objects.filter(user=req.user, completed=True).values_list('lesson_id', flat=True)
+        )
+
+    modules_data = []
+    for m in course.modules.all().order_by('order'):
+        lessons_qs = m.lessons.all() if is_admin else m.lessons.filter(is_published=True)
+        lessons_data = []
+        for l in lessons_qs.order_by('order'):
+            is_locked = not is_enrolled and not l.is_free_preview
+            lesson_info = serialize_lesson_data(l, include_video_url=is_admin)
+            lesson_info['is_locked'] = is_locked
+            lesson_info['is_completed'] = l.id in completed_lesson_ids
+            lessons_data.append(lesson_info)
+
+        modules_data.append({
+            'id': m.id,
+            'title': m.title,
+            'order': m.order,
+            'lessons': lessons_data
+        })
+
+    return Response({
+        'course_id': course.id,
+        'title': course.title,
+        'slug': course.slug,
+        'price': float(course.price),
+        'is_enrolled': is_enrolled,
+        'modules': modules_data
+    })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def lesson_playback(req, course_id, lesson_id):
+    """
+    Secure Playback Authorization Endpoint:
+    GET /api/courses/{course_id}/lessons/{lesson_id}/playback/
+    
+    Validates:
+    1. Lesson exists and belongs to the requested course (IDOR / cross-course protection)
+    2. Lesson is published (unpublished lessons hidden from students)
+    3. User entitlement:
+       - Free-preview lessons are accessible without paid enrollment.
+       - Paid lessons require authentication and an active, verified enrollment.
+       - Refunded, cancelled, expired, or revoked enrollments explicitly denied.
+    4. Returns authorized playback payload with verified VEED embed URL.
+    """
+    try:
+        lesson = Lesson.objects.select_related('module__course').get(pk=lesson_id)
+    except Lesson.DoesNotExist:
+        return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Validate that lesson belongs to the specified course
+    if not lesson.module or lesson.module.course_id != int(course_id):
+        return Response(
+            {'error': 'Lesson does not belong to the requested course'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    is_admin = check_admin_permission(req.user) if req.user and req.user.is_authenticated else False
+
+    # Check publication status
+    if not is_admin and not lesson.is_published:
+        return Response({'error': 'Lesson is not published or currently unavailable'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Entitlement verification
+    is_free = lesson.is_free_preview
+    is_authorized = False
+    is_enrolled = False
+
+    if is_admin:
+        is_authorized = True
+        is_enrolled = True
+    elif is_free:
+        is_authorized = True
+        if req.user and req.user.is_authenticated:
+            is_enrolled = Enrollment.objects.filter(user=req.user, course_id=course_id, status='ACTIVE').exists() or getattr(req.user, 'paid', False)
+    else:
+        # Paid lesson: strict authentication & purchase verification
+        if not req.user or not req.user.is_authenticated:
+            return Response(
+                {
+                    'error': 'Authentication required. Please sign in to access this lesson.',
+                    'requires_auth': True,
+                    'locked': True
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Check for revoked / refunded / cancelled enrollments
+        revoked_enrollments = Enrollment.objects.filter(
+            user=req.user,
+            course_id=course_id,
+            status__in=['REFUNDED', 'CANCELLED', 'EXPIRED', 'REVOKED']
+        )
+        active_enrollments = Enrollment.objects.filter(
+            user=req.user,
+            course_id=course_id,
+            status='ACTIVE'
+        )
+
+        if revoked_enrollments.exists() and not active_enrollments.exists():
+            return Response(
+                {
+                    'error': 'Access revoked: Your enrollment for this course has been refunded, cancelled, or revoked.',
+                    'revoked': True,
+                    'locked': True
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Check active enrollment or verified payment record or global paid flag
+        if active_enrollments.exists() or PaymentRecord.objects.filter(user=req.user, course_id=course_id, status='SUCCESS').exists() or getattr(req.user, 'paid', False):
+            is_authorized = True
+            is_enrolled = True
+        else:
+            return Response(
+                {
+                    'error': 'Access denied: You have not purchased this course.',
+                    'locked': True,
+                    'course_id': course_id,
+                    'course_title': lesson.module.course.title if lesson.module and lesson.module.course else '',
+                    'course_price': float(lesson.module.course.price) if lesson.module and lesson.module.course else 499.0
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+    if not is_authorized:
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Determine embed URL
+    embed_url = ''
+    if lesson.video_url:
+        embed_url = lesson.video_url
+    elif lesson.video_id:
+        embed_url = normalize_veed_embed_url(lesson.video_id)
+    elif lesson.assets.exists():
+        first_asset = lesson.assets.first()
+        embed_url = first_asset.url or (first_asset.file.url if first_asset.file else '')
+
+    user_identifier = req.user.email.upper() if (req.user and req.user.is_authenticated) else 'GUEST_STUDENT'
+    user_id = f"LM-{req.user.id}" if (req.user and req.user.is_authenticated) else "LM-PREVIEW"
+    watermark = f"ENROLLED STUDENT: {user_identifier} • ID: {user_id}"
+
+    return Response({
+        'lesson_id': lesson.id,
+        'course_id': int(course_id),
+        'course_title': lesson.module.course.title if lesson.module and lesson.module.course else '',
+        'module_id': lesson.module_id,
+        'module_title': lesson.module.title if lesson.module else '',
+        'title': lesson.title,
+        'description': lesson.description or '',
+        'video_provider': lesson.video_provider or 'veed',
+        'video_id': lesson.video_id or '',
+        'embed_url': embed_url,
+        'duration': lesson.duration or '',
+        'duration_seconds': lesson.duration_seconds,
+        'is_free_preview': lesson.is_free_preview,
+        'is_enrolled': is_enrolled,
+        'watermark': watermark
+    })
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

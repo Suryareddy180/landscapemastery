@@ -42,13 +42,24 @@ urlpatterns = [
     path('admin/upload-logo/', views.admin_upload_logo),
     path('admin/upload-syllabus-pdf/', views.admin_upload_syllabus_pdf),
 
+    # Student Video Playback & Course Curriculum
+    path('courses/<int:course_id>/curriculum/', views.course_curriculum),
+    path('courses/<int:course_id>/curriculum', views.course_curriculum),
+    path('courses/<int:course_id>/lessons/<int:lesson_id>/playback/', views.lesson_playback),
+    path('courses/<int:course_id>/lessons/<int:lesson_id>/playback', views.lesson_playback),
+
     # Admin Course Builder
     path('admin/courses/', views.admin_courses),
     path('admin/courses/<int:pk>/', views.admin_course_detail),
     path('admin/courses/<int:pk>/upload-cover/', views.admin_upload_course_cover),
     path('admin/courses/<int:course_id>/modules/', views.admin_add_module),
+    path('admin/courses/<int:course_id>/lessons/', views.admin_course_lessons),
     path('admin/modules/<int:module_id>/lessons/', views.admin_add_lesson),
+    path('admin/lessons/<int:pk>/', views.admin_lesson_detail),
+    path('admin/lessons/<int:pk>/publish/', views.admin_lesson_publish),
     path('admin/lessons/<int:lesson_id>/assets/', views.admin_add_asset),
+    path('admin/veed/validate/', views.admin_validate_veed),
+    path('admin/veed/validate', views.admin_validate_veed),
 
     # Admin Student Roster & Controls
     path('admin/students/', views.admin_students),

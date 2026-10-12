@@ -76,7 +76,21 @@ class Module(models.Model):
 class Lesson(models.Model):
     module = models.ForeignKey(Module, related_name='lessons', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    video_provider = models.CharField(max_length=50, default='veed', blank=True)
+    video_id = models.CharField(max_length=120, blank=True, default='')
+    video_url = models.CharField(max_length=500, blank=True, default='')
+    duration = models.CharField(max_length=50, blank=True, default='')
+    duration_seconds = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
+    is_free_preview = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
+    created_by = models.ForeignKey('Usr', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_lessons')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        ordering = ['order', 'id']
 
 class MediaAsset(models.Model):
     TYPE_CHOICES = (
