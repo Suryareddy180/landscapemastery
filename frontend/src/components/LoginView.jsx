@@ -215,7 +215,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
               {isAdmin ? (
                 <>
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Executive Governance Console</span>
+                  <span>Director Console</span>
                 </>
               ) : (
                 <>
@@ -225,11 +225,11 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
               )}
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-black text-stone-900 tracking-tight leading-tight">
-              {isAdmin ? 'Administrator Sign In' : 'Landscape Mastery'}
+              Landscape Mastery
             </h1>
             <p className="text-xs sm:text-sm text-stone-600 mt-1">
               {isAdmin
-                ? 'Authorized access for masterclass directors & system administrators'
+                ? 'Authorized director access & masterclass governance'
                 : 'Sign in to access your architectural masterclass lessons & video streams'}
             </p>
           </div>
@@ -257,21 +257,19 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
           {/* Card Context Ribbon */}
           <div className="flex items-center justify-between pb-4 border-b border-stone-100">
             <div>
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
-                <span>{isAdmin ? 'Administrator Sign In' : 'Student Account Access'}</span>
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
+                {isAdmin ? 'Administrator Sign In' : 'Student Sign In'}
               </h2>
-              <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
+              <p className="text-xs text-stone-500 mt-0.5">
                 {isAdmin
-                  ? 'Access Course Builder, VEED Video Hosting, and Revenue Analytics.'
-                  : 'Resume your masterclass lessons, video stream, and certifications.'}
+                  ? 'Enter your director credentials to access the console.'
+                  : 'Enter your registered credentials to resume learning.'}
               </p>
             </div>
-            {isAdmin && (
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                Director
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 shrink-0">
+              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span>{isAdmin ? 'Director' : 'Student'}</span>
+            </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
