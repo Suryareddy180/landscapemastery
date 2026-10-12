@@ -17,6 +17,30 @@ export const isValidVeedEmbedUrl = (url) => {
   }
 };
 
+/**
+ * Strips sharing options, watermark links, and titles from VEED embed URLs
+ * to secure proprietary course content and remove third-party branding tags.
+ */
+export const sanitizeVeedEmbedUrl = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if ((host === 'www.veed.io' || host === 'veed.io') && parsed.pathname.startsWith('/embed/')) {
+      parsed.searchParams.set('watermark', '0');
+      parsed.searchParams.set('sharing', '0');
+      parsed.searchParams.set('title', '0');
+      if (!parsed.searchParams.has('color') || !parsed.searchParams.get('color')) {
+        parsed.searchParams.set('color', '10b981');
+      }
+      return parsed.toString();
+    }
+    return url;
+  } catch {
+    return url;
+  }
+};
+
 export default function CourseVideoPlayer({
   playbackData,
   isLoading = false,
@@ -61,8 +85,9 @@ export default function CourseVideoPlayer({
     }
   };
 
-  const embedUrl = playbackData?.embed_url || '';
+  const rawEmbedUrl = playbackData?.embed_url || '';
   const isVeed = (playbackData?.video_provider || 'veed').toLowerCase() === 'veed';
+  const embedUrl = isVeed ? sanitizeVeedEmbedUrl(rawEmbedUrl) : rawEmbedUrl;
   const isApprovedUrl = isValidVeedEmbedUrl(embedUrl);
   const isFreePreview = !!playbackData?.is_free_preview;
   const watermarkText = playbackData?.watermark || '';
@@ -161,7 +186,7 @@ export default function CourseVideoPlayer({
             src={embedUrl}
             title={playbackData?.title || 'Lesson Video Player'}
             className="w-full h-full border-0 absolute inset-0 z-10"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             onLoad={() => setIframeLoaded(true)}
           />

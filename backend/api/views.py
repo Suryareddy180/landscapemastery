@@ -1388,12 +1388,12 @@ def lesson_playback(req, course_id, lesson_id):
     if not is_authorized:
         return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Determine embed URL
+    # Determine embed URL - strictly sanitize VEED URLs to remove watermark and share button
     embed_url = ''
-    if lesson.video_url:
-        embed_url = lesson.video_url
-    elif lesson.video_id:
-        embed_url = normalize_veed_embed_url(lesson.video_id)
+    if lesson.video_id:
+        embed_url = normalize_veed_embed_url(lesson.video_id, watermark=False, sharing=False, title=False)
+    elif lesson.video_url:
+        embed_url = normalize_veed_embed_url(lesson.video_url, watermark=False, sharing=False, title=False) or lesson.video_url
     elif lesson.assets.exists():
         first_asset = lesson.assets.first()
         embed_url = first_asset.url or (first_asset.file.url if first_asset.file else '')

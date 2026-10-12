@@ -152,9 +152,9 @@ class Command(BaseCommand):
             defaults={'order': 1}
         )
 
-        # Lesson with VEED video
+        # Lesson with VEED video (watermark=0, sharing=0, title=0 for privacy and security)
         veed_id = "da580287-a62a-41dd-8c97-8e1b4192e9dd"
-        veed_url = f"https://www.veed.io/embed/{veed_id}?watermark=1&color=&sharing=1&title=1"
+        veed_url = f"https://www.veed.io/embed/{veed_id}?watermark=0&color=10b981&sharing=0&title=0"
         lens_lesson, l_created = Lesson.objects.get_or_create(
             module=lens_mod,
             title="Landscape Lens - Masterclass Video",

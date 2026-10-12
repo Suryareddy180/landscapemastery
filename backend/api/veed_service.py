@@ -59,27 +59,29 @@ def extract_veed_video_id(input_value):
     except Exception:
         return None
 
-def normalize_veed_embed_url(video_id_or_url, watermark=True, color="", sharing=True, title=True):
+def normalize_veed_embed_url(video_id_or_url, watermark=False, color="10b981", sharing=False, title=False):
     """
-    Constructs a normalized, canonical VEED embed URL for playback:
-    https://www.veed.io/embed/<video_id>?watermark=1&color=&sharing=1&title=1
+    Constructs a secured, canonical VEED embed URL for playback:
+    https://www.veed.io/embed/<video_id>?watermark=0&color=10b981&sharing=0&title=0
+    Strictly removes VEED tags, watermark anchors, and share buttons for content security.
     """
     video_id = extract_veed_video_id(video_id_or_url)
     if not video_id:
         return None
 
-    params = []
-    if watermark:
-        params.append("watermark=1")
+    wm_val = "1" if watermark else "0"
+    share_val = "1" if sharing else "0"
+    title_val = "1" if title else "0"
+
+    params = [
+        f"watermark={wm_val}",
+        f"sharing={share_val}",
+        f"title={title_val}"
+    ]
     if color:
         params.append(f"color={urllib.parse.quote(color)}")
-    if sharing:
-        params.append("sharing=1")
-    if title:
-        params.append("title=1")
 
-    query = f"?{'&'.join(params)}" if params else ""
-    return f"https://www.veed.io/embed/{video_id}{query}"
+    return f"https://www.veed.io/embed/{video_id}?{'&'.join(params)}"
 
 def validate_veed_source(input_value):
     """
