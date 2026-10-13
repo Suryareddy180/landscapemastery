@@ -9,7 +9,8 @@ export default function AdminDashboardLayout({
   onNavigate,
   children,
   siteSettings,
-  onLogout
+  onLogout,
+  onOpenProfile
 }) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -227,6 +228,18 @@ export default function AdminDashboardLayout({
               <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
               <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">Live &amp; Synced</span>
             </div>
+
+            {/* My Profile Action Button */}
+            {onOpenProfile && (
+              <button
+                type="button"
+                onClick={onOpenProfile}
+                className="bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-stone-200 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm text-emerald-800">account_circle</span>
+                <span>My Profile</span>
+              </button>
+            )}
 
             {/* Logout Action Button */}
             <button

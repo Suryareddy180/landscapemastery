@@ -540,3 +540,299 @@ class SecurePlaybackAuthorizationTests(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertTrue(res.json().get('revoked'))
 
+
+class UniversalProfileManagementTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.student_pwd = "StudentPass123!"
+        self.student = Usr.objects.create_user(
+            email="surya.student@example.com",
+            password=self.student_pwd,
+            full_name="Surya Prakash Reddy Nallimilli",
+            phone="+918074290125",
+            role="STUDENT",
+            paid=True,
+            is_active=True
+        )
+
+        self.employee_pwd = "EmployeePass123!"
+        self.employee = Usr.objects.create_user(
+            email="rajesh.employee@example.com",
+            password=self.employee_pwd,
+            full_name="Rajesh Kumar",
+            phone="+919876543210",
+            role="EMPLOYEE",
+            paid=False,
+            is_active=True
+        )
+
+        self.household_pwd = "HouseholdPass123!"
+        self.household = Usr.objects.create_user(
+            email="sharma.family@example.com",
+            password=self.household_pwd,
+            full_name="Anil Sharma",
+            phone="+919123456789",
+            role="HOUSEHOLD",
+            paid=False,
+            is_active=True
+        )
+
+        from api.views import get_tokens_for_user
+        self.student_token = get_tokens_for_user(self.student)
+        self.employee_token = get_tokens_for_user(self.employee)
+        self.household_token = get_tokens_for_user(self.household)
+
+    def test_unauthenticated_profile_access_denied(self):
+        res = self.client.get('/api/profile/')
+        self.assertIn(res.status_code, [401, 403])
+        res = self.client.patch('/api/profile/', {'full_name': 'Hacker'})
+        self.assertIn(res.status_code, [401, 403])
+
+    def test_student_profile_fetch_and_update(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        res = self.client.get('/api/profile/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['role'], 'STUDENT')
+        self.assertEqual(data['email'], self.student.email)
+        self.assertIn('qualification', data)
+        self.assertIn('branch', data)
+        self.assertIn('passout_year', data)
+        self.assertIn('college_name', data)
+        self.assertIn('student_status', data)
+
+        # Update Student Profile with required fields
+        patch_payload = {
+            'full_name': 'Surya Prakash Reddy Nallimilli',
+            'phone': '+91 8074290125',
+            'dob': '2005-01-14',
+            'qualification': 'B.Tech',
+            'branch': 'AI & DS',
+            'passout_year': 2026,
+            'college_name': 'Sri Vasavi Engineering College',
+            'student_status': 'Still Studying'
+        }
+        patch_res = self.client.patch('/api/profile/', patch_payload, format='json')
+        self.assertEqual(patch_res.status_code, 200)
+        updated = patch_res.json()['profile']
+        self.assertEqual(updated['qualification'], 'B.Tech')
+        self.assertEqual(updated['branch'], 'AI & DS')
+        self.assertEqual(updated['passout_year'], 2026)
+        self.assertEqual(updated['college_name'], 'Sri Vasavi Engineering College')
+        self.assertEqual(updated['student_status'], 'Still Studying')
+        self.assertEqual(updated['dob'], '2005-01-14')
+
+    def test_employee_profile_fetch_and_update(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.employee_token}')
+        res = self.client.get('/api/profile/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['role'], 'EMPLOYEE')
+        self.assertIn('company_name', data)
+        self.assertIn('department', data)
+        self.assertIn('designation', data)
+        self.assertIn('employment_status', data)
+
+        # Update Employee Profile
+        patch_payload = {
+            'company_name': '3CAPSTECH Solutions Pvt Ltd',
+            'department': 'Cloud Architecture',
+            'designation': 'Senior Solutions Architect',
+            'employment_status': 'Full-Time',
+            'dob': '1995-06-20'
+        }
+        patch_res = self.client.patch('/api/profile/', patch_payload, format='json')
+        self.assertEqual(patch_res.status_code, 200)
+        updated = patch_res.json()['profile']
+        self.assertEqual(updated['company_name'], '3CAPSTECH Solutions Pvt Ltd')
+        self.assertEqual(updated['department'], 'Cloud Architecture')
+        self.assertEqual(updated['designation'], 'Senior Solutions Architect')
+        self.assertEqual(updated['employment_status'], 'Full-Time')
+
+    def test_household_profile_fetch_and_update(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.household_token}')
+        res = self.client.get('/api/profile/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['role'], 'HOUSEHOLD')
+        self.assertIn('household_name', data)
+        self.assertIn('primary_contact_name', data)
+        self.assertIn('residential_address', data)
+        self.assertIn('member_count', data)
+
+        # Update Household Profile
+        patch_payload = {
+            'household_name': 'Sharma Villa',
+            'primary_contact_name': 'Anil Sharma',
+            'residential_address': 'Flat 402, Green Meadows, Hyderabad',
+            'member_count': 4
+        }
+        patch_res = self.client.patch('/api/profile/', patch_payload, format='json')
+        self.assertEqual(patch_res.status_code, 200)
+        updated = patch_res.json()['profile']
+        self.assertEqual(updated['household_name'], 'Sharma Villa')
+        self.assertEqual(updated['residential_address'], 'Flat 402, Green Meadows, Hyderabad')
+        self.assertEqual(updated['member_count'], 4)
+
+    def test_future_dob_rejected(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        res = self.client.patch('/api/profile/', {'dob': '2099-12-31'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('future', res.json().get('error', '').lower())
+
+    def test_invalid_passout_year_rejected(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        res = self.client.patch('/api/profile/', {'passout_year': 1899}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('passout year', res.json().get('error', '').lower())
+
+    def test_avatar_upload_and_removal(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+
+        # Create valid PNG in memory
+        img_io = BytesIO()
+        img = Image.new('RGB', (100, 100), color='green')
+        img.save(img_io, format='PNG')
+        img_io.seek(0)
+        valid_file = SimpleUploadedFile("avatar.png", img_io.read(), content_type="image/png")
+
+        res = self.client.post('/api/profile/upload-picture/', {'avatar': valid_file}, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNotNone(res.json().get('avatar_url'))
+
+        # Remove picture
+        del_res = self.client.delete('/api/profile/picture/')
+        self.assertEqual(del_res.status_code, 200)
+        self.assertIsNone(del_res.json().get('avatar_url'))
+
+    def test_change_password_flow(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+
+        # Wrong current password
+        bad_cur = self.client.post('/api/profile/change-password/', {
+            'current_password': 'IncorrectCurrentPassword1!',
+            'new_password': 'NewSecurePass2026!',
+            'confirm_password': 'NewSecurePass2026!'
+        }, format='json')
+        self.assertEqual(bad_cur.status_code, 400)
+        self.assertIn('incorrect', bad_cur.json().get('error', '').lower())
+
+        # Password mismatch
+        mismatch = self.client.post('/api/profile/change-password/', {
+            'current_password': self.student_pwd,
+            'new_password': 'NewSecurePass2026!',
+            'confirm_password': 'MismatchPass2026!'
+        }, format='json')
+        self.assertEqual(mismatch.status_code, 400)
+
+        # Weak password (no number)
+        weak = self.client.post('/api/profile/change-password/', {
+            'current_password': self.student_pwd,
+            'new_password': 'NoNumericLetterHere!',
+            'confirm_password': 'NoNumericLetterHere!'
+        }, format='json')
+        self.assertEqual(weak.status_code, 400)
+
+        # Successful change
+        success = self.client.post('/api/profile/change-password/', {
+            'current_password': self.student_pwd,
+            'new_password': 'NewSecurePass2026!',
+            'confirm_password': 'NewSecurePass2026!'
+        }, format='json')
+        self.assertEqual(success.status_code, 200)
+        self.assertIn('token', success.json())
+
+        # Check new password works, old does not
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password('NewSecurePass2026!'))
+        self.assertFalse(self.student.check_password(self.student_pwd))
+
+    def test_delete_account_flow(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+
+        # Without acknowledgement
+        no_ack = self.client.post('/api/profile/delete-account/', {
+            'password': self.student_pwd,
+            'acknowledge': False
+        }, format='json')
+        self.assertEqual(no_ack.status_code, 400)
+
+        # Wrong password
+        wrong_pwd = self.client.post('/api/profile/delete-account/', {
+            'password': 'WrongPassword123!',
+            'acknowledge': True
+        }, format='json')
+        self.assertEqual(wrong_pwd.status_code, 400)
+
+        # Successful deletion
+        success = self.client.post('/api/profile/delete-account/', {
+            'password': self.student_pwd,
+            'acknowledge': True
+        }, format='json')
+        self.assertEqual(success.status_code, 200)
+
+        self.student.refresh_from_db()
+        self.assertFalse(self.student.is_active)
+        self.assertTrue(self.student.email.startswith('deleted_'))
+
+    def test_universal_registration_student(self):
+        payload = {
+            'role': 'STUDENT',
+            'full_name': 'Deepak Verma',
+            'email': 'deepak.verma@example.com',
+            'phone': '+91 9988776655',
+            'password': 'StrongPass2026!',
+            'qualification': 'B.Arch',
+            'branch': 'Architecture & Spatial Planning',
+            'college_name': 'School of Planning and Architecture',
+            'passout_year': 2027
+        }
+        res = self.client.post('/api/auth/register/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        self.assertIn('token', data)
+        self.assertEqual(data['user']['role'], 'STUDENT')
+        self.assertEqual(data['profile']['qualification'], 'B.Arch')
+        self.assertEqual(data['profile']['passout_year'], 2027)
+
+    def test_universal_registration_employee(self):
+        payload = {
+            'role': 'EMPLOYEE',
+            'full_name': 'Meera Nair',
+            'email': 'meera.nair@3capstech.com',
+            'phone': '+91 9123456780',
+            'password': 'StrongPass2026!',
+            'company_name': '3CAPSTECH',
+            'department': 'DevOps & Infrastructure',
+            'designation': 'Lead Cloud Engineer'
+        }
+        res = self.client.post('/api/auth/register/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        self.assertIn('token', data)
+        self.assertEqual(data['user']['role'], 'EMPLOYEE')
+        self.assertEqual(data['profile']['company_name'], '3CAPSTECH')
+        self.assertEqual(data['profile']['designation'], 'Lead Cloud Engineer')
+
+    def test_universal_registration_household(self):
+        payload = {
+            'role': 'HOUSEHOLD',
+            'full_name': 'Ramesh Reddy',
+            'email': 'ramesh.reddy@example.com',
+            'phone': '+91 9848012345',
+            'password': 'StrongPass2026!',
+            'household_name': 'Reddy Nilayam',
+            'residential_address': 'Plot 45, Jubilee Hills, Hyderabad'
+        }
+        res = self.client.post('/api/auth/register/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        self.assertIn('token', data)
+        self.assertEqual(data['user']['role'], 'HOUSEHOLD')
+        self.assertEqual(data['profile']['household_name'], 'Reddy Nilayam')
+
+

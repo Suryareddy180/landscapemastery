@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BASE_URL } from '../lib/api.js';
 
-export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl = '/lm_logo.png', user, onLogout }) {
+export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl = '/lm_logo.png', user, onLogout, onOpenProfile }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
@@ -82,22 +94,120 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
         {/* Header Right Action & Mobile Toggle */}
         <div className="flex items-center gap-3">
           {user ? (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-3">
+              {/* User Profile Dropdown Pill */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full bg-stone-50 hover:bg-stone-100/90 border border-stone-200/90 shadow-2xs transition-all cursor-pointer group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-900 text-white font-bold text-xs flex items-center justify-center overflow-hidden border border-emerald-700/40">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{(user.name || user.email || 'U')[0].toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-stone-800 group-hover:text-emerald-950 transition-colors leading-tight max-w-[120px] truncate">
+                      {user.name || user.email.split('@')[0]}
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-medium">
+                      {user.role === 'STUDENT' ? 'Student' : (user.role === 'EMPLOYEE' ? 'Employee' : (user.role === 'HOUSEHOLD' ? 'Household' : 'Admin'))}
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-sm text-stone-400 group-hover:text-stone-600 transition-transform duration-200">
+                    {profileDropdownOpen ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {profileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 overflow-hidden text-xs"
+                    >
+                      <div className="px-4 py-2 border-b border-stone-100">
+                        <p className="font-bold text-stone-800 truncate">{user.name || 'User Account'}</p>
+                        <p className="text-[11px] text-stone-400 truncate">{user.email}</p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          if (onOpenProfile) onOpenProfile();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-stone-700 hover:bg-emerald-50 hover:text-emerald-950 flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-base text-emerald-800">account_circle</span>
+                        <span>My Profile</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          if (onOpenProfile) onOpenProfile();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-stone-700 hover:bg-emerald-50 hover:text-emerald-950 flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-base text-stone-500">edit_note</span>
+                        <span>Edit Profile</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          if (onOpenProfile) onOpenProfile();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-stone-700 hover:bg-emerald-50 hover:text-emerald-950 flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-base text-stone-500">lock_reset</span>
+                        <span>Change Password</span>
+                      </button>
+
+                      <div className="border-t border-stone-100 my-1" />
+
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          onNavigate(isAdmin ? 'admin' : 'v3');
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-stone-700 hover:bg-stone-50 flex items-center gap-2.5 font-semibold transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-base text-emerald-700">{isAdmin ? 'admin_panel_settings' : 'play_circle'}</span>
+                        <span>{isAdmin ? 'Admin Operations' : 'Course Portal'}</span>
+                      </button>
+
+                      {onLogout && (
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            onLogout();
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 font-semibold transition-colors cursor-pointer border-t border-stone-100"
+                        >
+                          <span className="material-symbols-outlined text-base text-rose-500">logout</span>
+                          <span>Sign Out</span>
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Portal Quick Access Button */}
               <button
                 onClick={() => onNavigate(isAdmin ? 'admin' : 'v3')}
                 className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-md shadow-emerald-950/20 cursor-pointer btn-shine"
               >
                 <span className="material-symbols-outlined text-sm">{isAdmin ? 'admin_panel_settings' : 'play_circle'}</span>
-                <span>{isAdmin ? 'Admin Console' : 'My Course Portal'}</span>
+                <span>{isAdmin ? 'Console' : 'Portal'}</span>
               </button>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-full transition-colors cursor-pointer border border-stone-200"
-                >
-                  Logout
-                </button>
-              )}
             </div>
           ) : (
             <motion.button 
@@ -169,6 +279,13 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
               {user ? (
                 <>
                   <button
+                    onClick={() => { setMobileMenuOpen(false); if (onOpenProfile) onOpenProfile(); }}
+                    className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 border border-stone-200 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm text-emerald-800">account_circle</span>
+                    <span>My Profile &amp; Settings</span>
+                  </button>
+                  <button
                     onClick={() => { setMobileMenuOpen(false); onNavigate(isAdmin ? 'admin' : 'v3'); }}
                     className="w-full bg-emerald-900 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer"
                   >
@@ -178,7 +295,7 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
                   {onLogout && (
                     <button
                       onClick={() => { setMobileMenuOpen(false); onLogout(); }}
-                      className="w-full bg-stone-100 text-stone-700 font-semibold text-xs py-2.5 rounded-xl hover:bg-stone-200 cursor-pointer border border-stone-200"
+                      className="w-full bg-rose-50 text-rose-700 font-semibold text-xs py-2.5 rounded-xl hover:bg-rose-100 cursor-pointer border border-rose-200"
                     >
                       Logout
                     </button>

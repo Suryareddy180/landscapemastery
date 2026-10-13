@@ -7,6 +7,7 @@ import Header from './components/Header.jsx';
 import LandingView from './components/LandingView.jsx';
 import LoginView from './components/LoginView.jsx';
 import Footer from './components/Footer.jsx';
+import ProfileModal from './components/ProfileModal.jsx';
 
 // Lazy-loaded Views for production performance optimization
 const DashboardView = lazy(() => import('./components/DashboardView.jsx'));
@@ -44,6 +45,7 @@ function LandscapeApp({ initialView = 'v1' }) {
   };
 
   const [activeView, setActiveView] = useState(getEffectiveView);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const [token, setToken] = useState(() => localStorage.getItem('lm_auth_token') || '');
   const [user, setUser] = useState(() => {
@@ -88,6 +90,11 @@ function LandscapeApp({ initialView = 'v1' }) {
     if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
       setActiveView(viewParam);
       return;
+    }
+
+    // Priority 3: Profile route
+    if (location.pathname.endsWith('/profile') || location.pathname === '/profile' || initialView === 'profile') {
+      setProfileModalOpen(true);
     }
 
     // Auto-restore view if token and user exist
@@ -154,7 +161,7 @@ function LandscapeApp({ initialView = 'v1' }) {
       {/* Landing Page (Screen 1) */}
       {activeView === 'v1' && (
         <div className="view-section active">
-          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} />
+          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
           <LandingView onNavigate={setActiveView} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} />
           <Footer />
         </div>
@@ -163,7 +170,7 @@ function LandscapeApp({ initialView = 'v1' }) {
       {/* Login Portal (Screen 2) */}
       {activeView === 'v2' && (
         <div className="view-section active min-h-screen flex flex-col">
-          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} />
+          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
           <LoginView onNavigate={setActiveView} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} />
         </div>
       )}
@@ -172,7 +179,7 @@ function LandscapeApp({ initialView = 'v1' }) {
       {activeView === 'v3' && (
         <Suspense fallback={<ViewLoader />}>
           <div className="view-section active h-screen flex overflow-hidden bg-surface">
-            <DashboardView onNavigate={setActiveView} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} />
+            <DashboardView onNavigate={setActiveView} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} onOpenProfile={() => setProfileModalOpen(true)} />
           </div>
         </Suspense>
       )}
@@ -183,15 +190,28 @@ function LandscapeApp({ initialView = 'v1' }) {
           <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
             {(!token || !user || !ADMIN_ROLES.includes(user?.role)) ? (
               <div className="min-h-screen flex flex-col overflow-y-auto bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3]">
-                <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} />
+                <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
                 <LoginView onNavigate={setActiveView} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} isAdminPortal={true} />
               </div>
             ) : (
-              <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} />
+              <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} onOpenProfile={() => setProfileModalOpen(true)} />
             )}
           </div>
         </Suspense>
       )}
+
+      {/* Universal Profile Management Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        token={token}
+        user={user}
+        onUserUpdated={(updatedUser) => {
+          setUser(updatedUser);
+          localStorage.setItem('lm_auth_user', JSON.stringify(updatedUser));
+        }}
+        onLogout={handleLogout}
+      />
     </div>
   );
 }
@@ -231,11 +251,13 @@ export default function App() {
         <Route path="/landscapemastery/portal" element={<LandscapeApp key="lm-v3" initialView="v3" />} />
         <Route path="/landscapemastery/dashboard" element={<LandscapeApp key="lm-v3-dash" initialView="v3" />} />
         <Route path="/landscapemastery/admin" element={<LandscapeApp key="lm-admin" initialView="admin" />} />
+        <Route path="/landscapemastery/profile" element={<LandscapeApp key="lm-profile" initialView="profile" />} />
 
         {/* Shortcuts for Landscape Mastery */}
         <Route path="/login" element={<LandscapeApp key="short-v2" initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp key="short-v3" initialView="v3" />} />
         <Route path="/dashboard" element={<LandscapeApp key="short-v3-dash" initialView="v3" />} />
+        <Route path="/profile" element={<LandscapeApp key="short-profile" initialView="profile" />} />
         <Route path="/portal/admin" element={<LandscapeApp key="short-admin1" initialView="admin" />} />
         <Route path="/portal-admin" element={<LandscapeApp key="short-admin2" initialView="admin" />} />
         <Route path="/courses" element={<Navigate to="/landscapemastery#courses" replace />} />

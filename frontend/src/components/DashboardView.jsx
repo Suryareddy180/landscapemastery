@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BASE_URL } from '../lib/api.js';
 import CourseVideoPlayer from './CourseVideoPlayer.jsx';
 
-export default function DashboardView({ onNavigate, token, user, onLogout, logoUrl }) {
+export default function DashboardView({ onNavigate, token, user, onLogout, logoUrl, onOpenProfile }) {
   // Navigation State: null = Photo 1 (Active Courses), Object = Photo 2 (Course Learning Workspace)
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -276,11 +276,15 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
           {/* Student Profile Avatar */}
           <button
-            onClick={onLogout}
-            title={`${user?.email || 'Student'} (Click to Logout)`}
-            className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-xs hover:ring-2 hover:ring-emerald-400 transition-all"
+            onClick={() => { if (onOpenProfile) onOpenProfile(); }}
+            title={`${user?.name || user?.email || 'User'} - Click to view My Profile`}
+            className="w-10 h-10 rounded-full bg-emerald-900 text-white font-bold flex items-center justify-center text-xs shadow-xs hover:ring-2 hover:ring-emerald-400 transition-all cursor-pointer overflow-hidden border border-emerald-700/50"
           >
-            {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'S'}
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span>{user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'S'}</span>
+            )}
           </button>
         </div>
       </aside>
@@ -297,7 +301,27 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           <div className="flex-1 flex flex-col h-full overflow-y-auto px-6 md:px-12 py-8 bg-[#FAFAFA] relative">
             
             {/* Header: Active Courses */}
-            <h1 className="text-2xl font-bold text-stone-900 mb-6 tracking-tight">Active Courses</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Active Courses</h1>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { if (onOpenProfile) onOpenProfile(); }}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-stone-200 hover:border-emerald-700/40 text-xs font-semibold text-stone-700 hover:text-emerald-950 transition-all shadow-2xs cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm text-emerald-800">account_circle</span>
+                  <span>My Profile</span>
+                </button>
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-semibold text-stone-600 hover:text-stone-900 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm text-stone-500">logout</span>
+                    <span>Logout</span>
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* Filter Tabs: Active | Archived */}
             <div className="flex items-center gap-8 border-b border-stone-200 mb-6">

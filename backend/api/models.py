@@ -23,7 +23,9 @@ class Usr(AbstractBaseUser, PermissionsMixin):
         ('CONTENT_MANAGER', 'Content Manager'),
         ('SUPPORT_ADMIN', 'Support Admin'),
         ('ADMIN', 'Legacy Admin'),
-        ('STUDENT', 'Student')
+        ('STUDENT', 'Student'),
+        ('EMPLOYEE', 'Employee'),
+        ('HOUSEHOLD', 'Household'),
     )
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=30, blank=True, null=True)
@@ -198,3 +200,43 @@ class AuditLog(models.Model):
     details = models.TextField(blank=True, null=True)
     ip_address = models.CharField(max_length=45, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True, null=True)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(Usr, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    dob = models.DateField(blank=True, null=True)
+    email_verified = models.BooleanField(default=True)
+    phone_verified = models.BooleanField(default=False)
+
+    # Student specific fields
+    qualification = models.CharField(max_length=100, blank=True, null=True)
+    branch = models.CharField(max_length=100, blank=True, null=True)
+    passout_year = models.IntegerField(blank=True, null=True)
+    college_name = models.CharField(max_length=255, blank=True, null=True)
+    student_status = models.CharField(max_length=50, blank=True, null=True, default='Still Studying')
+    student_id = models.CharField(max_length=50, blank=True, null=True)
+
+    # Employee specific fields
+    employee_id = models.CharField(max_length=50, blank=True, null=True)
+    company_name = models.CharField(max_length=255, blank=True, null=True)
+    department = models.CharField(max_length=100, blank=True, null=True)
+    designation = models.CharField(max_length=100, blank=True, null=True)
+    employment_status = models.CharField(max_length=50, blank=True, null=True, default='Full-Time')
+
+    # Household specific fields
+    household_name = models.CharField(max_length=255, blank=True, null=True)
+    household_id = models.CharField(max_length=50, blank=True, null=True)
+    primary_contact_name = models.CharField(max_length=255, blank=True, null=True)
+    residential_address = models.TextField(blank=True, null=True)
+    member_count = models.IntegerField(blank=True, null=True, default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        db_table = 'api_userprofile'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Profile of {self.user.email} ({self.user.role})"

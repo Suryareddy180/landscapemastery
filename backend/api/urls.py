@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import profile_views
 
 urlpatterns = [
     # Health Check (Load balancers & uptime monitoring)
@@ -8,10 +9,27 @@ urlpatterns = [
     # Auth & Webhooks
     path('login', views.login),
     path('login/', views.login),
+    path('auth/register', profile_views.register),
+    path('auth/register/', profile_views.register),
+    path('register', profile_views.register),
+    path('register/', profile_views.register),
     path('auth/forgot-password', views.forgot_password),
     path('auth/forgot-password/', views.forgot_password),
     path('auth/reset-password', views.reset_password),
     path('auth/reset-password/', views.reset_password),
+
+    # Universal Profile Management System Endpoints
+    path('profile', profile_views.user_profile),
+    path('profile/', profile_views.user_profile),
+    path('profile/upload-picture', profile_views.upload_profile_picture),
+    path('profile/upload-picture/', profile_views.upload_profile_picture),
+    path('profile/picture', profile_views.delete_profile_picture),
+    path('profile/picture/', profile_views.delete_profile_picture),
+    path('profile/change-password', profile_views.change_password),
+    path('profile/change-password/', profile_views.change_password),
+    path('profile/delete-account', profile_views.delete_account),
+    path('profile/delete-account/', profile_views.delete_account),
+
     path('webhook/razorpay', views.razorpay_webhook),
     path('webhook/razorpay/', views.razorpay_webhook),
     path('checkout/session', views.checkout_session),

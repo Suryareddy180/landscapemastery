@@ -6,7 +6,7 @@ import UserGovernanceSection from './admin/UserGovernanceSection.jsx';
 import CompanyConfigSection from './admin/CompanyConfigSection.jsx';
 import { BASE_URL } from '../lib/api.js';
 
-export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated }) {
+export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated, onOpenProfile }) {
   const [activeSection, setActiveSection] = useState('overview');
   const fileInputRef = useRef(null);
   const pdfFileInputRef = useRef(null);
@@ -381,6 +381,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       onNavigate={onNavigate}
       siteSettings={siteSettings}
       onLogout={onLogout}
+      onOpenProfile={onOpenProfile}
     >
       {/* SECTION 1: DASHBOARD OVERVIEW */}
       {activeSection === 'overview' && (
