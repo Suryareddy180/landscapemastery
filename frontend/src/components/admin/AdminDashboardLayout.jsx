@@ -25,6 +25,7 @@ export default function AdminDashboardLayout({
     { id: 'cms', label: 'Landing CMS & Logo', icon: 'web', badge: 'CMS' },
     { id: 'coupons', label: 'Coupons & Offers', icon: 'local_offer', badge: null },
     { id: 'testimonials', label: 'Testimonials & FAQs', icon: 'chat_bubble_outline', badge: null },
+    { id: 'community', label: 'Community Management', icon: 'forum', badge: 'Mod' },
     { id: '3caps', label: '3CAPSTECH Configuration', icon: 'domain', badge: '3CAPS' },
     { id: 'audit', label: 'Security Audit Logs', icon: 'security', badge: 'Logs' },
     { id: 'settings', label: 'System Settings', icon: 'settings', badge: null }

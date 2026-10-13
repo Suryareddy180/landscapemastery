@@ -254,3 +254,63 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.email} ({self.user.role})"
+
+
+class CommunityChannel(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+    topic = models.CharField(max_length=255, blank=True, default='')
+    pinned_announcement = models.TextField(blank=True, default='')
+    is_active = models.BooleanField(default=True)
+    is_read_only = models.BooleanField(default=False)
+    created_by = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_channels')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_community_channel'
+        ordering = ['slug']
+
+    def __str__(self):
+        return f"#{self.slug}"
+
+
+class CommunityMessage(models.Model):
+    channel = models.ForeignKey(CommunityChannel, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(Usr, on_delete=models.CASCADE, related_name='community_messages')
+    content = models.TextField()
+    is_pinned = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    deleted_by = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderated_messages')
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    reactions = models.JSONField(default=dict, blank=True)
+    flagged_count = models.IntegerField(default=0)
+    is_flagged = models.BooleanField(default=False)
+    moderation_note = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_community_message'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.channel.slug}] {self.user.email}: {self.content[:30]}"
+
+
+class CommunityMemberProfile(models.Model):
+    user = models.OneToOneField(Usr, on_delete=models.CASCADE, related_name='community_profile')
+    is_muted = models.BooleanField(default=False)
+    mute_reason = models.CharField(max_length=255, blank=True, default='')
+    muted_until = models.DateTimeField(null=True, blank=True)
+    custom_role_title = models.CharField(max_length=100, blank=True, default='')
+    warning_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_community_member_profile'
+
+    def __str__(self):
+        return f"Community Profile: {self.user.email} (Muted: {self.is_muted})"
+

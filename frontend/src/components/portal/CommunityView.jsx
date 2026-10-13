@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BASE_URL } from '../../lib/api.js';
 
-const CHANNELS = [
+const FALLBACK_CHANNELS = [
   {
     id: 'general-architecture',
+    slug: 'general-architecture',
     name: 'general-architecture',
     topic: 'Landscape spatial design, zoning regulations, and master planning concepts',
     pinned: '📌 Welcome to the 2026 Studio! Share portfolio drafts, field challenges, and project milestones.',
@@ -11,6 +13,7 @@ const CHANNELS = [
   },
   {
     id: 'site-grading-swales',
+    slug: 'site-grading-swales',
     name: 'site-grading-swales',
     topic: 'Topographical contours, cut-and-fill balance, and stormwater management',
     pinned: '📌 Tip: Always verify benchmark elevation before calculating run-to-rise swale invert depths.',
@@ -18,6 +21,7 @@ const CHANNELS = [
   },
   {
     id: 'hardscape-masonry',
+    slug: 'hardscape-masonry',
     name: 'hardscape-masonry',
     topic: 'Dry-stack vs mortared stone, retaining wall footers, and geogrid ties',
     pinned: '📌 Specification: Hydrostatic weep holes must be set at 6-8ft intervals with crushed washed gravel backfill.',
@@ -25,6 +29,7 @@ const CHANNELS = [
   },
   {
     id: 'botanical-lighting',
+    slug: 'botanical-lighting',
     name: 'botanical-lighting',
     topic: 'Xeriscaping, native plant matrices, micro-climates, and low-voltage lumen schemes',
     pinned: '📌 Recommended Kelvin: 2700K warm white for foliage uplighting, 3000K for stone column washes.',
@@ -32,6 +37,7 @@ const CHANNELS = [
   },
   {
     id: 'ask-instructors',
+    slug: 'ask-instructors',
     name: 'ask-instructors',
     topic: 'Direct Q&A with masterclass faculty and licensed landscape architects',
     pinned: '📌 Instructors host live studio critique sessions every Tuesday & Thursday at 6:00 PM EST.',
@@ -39,144 +45,97 @@ const CHANNELS = [
   }
 ];
 
-const INITIAL_MESSAGES = {
-  'general-architecture': [
-    {
-      id: 'm1',
-      sender: 'Marcus Vance, RLA',
-      role: 'Lead Faculty',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      time: '10:14 AM',
-      text: 'Good morning practitioners. For the courtyard schematic assignment, pay close attention to negative space around primary specimen trees. Do not crowd the root zone with dense hardscape paving.',
-      reactions: { '👍': 14, '🔥': 5, '💡': 8 }
-    },
-    {
-      id: 'm2',
-      sender: 'Elena Rostova',
-      role: 'Architect',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80',
-      time: '10:28 AM',
-      text: 'Agreed! In our recent Mediterranean villa project, we maintained a 12-foot permeable gravel circle around mature olive trees with sub-surface aeration rings.',
-      reactions: { '💡': 6, '📐': 4 }
-    },
-    {
-      id: 'm3',
-      sender: 'David Chen',
-      role: 'Student',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      time: '11:02 AM',
-      text: 'Has anyone tested using permeable resin-bound aggregate right up to the tree grate? Does it allow sufficient gas exchange for oaks?',
-      reactions: { '👍': 2 }
-    },
-    {
-      id: 'm4',
-      sender: 'Marcus Vance, RLA',
-      role: 'Lead Faculty',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      time: '11:15 AM',
-      text: 'David, it depends heavily on the aggregate binder. Polyurethane matrix maintains ~20% void ratio which works well, but epoxy binders will clog over time with organic silt. Better to install vertical perforated aeration tubes around the drip line.',
-      reactions: { '🔥': 9, '💡': 11 }
-    }
-  ],
-  'site-grading-swales': [
-    {
-      id: 'm-sg-1',
-      sender: 'Sarah Jenkins, PE',
-      role: 'Civil Engineer',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
-      time: '09:20 AM',
-      text: 'When calculating rational method runoff Q = C * I * A, remember to bump the runoff coefficient C from 0.20 to 0.35 if the lawn sits on compacted subsoil post-construction.',
-      reactions: { '💡': 12, '📐': 7 }
-    },
-    {
-      id: 'm-sg-2',
-      sender: 'Carlos Mendez',
-      role: 'Student',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
-      time: '09:45 AM',
-      text: 'That explains why my initial swale depth calculation overflowed during the 10-year storm simulation. Updating my grading profile now.',
-      reactions: { '👍': 4 }
-    }
-  ],
-  'hardscape-masonry': [
-    {
-      id: 'm-hm-1',
-      sender: 'Vikram Patel',
-      role: 'Masonry Specialist',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80',
-      time: '08:10 AM',
-      text: 'Rule of thumb: Any segmental retaining wall exceeding 4 feet in height MUST include stamped structural engineering calculations with biaxial geogrid reinforcement.',
-      reactions: { '👍': 18, '🔥': 6 }
-    }
-  ],
-  'botanical-lighting': [
-    {
-      id: 'm-bl-1',
-      sender: 'Amara Okafor',
-      role: 'Lighting Designer',
-      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&auto=format&fit=crop&q=80',
-      time: '07:30 AM',
-      text: 'Avoid mounting spotlights directly on tree trunks with rigid screws. Use stainless steel tree-friendly bungee straps that expand as the trunk caliper grows.',
-      reactions: { '💡': 15, '👍': 9 }
-    }
-  ],
-  'ask-instructors': [
-    {
-      id: 'm-ai-1',
-      sender: 'Marcus Vance, RLA',
-      role: 'Lead Faculty',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      time: 'Yesterday',
-      text: 'Welcome to Office Hours! Drop your CAD drawing queries or grading balance questions here. We answer all questions within 4 hours during business days.',
-      reactions: { '👍': 22 }
-    }
-  ]
-};
+export default function CommunityView({ token, user, onOpenAdminCommunity }) {
+  const isModerator = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN'].includes(user.role);
 
-const SIMULATED_REPLIES = [
-  "Excellent point! Make sure to verify that against local municipal stormwater ordinances.",
-  "That's a very common field challenge. In our practice, we solve that with a dual-stage bioretention basin.",
-  "Check out Module 2, Lesson 4 for the detailed step-by-step CAD drafting blueprint on this exact detail.",
-  "Great question! Keep in mind the soil compaction testing requirements (ASTM D1557) before laying your stone base.",
-  "Love this observation! Adding this to our studio whiteboard for tomorrow's review session."
-];
-
-export default function CommunityView() {
+  const [channels, setChannels] = useState(FALLBACK_CHANNELS);
   const [selectedChannelId, setSelectedChannelId] = useState('general-architecture');
-  const [messagesByChannel, setMessagesByChannel] = useState(() => {
-    try {
-      const stored = localStorage.getItem('lm_portal_community_messages');
-      return stored ? JSON.parse(stored) : INITIAL_MESSAGES;
-    } catch {
-      return INITIAL_MESSAGES;
-    }
-  });
-  
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeOnlineCount, setActiveOnlineCount] = useState(26);
+  const [activeOnlineCount, setActiveOnlineCount] = useState(28);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [actionNotice, setActionNotice] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Sync with localStorage
+  // Load Channels from Backend or Fallback
   useEffect(() => {
-    try {
-      localStorage.setItem('lm_portal_community_messages', JSON.stringify(messagesByChannel));
-    } catch (e) {
-      console.warn('Failed to persist community messages', e);
-    }
-  }, [messagesByChannel]);
+    fetchChannels();
+  }, []);
 
-  // Gentle online presence fluctuation to simulate live peers
+  const fetchChannels = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/community/channels/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.channels && data.channels.length > 0) {
+          setChannels(data.channels);
+        }
+      }
+    } catch (e) {
+      console.warn('Using offline channels fallback', e);
+    }
+  };
+
+  // Load Channel Messages
+  useEffect(() => {
+    fetchMessages(selectedChannelId);
+  }, [selectedChannelId]);
+
+  const fetchMessages = async (slug) => {
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${BASE_URL}/api/community/channels/${slug}/messages/`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.messages) {
+          setMessages(data.messages);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Network error fetching messages, falling back to cached state', e);
+    }
+
+    // Local cached fallback
+    try {
+      const stored = localStorage.getItem(`lm_comm_${slug}`);
+      if (stored) {
+        setMessages(JSON.parse(stored));
+      } else {
+        // Initial mock message for clean UX
+        setMessages([
+          {
+            id: `init-${slug}`,
+            sender: 'Marcus Vance, RLA',
+            role: 'Lead Faculty',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            time: '10:15 AM',
+            text: `Welcome to #${slug}. Share site observations, technical specifications, and project questions.`,
+            reactions: { '👍': 12, '💡': 8 }
+          }
+        ]);
+      }
+    } catch {
+      setMessages([]);
+    }
+  };
+
+  const showNotice = (text, type = 'info') => {
+    setActionNotice({ text, type });
+    setTimeout(() => setActionNotice(null), 3500);
+  };
+
+  // Gentle online presence simulation
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveOnlineCount(prev => Math.max(18, Math.min(38, prev + (Math.random() > 0.5 ? 1 : -1))));
-    }, 15000);
+      setActiveOnlineCount(prev => Math.max(19, Math.min(42, prev + (Math.random() > 0.5 ? 1 : -1))));
+    }, 12000);
     return () => clearInterval(interval);
   }, []);
 
-  const activeChannel = CHANNELS.find(c => c.id === selectedChannelId) || CHANNELS[0];
-  const activeMessages = messagesByChannel[selectedChannelId] || [];
+  const activeChannel = channels.find(c => (c.slug || c.id) === selectedChannelId) || channels[0] || FALLBACK_CHANNELS[0];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -184,102 +143,247 @@ export default function CommunityView() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChannelId, activeMessages.length]);
+  }, [selectedChannelId, messages.length]);
 
-  const handleSendMessage = (e) => {
+  // Send Message
+  const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
 
-    const userMsg = {
-      id: `usr-${Date.now()}`,
-      sender: 'You (Student Architect)',
-      role: 'Practitioner',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    const textToSend = newMessage.trim();
+    setNewMessage('');
+    setIsSending(true);
+
+    const optimisticMsg = {
+      id: `tmp-${Date.now()}`,
+      sender: user?.name || user?.full_name || (user?.email ? user.email.split('@')[0] : 'You (Student Architect)'),
+      sender_email: user?.email || '',
+      role: isModerator ? (user.role === 'SUPER_ADMIN' ? 'Portal Super Admin' : 'Content Manager') : 'Student Architect',
+      is_moderator: isModerator,
+      avatar: user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: newMessage.trim(),
+      text: textToSend,
       reactions: {}
     };
 
-    setMessagesByChannel(prev => ({
-      ...prev,
-      [selectedChannelId]: [...(prev[selectedChannelId] || []), userMsg]
+    setMessages(prev => [...prev, optimisticMsg]);
+
+    try {
+      if (token) {
+        const res = await fetch(`${BASE_URL}/api/community/channels/${activeChannel.slug || selectedChannelId}/post/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ content: textToSend })
+        });
+
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData.data) {
+            setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? resData.data : m));
+          }
+        } else {
+          const errData = await res.json();
+          showNotice(errData.error || 'Failed to post message', 'error');
+        }
+      } else {
+        // Cache locally for guest/preview
+        localStorage.setItem(`lm_comm_${selectedChannelId}`, JSON.stringify([...messages, optimisticMsg]));
+      }
+    } catch {
+      // Offline fallback
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Toggle Reactions
+  const handleToggleReaction = async (msgId, emoji) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msgId) return m;
+      const rx = m.reactions || {};
+      return {
+        ...m,
+        reactions: {
+          ...rx,
+          [emoji]: (rx[emoji] || 0) + 1
+        }
+      };
     }));
 
-    const sentText = newMessage.trim();
-    setNewMessage('');
-
-    // Trigger realistic peer reaction / response after 2 seconds
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const randomReply = SIMULATED_REPLIES[Math.floor(Math.random() * SIMULATED_REPLIES.length)];
-      const botMsg = {
-        id: `bot-${Date.now()}`,
-        sender: 'Marcus Vance, RLA',
-        role: 'Lead Faculty',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: randomReply,
-        reactions: { '👍': 1 }
-      };
-
-      setMessagesByChannel(prev => ({
-        ...prev,
-        [selectedChannelId]: [...(prev[selectedChannelId] || []), botMsg]
-      }));
-    }, 2200);
+    if (token && typeof msgId === 'number') {
+      try {
+        await fetch(`${BASE_URL}/api/community/messages/${msgId}/react/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ emoji })
+        });
+      } catch {
+        // Silent reaction sync
+      }
+    }
   };
 
-  const handleToggleReaction = (msgId, emoji) => {
-    setMessagesByChannel(prev => {
-      const channelMsgs = prev[selectedChannelId] || [];
-      const updated = channelMsgs.map(m => {
-        if (m.id !== msgId) return m;
-        const currentCount = m.reactions?.[emoji] || 0;
-        return {
-          ...m,
-          reactions: {
-            ...m.reactions,
-            [emoji]: currentCount + 1
-          }
-        };
+  // Student: Flag / Report Message
+  const handleFlagMessage = async (msgId) => {
+    if (!token) {
+      showNotice('Please log in to report messages', 'error');
+      return;
+    }
+    try {
+      const res = await fetch(`${BASE_URL}/api/community/messages/${msgId}/flag/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: 'Reported by studio student' })
       });
-      return {
-        ...prev,
-        [selectedChannelId]: updated
-      };
-    });
+      if (res.ok) {
+        showNotice('Message reported to Content Managers & Super Admins for review.', 'success');
+      }
+    } catch {
+      showNotice('Report submitted.', 'info');
+    }
   };
 
-  const filteredMessages = activeMessages.filter(m => {
+  // MODERATOR ACTIONS (SUPER_ADMIN & CONTENT_MANAGER)
+  const handleModAction = async (msgId, action) => {
+    if (!token || !isModerator) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/admin/community/messages/${msgId}/moderate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action })
+      });
+
+      if (res.ok) {
+        if (action === 'delete') {
+          setMessages(prev => prev.filter(m => m.id !== msgId));
+          showNotice('Message deleted by studio moderator.', 'success');
+        } else if (action === 'pin') {
+          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, is_pinned: true } : m));
+          showNotice('Message pinned to channel header.', 'success');
+        } else if (action === 'unpin') {
+          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, is_pinned: false } : m));
+          showNotice('Message unpinned.', 'info');
+        }
+      }
+    } catch {
+      showNotice('Moderation action failed', 'error');
+    }
+  };
+
+  // Mute member action by moderator
+  const handleMuteMember = async (senderId, senderEmail) => {
+    if (!token || !isModerator || !senderId) return;
+    if (!window.confirm(`Mute user ${senderEmail} from posting in all community channels?`)) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/admin/community/members/${senderId}/moderate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'mute', reason: 'Direct moderator intervention' })
+      });
+
+      if (res.ok) {
+        showNotice(`Member ${senderEmail} has been muted.`, 'success');
+      }
+    } catch {
+      showNotice('Failed to mute user', 'error');
+    }
+  };
+
+  const filteredMessages = messages.filter(m => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return m.text.toLowerCase().includes(q) || m.sender.toLowerCase().includes(q);
+    return (m.text && m.text.toLowerCase().includes(q)) || (m.sender && m.sender.toLowerCase().includes(q));
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col h-[750px]">
+    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden flex flex-col h-[750px]">
+      {/* Toast Notice */}
+      <AnimatePresence>
+        {actionNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`px-4 py-2 text-xs font-semibold flex items-center justify-between border-b ${
+              actionNotice.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+              actionNotice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+              'bg-blue-50 text-blue-800 border-blue-200'
+            }`}
+          >
+            <span>{actionNotice.text}</span>
+            <button onClick={() => setActionNotice(null)} className="font-bold opacity-60 hover:opacity-100">✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MODERATOR BANNER (Super Admin & Content Manager only) */}
+      {isModerator && (
+        <div className="px-5 py-2.5 bg-gradient-to-r from-emerald-900 to-stone-900 text-white flex items-center justify-between text-xs shadow-inner">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-400 text-base">verified_user</span>
+            <span className="font-bold tracking-tight">
+              Community Moderator Rights Enabled
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-700/80 text-[10px] uppercase font-bold text-emerald-100">
+              {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Content Manager'}
+            </span>
+          </div>
+
+          {onOpenAdminCommunity && (
+            <button
+              onClick={onOpenAdminCommunity}
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <span>Open Admin Community Console</span>
+              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Bar */}
-      <div className="p-4 sm:p-5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-4 sm:p-5 border-b border-stone-200 bg-stone-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
             #
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">#{activeChannel.name}</h2>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
+              <h2 className="text-lg font-bold text-stone-900 tracking-tight">#{activeChannel.name}</h2>
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-100">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 {activeOnlineCount} Online
               </span>
+              {activeChannel.is_read_only && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
+                  🔒 Read-Only
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{activeChannel.topic}</p>
+            <p className="text-xs text-stone-500 line-clamp-1 mt-0.5">{activeChannel.topic}</p>
           </div>
         </div>
 
         {/* Message Search */}
         <div className="relative w-full sm:w-64">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-base">
             search
           </span>
           <input
@@ -287,7 +391,7 @@ export default function CommunityView() {
             placeholder="Search discussion..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white rounded-lg border border-slate-200 focus:outline-hidden focus:border-blue-500 text-slate-800"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white rounded-lg border border-stone-200 focus:outline-hidden focus:border-blue-500 text-stone-800"
           />
         </div>
       </div>
@@ -295,46 +399,46 @@ export default function CommunityView() {
       {/* Main Split Layout: Channels Rail (left) + Chat Stream (right) */}
       <div className="flex-1 flex overflow-hidden">
         {/* Channels Navigation Rail */}
-        <div className="w-56 sm:w-64 border-r border-slate-200/80 bg-slate-50/70 p-3 overflow-y-auto hidden md:block">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 py-2">
-            Discussions & Rooms
+        <div className="w-56 sm:w-64 border-r border-stone-200 bg-stone-50/70 p-3 overflow-y-auto hidden md:block">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-stone-400 px-3 py-2 flex items-center justify-between">
+            <span>Discussions & Rooms</span>
+            <span className="font-mono text-[10px] text-stone-400">{channels.length}</span>
           </div>
+
           <div className="space-y-1">
-            {CHANNELS.map(ch => {
-              const isSelected = ch.id === selectedChannelId;
-              const msgCount = (messagesByChannel[ch.id] || []).length;
+            {channels.map(ch => {
+              const chSlug = ch.slug || ch.id;
+              const isSelected = chSlug === selectedChannelId;
               return (
                 <button
-                  key={ch.id}
-                  onClick={() => setSelectedChannelId(ch.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
+                  key={chSlug}
+                  onClick={() => setSelectedChannelId(chSlug)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
+                      ? 'bg-blue-600 text-white shadow-2xs font-bold'
+                      : 'text-stone-600 hover:bg-stone-200/60 hover:text-stone-900'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
                     <span className="opacity-70 font-mono">#</span>
                     <span className="truncate">{ch.name}</span>
                   </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    isSelected ? 'bg-blue-700 text-blue-100' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {msgCount}
-                  </span>
+                  {ch.is_read_only && (
+                    <span className="text-[10px] opacity-80">🔒</span>
+                  )}
                 </button>
               );
             })}
           </div>
 
           {/* Quick Studio Info */}
-          <div className="mt-8 p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
+          <div className="mt-8 p-3.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-stone-800 mb-1">
               <span className="material-symbols-outlined text-blue-600 text-base">verified</span>
               Live Architecture Studio
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Connect in real-time with certified civil engineers, site superintendents, and landscape masters.
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              Moderated by licensed landscape faculty and certified superintendents.
             </p>
           </div>
         </div>
@@ -342,9 +446,11 @@ export default function CommunityView() {
         {/* Chat Feed */}
         <div className="flex-1 flex flex-col bg-white overflow-hidden">
           {/* Pinned Channel Notice */}
-          {activeChannel.pinned && (
+          {(activeChannel.pinned || activeChannel.pinned_announcement) && (
             <div className="px-5 py-2.5 bg-blue-50/60 border-b border-blue-100 text-xs text-blue-900 flex items-center justify-between gap-3">
-              <span className="truncate font-medium">{activeChannel.pinned}</span>
+              <span className="truncate font-medium">
+                {activeChannel.pinned || activeChannel.pinned_announcement}
+              </span>
               <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider whitespace-nowrap">Pinned</span>
             </div>
           )}
@@ -352,65 +458,118 @@ export default function CommunityView() {
           {/* Messages Scroll Area */}
           <div className="flex-1 p-5 overflow-y-auto space-y-4">
             {filteredMessages.length === 0 ? (
-              <div className="py-20 text-center text-slate-400">
+              <div className="py-20 text-center text-stone-400">
                 <span className="material-symbols-outlined text-4xl mb-1">chat</span>
-                <p className="text-xs">No messages found in #{activeChannel.name}. Start the discussion below!</p>
+                <p className="text-xs">No messages in #{activeChannel.name}. Start the discussion below!</p>
               </div>
             ) : (
               filteredMessages.map((msg) => {
-                const isInstructor = msg.role?.includes('Faculty') || msg.role?.includes('Engineer');
+                const isInstructor = msg.is_moderator || msg.role?.includes('Faculty') || msg.role?.includes('Manager') || msg.role?.includes('Admin');
                 return (
-                  <div key={msg.id} className="flex items-start gap-3 group">
+                  <div key={msg.id} className="flex items-start gap-3 group relative">
                     <img
-                      src={msg.avatar}
+                      src={msg.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
                       alt={msg.sender}
-                      className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200 shadow-2xs"
+                      className="w-9 h-9 rounded-full object-cover shrink-0 border border-stone-200 shadow-2xs"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-slate-900">{msg.sender}</span>
+                        <span className="text-xs font-bold text-stone-900">{msg.sender}</span>
                         {msg.role && (
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             isInstructor
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-amber-100 text-amber-900 font-bold border border-amber-200'
+                              : 'bg-stone-100 text-stone-600'
                           }`}>
                             {msg.role}
                           </span>
                         )}
-                        <span className="text-[11px] text-slate-400 font-mono ml-auto">{msg.time}</span>
+                        {msg.is_pinned && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            📌 Pinned
+                          </span>
+                        )}
+                        <span className="text-[11px] text-stone-400 font-mono ml-auto">{msg.time}</span>
                       </div>
 
-                      <div className="text-xs sm:text-sm text-slate-700 bg-slate-50/80 rounded-2xl p-3 border border-slate-100 leading-relaxed break-words">
+                      <div className="text-xs sm:text-sm text-stone-700 bg-stone-50/80 rounded-2xl p-3 border border-stone-100 leading-relaxed break-words">
                         {msg.text}
                       </div>
 
-                      {/* Reactions & Add Reaction Pill */}
-                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                        {Object.entries(msg.reactions || {}).map(([emoji, count]) => (
-                          count > 0 && (
-                            <button
-                              key={emoji}
-                              onClick={() => handleToggleReaction(msg.id, emoji)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 hover:bg-blue-50 text-[11px] text-slate-700 border border-slate-200/60 transition-all cursor-pointer"
-                            >
-                              <span>{emoji}</span>
-                              <span className="font-semibold text-[10px]">{count}</span>
-                            </button>
-                          )
-                        ))}
-
-                        {/* Quick Reaction Bar on Hover */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pl-1">
-                          {['👍', '🔥', '💡', '📐'].map(emoji => (
-                            <button
-                              key={emoji}
-                              onClick={() => handleToggleReaction(msg.id, emoji)}
-                              className="text-xs p-1 hover:bg-slate-100 rounded transition-all"
-                            >
-                              {emoji}
-                            </button>
+                      {/* Reactions & Hover Action Bar */}
+                      <div className="flex items-center justify-between gap-2 mt-2">
+                        {/* Reactions Bar */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {Object.entries(msg.reactions || {}).map(([emoji, count]) => (
+                            count > 0 && (
+                              <button
+                                key={emoji}
+                                onClick={() => handleToggleReaction(msg.id, emoji)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 hover:bg-blue-50 text-[11px] text-stone-700 border border-stone-200/60 transition-all cursor-pointer"
+                              >
+                                <span>{emoji}</span>
+                                <span className="font-semibold text-[10px]">{count}</span>
+                              </button>
+                            )
                           ))}
+
+                          {/* Quick Reaction Emoji Picker */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pl-1">
+                            {['👍', '🔥', '💡', '📐'].map(emoji => (
+                              <button
+                                key={emoji}
+                                onClick={() => handleToggleReaction(msg.id, emoji)}
+                                className="text-xs p-1 hover:bg-stone-100 rounded transition-all cursor-pointer"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Message Actions (Report / Moderator Tools) */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                          {/* Student Report Flag */}
+                          {!isModerator && (
+                            <button
+                              onClick={() => handleFlagMessage(msg.id)}
+                              title="Report message"
+                              className="p-1 text-stone-400 hover:text-amber-600 rounded cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">flag</span>
+                            </button>
+                          )}
+
+                          {/* Super Admin & Content Manager Mod Menu */}
+                          {isModerator && (
+                            <>
+                              <button
+                                onClick={() => handleModAction(msg.id, msg.is_pinned ? 'unpin' : 'pin')}
+                                title={msg.is_pinned ? 'Unpin' : 'Pin to channel'}
+                                className="p-1 text-stone-400 hover:text-amber-600 rounded cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">
+                                  {msg.is_pinned ? 'push_pin' : 'keep'}
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => handleModAction(msg.id, 'delete')}
+                                title="Delete message (Moderator)"
+                                className="p-1 text-stone-400 hover:text-rose-600 rounded cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">delete</span>
+                              </button>
+                              {msg.sender_id && (
+                                <button
+                                  onClick={() => handleMuteMember(msg.sender_id, msg.sender_email || msg.sender)}
+                                  title="Mute user from studio"
+                                  className="p-1 text-stone-400 hover:text-rose-600 rounded cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[15px]">volume_off</span>
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -419,43 +578,38 @@ export default function CommunityView() {
               })
             )}
 
-            {/* Simulated Peer Typing Indicator */}
-            {isTyping && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 italic py-1">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
-                </div>
-                <span>Marcus Vance, RLA is typing...</span>
-              </div>
-            )}
-
             <div ref={messagesEndRef} />
           </div>
 
           {/* Bottom Message Input Bar */}
-          <div className="p-3 sm:p-4 border-t border-slate-200/80 bg-slate-50/50">
-            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={`Message #${activeChannel.name}... (Press Enter to send)`}
-                className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs text-slate-900 placeholder-slate-400"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim()}
-                className={`flex items-center justify-center p-2.5 rounded-xl font-bold transition-all shadow-xs ${
-                  newMessage.trim()
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">send</span>
-              </button>
-            </form>
+          <div className="p-3 sm:p-4 border-t border-stone-200 bg-stone-50/50">
+            {activeChannel.is_read_only && !isModerator ? (
+              <div className="py-2.5 px-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">lock</span>
+                <span>This channel is currently read-only. Only course instructors and faculty can post.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={`Message #${activeChannel.name}... (Press Enter to send)`}
+                  className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-white rounded-xl border border-stone-200 focus:outline-hidden focus:border-blue-500 shadow-2xs text-stone-900 placeholder-stone-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim() || isSending}
+                  className={`flex items-center justify-center p-2.5 rounded-xl font-bold transition-all shadow-xs ${
+                    newMessage.trim() && !isSending
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                      : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">send</span>
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

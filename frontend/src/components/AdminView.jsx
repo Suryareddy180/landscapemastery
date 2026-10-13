@@ -4,6 +4,7 @@ import CourseBuilderSection from './admin/CourseBuilderSection.jsx';
 import MediaLibrarySection from './admin/MediaLibrarySection.jsx';
 import UserGovernanceSection from './admin/UserGovernanceSection.jsx';
 import CompanyConfigSection from './admin/CompanyConfigSection.jsx';
+import CommunityManagementSection from './admin/CommunityManagementSection.jsx';
 import { BASE_URL } from '../lib/api.js';
 
 export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated, onOpenProfile }) {
@@ -1088,6 +1089,11 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       {/* SECTION: 3CAPSTECH CONFIGURATION & GOVERNANCE */}
       {activeSection === '3caps' && (
         <CompanyConfigSection token={token} />
+      )}
+
+      {/* SECTION: COMMUNITY MANAGEMENT (Super Admin & Content Manager) */}
+      {activeSection === 'community' && (
+        <CommunityManagementSection token={token} />
       )}
 
       {/* SECTION 9: AUDIT LOGS */}

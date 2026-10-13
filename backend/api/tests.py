@@ -1052,3 +1052,123 @@ class UniversalProfileManagementTests(TestCase):
         self.assertEqual(enrollments.count(), 1)
 
 
+class CommunityManagementTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.superadmin = Usr.objects.create_user(
+            email="superadmin@landscapemastery.com",
+            password="AdminPassword123!",
+            role="SUPER_ADMIN",
+            is_staff=True,
+            is_superuser=True
+        )
+        self.content_manager = Usr.objects.create_user(
+            email="contentmgr@landscapemastery.com",
+            password="ContentPass123!",
+            role="CONTENT_MANAGER",
+            is_staff=True
+        )
+        self.student = Usr.objects.create_user(
+            email="student@landscapemastery.com",
+            password="StudentPass123!",
+            role="STUDENT"
+        )
+        self.hacker = Usr.objects.create_user(
+            email="spammer@example.com",
+            password="SpamPass123!",
+            role="STUDENT"
+        )
+
+        from api.views import get_tokens_for_user
+        self.superadmin_token = get_tokens_for_user(self.superadmin)
+        self.content_mgr_token = get_tokens_for_user(self.content_manager)
+        self.student_token = get_tokens_for_user(self.student)
+        self.hacker_token = get_tokens_for_user(self.hacker)
+
+    def test_channels_list_and_auto_seed(self):
+        res = self.client.get('/api/community/channels/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn('channels', data)
+        self.assertGreaterEqual(len(data['channels']), 5)
+        slugs = [c['slug'] for c in data['channels']]
+        self.assertIn('general-architecture', slugs)
+
+    def test_student_post_message_and_reaction(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        post_res = self.client.post('/api/community/channels/general-architecture/post/', {
+            'content': 'Hello from our landscape architecture studio!'
+        }, format='json')
+        self.assertEqual(post_res.status_code, 201)
+        msg_data = post_res.json()['data']
+        msg_id = msg_data['id']
+        self.assertEqual(msg_data['text'], 'Hello from our landscape architecture studio!')
+
+        # React with emoji
+        react_res = self.client.post(f'/api/community/messages/{msg_id}/react/', {
+            'emoji': '🔥'
+        }, format='json')
+        self.assertEqual(react_res.status_code, 200)
+        self.assertEqual(react_res.json()['reactions']['🔥'], 1)
+
+    def test_admin_access_control(self):
+        # Student attempting admin overview -> 403 Forbidden
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        res = self.client.get('/api/admin/community/overview/')
+        self.assertEqual(res.status_code, 403)
+
+        # Content Manager accessing admin overview -> 200 OK
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.content_mgr_token}')
+        res_cm = self.client.get('/api/admin/community/overview/')
+        self.assertEqual(res_cm.status_code, 200)
+        self.assertIn('stats', res_cm.json())
+
+        # Super Admin accessing admin overview -> 200 OK
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.superadmin_token}')
+        res_sa = self.client.get('/api/admin/community/overview/')
+        self.assertEqual(res_sa.status_code, 200)
+
+    def test_content_manager_moderation_pin_delete_and_mute(self):
+        # 1. Student posts message
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.hacker_token}')
+        post_res = self.client.post('/api/community/channels/general-architecture/post/', {
+            'content': 'Spam advertising unauthorized blueprints'
+        }, format='json')
+        self.assertEqual(post_res.status_code, 201)
+        msg_id = post_res.json()['data']['id']
+
+        # 2. Content Manager pins message
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.content_mgr_token}')
+        pin_res = self.client.post(f'/api/admin/community/messages/{msg_id}/moderate/', {
+            'action': 'pin'
+        }, format='json')
+        self.assertEqual(pin_res.status_code, 200)
+
+        # 3. Content Manager deletes message
+        del_res = self.client.post(f'/api/admin/community/messages/{msg_id}/moderate/', {
+            'action': 'delete'
+        }, format='json')
+        self.assertEqual(del_res.status_code, 200)
+
+        # Message is now omitted from active channel messages
+        get_res = self.client.get('/api/community/channels/general-architecture/messages/')
+        active_ids = [m['id'] for m in get_res.json()['messages']]
+        self.assertNotIn(msg_id, active_ids)
+
+        # 4. Content Manager mutes the spammer
+        mute_res = self.client.post(f'/api/admin/community/members/{self.hacker.id}/moderate/', {
+            'action': 'mute',
+            'reason': 'Violation of academic standards'
+        }, format='json')
+        self.assertEqual(mute_res.status_code, 200)
+
+        # 5. Spammer cannot post anymore -> 403 Forbidden
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.hacker_token}')
+        blocked_res = self.client.post('/api/community/channels/general-architecture/post/', {
+            'content': 'Another spam attempt'
+        }, format='json')
+        self.assertEqual(blocked_res.status_code, 403)
+        self.assertIn('Cannot post', blocked_res.json()['error'])
+
+
+

@@ -425,7 +425,11 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
               />
             ) : portalTab === 'community' ? (
               /* LIVE ARCHITECT COMMUNITY TAB (Icon 4) */
-              <CommunityView />
+              <CommunityView
+                token={token}
+                user={user}
+                onOpenAdminCommunity={() => onNavigate('admin')}
+              />
             ) : (
               /* ACTIVE COURSES CATALOG (Icon 1) */
               <>

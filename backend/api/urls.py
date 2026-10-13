@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import profile_views
+from . import community_views
 
 urlpatterns = [
     # Health Check (Load balancers & uptime monitoring)
@@ -109,4 +110,22 @@ urlpatterns = [
     path('admin/coupons/', views.admin_coupons),
     path('admin/coupons/<int:pk>/', views.admin_coupon_detail),
     path('checkout/coupon/', views.apply_coupon),
+
+    # Community Discussions (Students & Faculty)
+    path('community/channels/', community_views.get_community_channels),
+    path('community/channels/<slug:slug>/messages/', community_views.get_channel_messages),
+    path('community/channels/<slug:slug>/messages', community_views.get_channel_messages),
+    path('community/channels/<slug:slug>/post/', community_views.post_channel_message),
+    path('community/messages/<int:message_id>/react/', community_views.react_message),
+    path('community/messages/<int:message_id>/flag/', community_views.flag_message),
+
+    # Community Management (Content Manager & Super Admin)
+    path('admin/community/overview/', community_views.admin_community_overview),
+    path('admin/community/channels/', community_views.admin_channels_list_create),
+    path('admin/community/channels/<slug:slug>/', community_views.admin_channel_detail),
+    path('admin/community/messages/', community_views.admin_messages_list),
+    path('admin/community/messages/<int:message_id>/moderate/', community_views.admin_moderate_message),
+    path('admin/community/members/', community_views.admin_members_list),
+    path('admin/community/members/<int:user_id>/moderate/', community_views.admin_moderate_member),
 ]
+
