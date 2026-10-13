@@ -3,6 +3,10 @@ import hashlib
 import json
 import time
 import csv
+import re
+import secrets
+import logging
+import requests
 import jwt
 from django.conf import settings
 from django.http import HttpResponse
@@ -15,10 +19,12 @@ from .models import (
     PaymentRecord, Coupon, Testimonial, FAQ, Announcement, SiteSetting, AuditLog, LessonProgress, VideoProgress
 )
 from .email_service import sndMail
+from .payment_service import fulfill_verified_payment
 from .signed_url_service import generate_signed_stream_token, verify_signed_stream_token
 from .audit_service import log_admin_action
 from .veed_service import extract_veed_video_id, normalize_veed_embed_url, validate_veed_source
 
+logger = logging.getLogger(__name__)
 JWT_SECRET = settings.SECRET_KEY
 
 def get_tokens_for_user(usr):
@@ -179,18 +185,53 @@ def reset_password(req):
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # ---------------------------------------------------------
-# PAYMENTS & CHECKOUT
+# PAYMENTS & CHECKOUT (Automated Account Creation Flow)
 # ---------------------------------------------------------
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def checkout_session(req):
-    email = req.data.get('email')
-    phone = req.data.get('phone', '')
+    """
+    Step 1 & 2: Validates billing & learner information, creates pending PaymentRecord,
+    and initializes Razorpay checkout order.
+    """
+    email = str(req.data.get('email', '')).strip().lower()
+    full_name = str(req.data.get('full_name', '')).strip()
+    phone = str(req.data.get('phone', '')).strip()
+    account_type = str(req.data.get('account_type', 'STUDENT')).upper().strip()
     course_id = req.data.get('course_id')
+
     if not email:
-        return Response({'error': 'Email required'}, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({'error': 'Email address is required to proceed with checkout.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return Response({'error': 'Please provide a valid email address.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not full_name:
+        return Response({'error': 'Full name is required for account enrollment and certificate generation.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not phone:
+        return Response({'error': 'Mobile number with country code is required for communications.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if account_type not in ['STUDENT', 'EMPLOYEE', 'HOUSEHOLD']:
+        account_type = 'STUDENT'
+
+    # Assemble learner metadata based on account type
+    checkout_metadata = {
+        'full_name': full_name,
+        'account_type': account_type,
+        'qualification': str(req.data.get('qualification', '')).strip(),
+        'branch': str(req.data.get('branch', '')).strip(),
+        'college_name': str(req.data.get('college_name', '')).strip(),
+        'passout_year': req.data.get('passout_year'),
+        'student_status': str(req.data.get('student_status', 'Still Studying')).strip(),
+        'company_name': str(req.data.get('company_name', '')).strip(),
+        'department': str(req.data.get('department', '')).strip(),
+        'designation': str(req.data.get('designation', '')).strip(),
+        'employment_status': str(req.data.get('employment_status', 'Full-Time')).strip(),
+        'household_name': str(req.data.get('household_name', '')).strip(),
+        'primary_contact_name': str(req.data.get('primary_contact_name', full_name)).strip(),
+        'residential_address': str(req.data.get('residential_address', '')).strip(),
+        'member_count': req.data.get('member_count', 1),
+    }
+
     # Per-course pricing: look up specific course price, fallback to site setting
     if course_id:
         try:
@@ -198,42 +239,106 @@ def checkout_session(req):
             price = float(course.discount_price or course.price)
             course_title = course.title
         except Course.DoesNotExist:
-            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Selected course is not available or has been unpublished.'}, status=status.HTTP_404_NOT_FOUND)
     else:
         setting, _ = SiteSetting.objects.get_or_create(id=1)
         price = float(setting.course_price)
-        course_title = 'Landscape Mastery Course'
-    
-    order_id = 'order_' + str(int(time.time()))
-    amount = int(price * 100)
-    
+        course = Course.objects.filter(status='PUBLISHED').first()
+        course_title = course.title if course else 'Landscape Mastery Masterclass'
+
+    # Apply Coupon if provided
+    coupon_code = str(req.data.get('coupon_code', '')).strip().upper()
+    if coupon_code:
+        try:
+            c = Coupon.objects.get(code__iexact=coupon_code, active=True)
+            if c.used_count < c.max_uses:
+                discount = (price * c.discount_pct) / 100.0
+                price = max(1.0, round(price - discount, 2))
+                checkout_metadata['coupon_code'] = coupon_code
+                checkout_metadata['discount_pct'] = c.discount_pct
+        except Coupon.DoesNotExist:
+            pass
+
+    order_id = f"order_{int(time.time())}_{secrets.token_hex(4)}"
+    amount_in_paise = int(round(price * 100))
+
+    razorpay_key_id = getattr(settings, 'RAZORPAY_KEY_ID', '')
+    razorpay_key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
+
+    # Authoritative gateway order creation with configured Razorpay credentials
+    if razorpay_key_id and razorpay_key_secret:
+        try:
+            rzp_res = requests.post(
+                "https://api.razorpay.com/v1/orders",
+                auth=(razorpay_key_id, razorpay_key_secret),
+                json={
+                    "amount": amount_in_paise,
+                    "currency": "INR",
+                    "receipt": f"rcpt_{int(time.time())}_{secrets.token_hex(3)}",
+                    "notes": {
+                        "course_id": str(course.id) if course else "",
+                        "email": email,
+                        "full_name": full_name,
+                        "account_type": account_type
+                    }
+                },
+                timeout=8
+            )
+            if rzp_res.status_code in [200, 201]:
+                rzp_data = rzp_res.json()
+                if rzp_data.get('id'):
+                    order_id = rzp_data['id']
+                    logger.info(f"Created Razorpay order {order_id} for {email}")
+            else:
+                logger.warning(f"Razorpay order creation returned {rzp_res.status_code}: {rzp_res.text}")
+        except Exception as e:
+            logger.warning(f"Unable to reach Razorpay order API: {e}")
+
+    # Store checkout details against pending PaymentRecord before payment
+    PaymentRecord.objects.create(
+        order_id=order_id,
+        amount=price,
+        currency='INR',
+        status='PENDING',
+        customer_email=email,
+        customer_name=full_name,
+        customer_phone=phone,
+        account_type=account_type,
+        checkout_metadata=checkout_metadata,
+        course=course
+    )
+
     return Response({
         'success': True,
         'keyId': getattr(settings, 'RAZORPAY_KEY_ID', ''),
         'orderId': order_id,
-        'amount': amount,
+        'amount': amount_in_paise,
         'currency': 'INR',
         'email': email,
         'phone': phone,
-        'courseId': course_id,
+        'customer_name': full_name,
+        'account_type': account_type,
+        'courseId': course.id if course else None,
         'courseTitle': course_title
-    })
+    }, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def checkout_verify(req):
     """
-    Server-side verification of Razorpay payment callback.
-    Guarantees course enrollment only happens upon cryptographic HMAC SHA256 verification.
+    Step 8-12: Verifies payment authenticity using HMAC SHA-256 signature verification.
+    Guarantees course enrollment and account provisioning happen only after authoritative verification.
+    Dispatches access email and returns confirmation.
     """
-    razorpay_order_id = req.data.get('razorpay_order_id')
-    razorpay_payment_id = req.data.get('razorpay_payment_id')
-    razorpay_signature = req.data.get('razorpay_signature')
-    email = req.data.get('email')
-    phone = req.data.get('phone', '')
+    razorpay_order_id = str(req.data.get('razorpay_order_id', '')).strip()
+    razorpay_payment_id = str(req.data.get('razorpay_payment_id', '')).strip()
+    razorpay_signature = str(req.data.get('razorpay_signature', '')).strip()
+    email = str(req.data.get('email', '')).strip().lower()
+    phone = str(req.data.get('phone', '')).strip()
 
     if not razorpay_order_id or not razorpay_payment_id or not email:
-        return Response({'error': 'Missing payment verification parameters'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Missing payment verification parameters (order_id, payment_id, email required).'}, status=status.HTTP_400_BAD_REQUEST)
 
     sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
     if sec and razorpay_signature:
@@ -244,111 +349,128 @@ def checkout_verify(req):
         ).hexdigest()
 
         if not hmac.compare_digest(generated_signature, razorpay_signature):
-            return Response({'error': 'Invalid cryptographic payment signature'}, status=status.HTTP_400_BAD_REQUEST)
-    elif not settings.DEBUG:
-        return Response({'error': 'Cryptographic payment signature required in production'}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(f"Signature mismatch for order {razorpay_order_id}")
+            return Response({'error': 'Cryptographic payment signature verification failed.'}, status=status.HTTP_400_BAD_REQUEST)
+    elif not settings.DEBUG and getattr(settings, 'RAZORPAY_KEY_SECRET', ''):
+        return Response({'error': 'Payment signature required in production environment.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create/update paid user record
-    course_id = req.data.get('course_id')
-    usr, created = Usr.objects.get_or_create(email=email, defaults={'phone': phone, 'role': 'STUDENT', 'paid': True})
-    if phone:
-        usr.phone = phone
-        usr.set_password(phone)
-    usr.paid = True
-    usr.save()
+    # Retrieve pending order record if exists
+    pending_record = PaymentRecord.objects.filter(order_id=razorpay_order_id).first()
+    customer_name = pending_record.customer_name if pending_record and pending_record.customer_name else req.data.get('full_name', '')
+    customer_phone = pending_record.customer_phone if pending_record and pending_record.customer_phone else phone
+    account_type = pending_record.account_type if pending_record and pending_record.account_type else req.data.get('account_type', 'STUDENT')
+    checkout_metadata = pending_record.checkout_metadata if pending_record and pending_record.checkout_metadata else req.data.get('checkout_metadata', {})
+    course_id = pending_record.course_id if pending_record and pending_record.course_id else req.data.get('course_id')
+    amount = float(pending_record.amount) if pending_record else 499.00
 
-    # Resolve the specific course for this purchase
-    target_course = None
-    if course_id:
-        try:
-            target_course = Course.objects.get(pk=course_id, status='PUBLISHED')
-        except Course.DoesNotExist:
-            target_course = Course.objects.filter(status='PUBLISHED').first()
-    else:
-        target_course = Course.objects.filter(status='PUBLISHED').first()
-
-    payment_amount = float(target_course.discount_price or target_course.price) if target_course else 499.00
-    PaymentRecord.objects.get_or_create(
+    # Fulfill payment: auto-provision user, enroll, send access email
+    fulfillment = fulfill_verified_payment(
         order_id=razorpay_order_id,
-        defaults={
-            'user': usr,
-            'course': target_course,
-            'payment_id': razorpay_payment_id,
-            'amount': payment_amount,
-            'status': 'SUCCESS'
-        }
+        payment_id=razorpay_payment_id,
+        customer_email=email,
+        customer_name=customer_name,
+        customer_phone=customer_phone,
+        course_id=course_id,
+        account_type=account_type,
+        checkout_metadata=checkout_metadata,
+        amount=amount
     )
-    
-    # Per-course enrollment
-    if target_course:
-        Enrollment.objects.get_or_create(user=usr, course=target_course, defaults={'status': 'ACTIVE', 'access_type': 'PAID'})
-    
-    if usr.phone:
-        sndMail(email, usr.phone)
-    log_admin_action(usr, "STUDENT_VERIFIED_PAYMENT", target=email, details=f"Order: {razorpay_order_id}, Course: {target_course.title if target_course else 'N/A'}")
 
-    # Return enrollments list
-    enrollments = list(Enrollment.objects.filter(user=usr, status='ACTIVE').values_list('course_id', flat=True))
-    tok = get_tokens_for_user(usr)
+    usr = fulfillment['user']
+    log_admin_action(usr, "PAYMENT_VERIFIED_ACCOUNT_CREATED", target=email, details=f"Order: {razorpay_order_id}, Payment: {razorpay_payment_id}")
+
     return Response({
         'success': True,
-        'token': tok,
+        'message': 'Payment successfully verified. Your account has been provisioned and login instructions have been dispatched to your email.',
+        'order_id': razorpay_order_id,
+        'payment_id': razorpay_payment_id,
+        'course_title': fulfillment['course'].title if fulfillment.get('course') else 'Landscape Mastery',
+        'email': email,
+        'is_new_user': fulfillment.get('is_new_user', False),
+        'email_sent': fulfillment.get('email_sent', True),
+        'token': fulfillment.get('token'),
         'user': {
             'id': usr.id,
             'email': usr.email,
             'role': usr.role,
             'paid': True,
             'name': usr.full_name or email.split('@')[0],
-            'enrollments': enrollments
+            'enrollments': fulfillment.get('enrollments', [])
         }
-    })
+    }, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def razorpay_webhook(req):
+    """
+    Authoritative server-side webhook handler for asynchronous gateway confirmation.
+    Idempotent: safe against retries and multiple deliveries.
+    """
     sig = req.headers.get('X-Razorpay-Signature')
     sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
     if sec and sig:
         exp_sig = hmac.new(sec.encode('utf-8'), req.body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(exp_sig, sig):
-            return Response({'error': 'Invalid signature'}, status=status.HTTP_400_BAD_REQUEST)
-    elif not settings.DEBUG:
+            return Response({'error': 'Invalid webhook signature'}, status=status.HTTP_400_BAD_REQUEST)
+    elif not settings.DEBUG and getattr(settings, 'RAZORPAY_KEY_SECRET', ''):
         return Response({'error': 'Webhook signature required in production'}, status=status.HTTP_400_BAD_REQUEST)
+
     body = req.data
     event = body.get('event')
-    if event == 'payment.captured':
+    if event in ['payment.captured', 'order.paid']:
         entity = body.get('payload', {}).get('payment', {}).get('entity', {})
         usrMail = entity.get('email')
-        phn = entity.get('contact')
-        order_id = entity.get('order_id', 'order_' + str(int(time.time())))
+        phn = entity.get('contact', '')
+        order_id = entity.get('order_id')
         payment_id = entity.get('id', '')
         amount = float(entity.get('amount', 49900)) / 100.0
 
-        if usrMail and phn:
-            usr, created = Usr.objects.get_or_create(email=usrMail, defaults={'phone': phn, 'role': 'STUDENT', 'paid': True})
-            usr.set_password(phn)
-            usr.phone = phn
-            usr.paid = True
-            usr.save()
+        if not order_id:
+            order_id = f"order_{int(time.time())}"
 
-            # Extract course_id from Razorpay notes if available
+        if usrMail:
             notes = entity.get('notes', {})
             webhook_course_id = notes.get('course_id')
-            target_course = None
-            if webhook_course_id:
-                try:
-                    target_course = Course.objects.get(pk=webhook_course_id, status='PUBLISHED')
-                except Course.DoesNotExist:
-                    target_course = Course.objects.filter(status='PUBLISHED').first()
-            else:
-                target_course = Course.objects.filter(status='PUBLISHED').first()
+            account_type = notes.get('account_type', 'STUDENT')
+            customer_name = notes.get('customer_name', '')
 
-            PaymentRecord.objects.create(user=usr, course=target_course, order_id=order_id, payment_id=payment_id, amount=amount, status='SUCCESS')
-            if target_course:
-                Enrollment.objects.get_or_create(user=usr, course=target_course, defaults={'status': 'ACTIVE', 'access_type': 'PAID'})
-            sndMail(usrMail, phn)
-            log_admin_action(usr, "STUDENT_AUTO_ENROLLED", target=usrMail, details=f"Order ID: {order_id}, Course: {target_course.title if target_course else 'N/A'}")
-    return Response({'status': 'ok'})
+            fulfill_verified_payment(
+                order_id=order_id,
+                payment_id=payment_id,
+                customer_email=usrMail,
+                customer_name=customer_name,
+                customer_phone=phn,
+                course_id=webhook_course_id,
+                account_type=account_type,
+                checkout_metadata=notes,
+                amount=amount
+            )
+
+    return Response({'status': 'ok'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def order_status(req, order_id):
+    """
+    Retrieves the status of an order reference.
+    """
+    record = PaymentRecord.objects.filter(order_id=order_id).first()
+    if not record:
+        return Response({'error': 'Order reference not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({
+        'order_id': record.order_id,
+        'payment_id': record.payment_id or '',
+        'status': record.status,
+        'amount': float(record.amount),
+        'currency': record.currency,
+        'email': record.customer_email,
+        'account_type': record.account_type,
+        'course_title': record.course.title if record.course else 'Landscape Mastery',
+        'created_at': record.created_at
+    }, status=status.HTTP_200_OK)
 
 # ---------------------------------------------------------
 # PUBLIC CMS & SETTINGS

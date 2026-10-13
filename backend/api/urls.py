@@ -36,6 +36,10 @@ urlpatterns = [
     path('checkout/session/', views.checkout_session),
     path('checkout/verify', views.checkout_verify),
     path('checkout/verify/', views.checkout_verify),
+    path('checkout/order/<str:order_id>/status', views.order_status),
+    path('checkout/order/<str:order_id>/status/', views.order_status),
+    path('orders/<str:order_id>/status', views.order_status),
+    path('orders/<str:order_id>/status/', views.order_status),
 
     # Public CMS & Settings
     path('public/settings/', views.public_settings),

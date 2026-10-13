@@ -144,14 +144,28 @@ class VideoProgress(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class PaymentRecord(models.Model):
-    user = models.ForeignKey(Usr, on_delete=models.CASCADE, null=True, blank=True)
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('REFUNDED', 'Refunded'),
+    )
+    user = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
     order_id = models.CharField(max_length=100, unique=True)
     payment_id = models.CharField(max_length=100, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
     currency = models.CharField(max_length=10, default='INR')
-    status = models.CharField(max_length=20, default='SUCCESS')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    customer_name = models.CharField(max_length=255, blank=True, null=True)
+    customer_email = models.EmailField(blank=True, null=True)
+    customer_phone = models.CharField(max_length=30, blank=True, null=True)
+    account_type = models.CharField(max_length=20, default='STUDENT')
+    checkout_metadata = models.JSONField(default=dict, blank=True)
+    email_sent = models.BooleanField(default=False)
+    email_error = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)

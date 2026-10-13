@@ -395,94 +395,18 @@ def delete_account(req):
 
 
 # ---------------------------------------------------------
-# UNIVERSAL REGISTRATION (Students, Employees, Households)
+# REGISTRATION ENDPOINTS (Blocked: Automated Payment Only)
 # ---------------------------------------------------------
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(req):
-    email = str(req.data.get('email', '')).strip().lower()
-    pwd = req.data.get('password', '')
-    full_name = str(req.data.get('full_name', '')).strip()
-    if not full_name:
-        fname = str(req.data.get('first_name', '')).strip()
-        lname = str(req.data.get('last_name', '')).strip()
-        full_name = f"{fname} {lname}".strip()
-    phone = str(req.data.get('phone', '')).strip()
-    role = str(req.data.get('role', 'STUDENT')).upper().strip()
-
-    if not email or not pwd or not full_name:
-        return Response({'error': 'Full name, email address, and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        return Response({'error': 'Please provide a valid email address.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    valid, err_msg = validate_password_strength(pwd)
-    if not valid:
-        return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
-
-    if role not in ['STUDENT', 'EMPLOYEE', 'HOUSEHOLD']:
-        role = 'STUDENT'
-
-    if Usr.objects.filter(email__iexact=email).exists():
-        return Response({'error': 'An account with this email address already exists. Please sign in instead.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    usr = Usr.objects.create_user(
-        email=email,
-        password=pwd,
-        full_name=full_name,
-        phone=phone or None,
-        role=role,
-        paid=False
-    )
-
-    profile, _ = UserProfile.objects.get_or_create(user=usr)
-
-    if role == 'STUDENT':
-        profile.qualification = req.data.get('qualification', '')
-        profile.branch = req.data.get('branch', '')
-        profile.college_name = req.data.get('college_name', '')
-        profile.student_status = req.data.get('student_status', 'Still Studying')
-        py = req.data.get('passout_year')
-        if py:
-            try:
-                profile.passout_year = int(py)
-            except (ValueError, TypeError):
-                pass
-        profile.student_id = f"STU-{usr.id:04d}"
-    elif role == 'EMPLOYEE':
-        profile.company_name = req.data.get('company_name', '3CAPSTECH')
-        profile.department = req.data.get('department', '')
-        profile.designation = req.data.get('designation', '')
-        profile.employment_status = req.data.get('employment_status', 'Full-Time')
-        profile.employee_id = f"EMP-{usr.id:04d}"
-    elif role == 'HOUSEHOLD':
-        profile.household_name = req.data.get('household_name', f"{full_name}'s Household")
-        profile.primary_contact_name = req.data.get('primary_contact_name', full_name)
-        profile.residential_address = req.data.get('residential_address', '')
-        mc = req.data.get('member_count')
-        if mc:
-            try:
-                profile.member_count = int(mc)
-            except (ValueError, TypeError):
-                pass
-        profile.household_id = f"HH-{usr.id:04d}"
-
-    profile.save()
-
-    tok = get_tokens_for_user(usr)
-    log_admin_action(usr, "USER_REGISTERED", target=usr.email, details=f"Registered as {usr.role}", ip=req.META.get('REMOTE_ADDR'))
-
+    """
+    Public registration is explicitly disabled.
+    All user accounts (Student, Employee, Household) are automatically provisioned
+    exclusively upon verified course payment or administrative staff provisioning.
+    """
     return Response({
-        'message': 'Account registered successfully.',
-        'token': tok,
-        'user': {
-            'id': usr.id,
-            'email': usr.email,
-            'role': usr.role,
-            'paid': usr.paid,
-            'name': usr.full_name,
-            'enrollments': []
-        },
-        'profile': serialize_profile(usr)
-    }, status=status.HTTP_201_CREATED)
+        'error': 'Direct public registration is disabled. Accounts are automatically provisioned upon verified course payment checkout or authorized administrative invitation.'
+    }, status=status.HTTP_403_FORBIDDEN)
+

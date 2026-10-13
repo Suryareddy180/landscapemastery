@@ -1,11 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  CheckCircle2, AlertCircle, ShieldCheck, Mail, Lock, Phone, User,
+  GraduationCap, Building2, Home, ArrowRight, X, RefreshCw
+} from 'lucide-react';
 import CourseCatalog from './CourseCatalog.jsx';
 import { BASE_URL } from '../lib/api.js';
 
 export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }) {
+  // Learner & Billing Details
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [accountType, setAccountType] = useState('STUDENT'); // STUDENT | EMPLOYEE | HOUSEHOLD
+
+  // Student-specific fields
+  const [qualification, setQualification] = useState('B.Arch');
+  const [branch, setBranch] = useState('Landscape Architecture');
+  const [collegeName, setCollegeName] = useState('');
+  const [passoutYear, setPassoutYear] = useState('2025');
+  const [studentStatus, setStudentStatus] = useState('Still Studying');
+
+  // Employee-specific fields
+  const [companyName, setCompanyName] = useState('');
+  const [department, setDepartment] = useState('');
+  const [designation, setDesignation] = useState('');
+
+  // Household-specific fields
+  const [householdName, setHouseholdName] = useState('');
+  const [residentialAddress, setResidentialAddress] = useState('');
+  const [memberCount, setMemberCount] = useState(2);
+
+  // Payment Result Modal State
+  const [paymentResult, setPaymentResult] = useState(null);
+
+  // Checkout and discount state
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -194,27 +223,79 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
     }
   };
 
-  // CRITICAL PAYMENT FLOW (BUG-002, BUG-003): Strict Server-Side Verification
+  // CRITICAL PAYMENT FLOW: Strict Server-Side Verification & Automated Account Provisioning
   const handlePayment = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setStatusMessage({ type: 'error', text: 'Please enter a valid email address to proceed.' });
+    if (e && e.preventDefault) e.preventDefault();
+
+    // Frontend Validations
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+
+    if (!cleanName) {
+      setStatusMessage({ type: 'error', text: 'Please enter your Full Name for certificate generation & account setup.' });
+      return;
+    }
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setStatusMessage({ type: 'error', text: 'Please enter a valid email address where account credentials will be sent.' });
+      return;
+    }
+    if (!cleanPhone || cleanPhone.length < 8) {
+      setStatusMessage({ type: 'error', text: 'Please provide a valid mobile number with country code (e.g. +91 9876543210).' });
+      return;
+    }
+
+    // Role-specific validations
+    if (accountType === 'STUDENT' && !collegeName.trim()) {
+      setStatusMessage({ type: 'error', text: 'Please provide your College / Institute Name.' });
+      return;
+    }
+    if (accountType === 'EMPLOYEE' && (!companyName.trim() || !designation.trim())) {
+      setStatusMessage({ type: 'error', text: 'Please provide both your Organization / Company and Designation.' });
+      return;
+    }
+    if (accountType === 'HOUSEHOLD' && !householdName.trim()) {
+      setStatusMessage({ type: 'error', text: 'Please enter your Household Name or Primary Contact.' });
       return;
     }
 
     setLoading(true);
     setStatusMessage(null);
 
+    const learnerPayload = {
+      full_name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+      account_type: accountType,
+      course_id: selectedCourse?.id || null,
+      coupon_code: couponCode.trim(),
+      // Student details
+      qualification: qualification.trim(),
+      branch: branch.trim(),
+      college_name: collegeName.trim(),
+      passout_year: passoutYear,
+      student_status: studentStatus,
+      // Employee details
+      company_name: companyName.trim(),
+      department: department.trim(),
+      designation: designation.trim(),
+      // Household details
+      household_name: householdName.trim(),
+      residential_address: residentialAddress.trim(),
+      member_count: memberCount
+    };
+
     try {
       const response = await fetch(`${BASE_URL}/api/checkout/session/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone, course_id: selectedCourse?.id || null })
+        body: JSON.stringify(learnerPayload)
       });
 
       if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
         setLoading(false);
-        setStatusMessage({ type: 'error', text: 'Unable to initialize checkout session. Please try again.' });
+        setStatusMessage({ type: 'error', text: errData.error || 'Unable to initialize checkout session. Please check details.' });
         return;
       }
 
@@ -225,7 +306,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         setLoading(false);
         setStatusMessage({
           type: 'error',
-          text: 'Payment Gateway is currently in configuration mode. Please contact support at contact@landscapemastery.com.'
+          text: 'Payment Gateway is in configuration mode. Please contact support at contact@landscapemastery.com.'
         });
         return;
       }
@@ -236,23 +317,27 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
         key: razorpayKey,
         amount: calculatedAmount,
         currency: 'INR',
+        order_id: data.orderId,
         name: 'Landscape Mastery',
-        description: selectedCourse ? `${selectedCourse.title} - Lifetime Access` : 'Executive Architecture Masterclass - Lifetime Access',
+        description: selectedCourse ? `${selectedCourse.title} - Lifetime Access` : 'Executive Architecture Masterclass',
         image: '/lm_logo.png',
         notes: {
           course_id: selectedCourse?.id || '',
-          course_title: selectedCourse?.title || 'Landscape Mastery'
+          course_title: selectedCourse?.title || 'Landscape Mastery',
+          account_type: accountType,
+          full_name: cleanName
         },
         prefill: {
-          email: email,
-          contact: phone || ''
+          name: cleanName,
+          email: cleanEmail,
+          contact: cleanPhone
         },
         theme: {
           color: '#064e3b',
         },
         handler: async function (razorpayResponse) {
           try {
-            setStatusMessage({ type: 'info', text: 'Verifying payment with secure server...' });
+            setStatusMessage({ type: 'info', text: 'Authoritatively verifying payment & provisioning credentials...' });
             const verifyRes = await fetch(`${BASE_URL}/api/checkout/verify/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -260,32 +345,44 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                 razorpay_order_id: razorpayResponse.razorpay_order_id,
                 razorpay_payment_id: razorpayResponse.razorpay_payment_id,
                 razorpay_signature: razorpayResponse.razorpay_signature,
-                email: email,
-                phone: phone,
-                course_id: selectedCourse?.id || null
+                email: cleanEmail,
+                full_name: cleanName,
+                phone: cleanPhone,
+                account_type: accountType,
+                course_id: selectedCourse?.id || null,
+                checkout_metadata: learnerPayload
               })
             });
 
             const verifyData = await verifyRes.json();
             setLoading(false);
 
-            if (verifyRes.ok && verifyData.success && verifyData.token) {
-              if (onLoginSuccess) {
-                onLoginSuccess(verifyData);
-              } else {
-                onNavigate('v3');
-              }
+            if (verifyRes.ok && verifyData.success) {
+              setPaymentResult({
+                type: 'success',
+                orderId: verifyData.order_id,
+                paymentId: verifyData.payment_id,
+                courseTitle: verifyData.course_title,
+                email: cleanEmail,
+                isNewUser: verifyData.is_new_user,
+                emailSent: verifyData.email_sent,
+                authData: verifyData
+              });
             } else {
-              setStatusMessage({
-                type: 'error',
-                text: verifyData.error || 'Payment verification failed. Please contact support if amount was deducted.'
+              setPaymentResult({
+                type: 'failed',
+                orderId: razorpayResponse.razorpay_order_id,
+                message: verifyData.error || 'Payment signature verification failed. Please contact support if your account was charged.',
+                canRetry: true
               });
             }
           } catch (verifyErr) {
             setLoading(false);
-            setStatusMessage({
-              type: 'error',
-              text: 'Network error while verifying payment. Please refresh or contact support.'
+            setPaymentResult({
+              type: 'failed',
+              orderId: razorpayResponse.razorpay_order_id,
+              message: 'Network error while verifying payment. Please refresh or contact support.',
+              canRetry: true
             });
           }
         },
@@ -294,7 +391,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             setLoading(false);
             setStatusMessage({
               type: 'warning',
-              text: 'Payment checkout was dismissed. Your account has not been charged.'
+              text: 'Checkout interface dismissed. Your account has not been charged.'
             });
           }
         }
@@ -303,9 +400,11 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (resp) {
         setLoading(false);
-        setStatusMessage({
-          type: 'error',
-          text: `Payment failed: ${resp.error.description || 'Transaction declined.'}`
+        setPaymentResult({
+          type: 'failed',
+          orderId: resp.error?.metadata?.order_id || '',
+          message: resp.error?.description || 'Payment was declined by your bank or payment provider.',
+          canRetry: true
         });
       });
       rzp.open();
@@ -671,31 +770,87 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               )}
 
               <form onSubmit={handlePayment} className="space-y-3.5">
+                {/* Account Type Selector */}
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Account Type <span className="text-emerald-700">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'STUDENT', label: 'Student', icon: GraduationCap },
+                      { id: 'EMPLOYEE', label: 'Employee', icon: Building2 },
+                      { id: 'HOUSEHOLD', label: 'Household', icon: Home }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      const isSelected = accountType === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setAccountType(item.id)}
+                          className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-900 text-white border-emerald-900 shadow-sm'
+                              : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Full Name */}
                 <div>
                   <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Email Address <span className="text-emerald-700">*</span>
+                    Full Name <span className="text-emerald-700">*</span>
                   </label>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mail</span>
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">person</span>
                     <input
-                      type="email"
+                      type="text"
                       required
-                      placeholder="architect@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. Surya Prakash Reddy"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
 
+                {/* Email Address */}
                 <div>
                   <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Phone Number <span className="text-stone-400 font-normal text-[10px] lowercase">(login password)</span>
+                    Email Address <span className="text-emerald-700">*</span>
                   </label>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-sm">phone_iphone</span>
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mail</span>
+                    <input
+                      type="email"
+                      required
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <span className="text-[10px] text-stone-400 mt-0.5 block">
+                    Account credentials &amp; login instructions will be dispatched to this email.
+                  </span>
+                </div>
+
+                {/* Mobile Number with country code */}
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Mobile Number <span className="text-emerald-700">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">phone_iphone</span>
                     <input
                       type="tel"
+                      required
                       placeholder="+91 98765 43210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -704,6 +859,190 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                   </div>
                 </div>
 
+                {/* Conditional Fields: STUDENT */}
+                {accountType === 'STUDENT' && (
+                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
+                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Student Academic Details</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Qualification</label>
+                        <select
+                          value={qualification}
+                          onChange={(e) => setQualification(e.target.value)}
+                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                        >
+                          <option value="B.Arch">B.Arch</option>
+                          <option value="B.Tech">B.Tech</option>
+                          <option value="B.Des">B.Des</option>
+                          <option value="B.Sc">B.Sc</option>
+                          <option value="M.Arch">M.Arch</option>
+                          <option value="M.Tech">M.Tech</option>
+                          <option value="Diploma">Diploma</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Passout Year</label>
+                        <select
+                          value={passoutYear}
+                          onChange={(e) => setPassoutYear(e.target.value)}
+                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                        >
+                          <option value="2027">2027</option>
+                          <option value="2026">2026</option>
+                          <option value="2025">2025</option>
+                          <option value="2024">2024</option>
+                          <option value="2023">2023</option>
+                          <option value="Earlier">Earlier</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Branch / Department</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Architecture / Civil / Design"
+                        value={branch}
+                        onChange={(e) => setBranch(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                        College / University Name <span className="text-emerald-700">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required={accountType === 'STUDENT'}
+                        placeholder="e.g. School of Planning and Architecture"
+                        value={collegeName}
+                        onChange={(e) => setCollegeName(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Current Working Status</label>
+                      <select
+                        value={studentStatus}
+                        onChange={(e) => setStudentStatus(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                      >
+                        <option value="Still Studying">Still Studying</option>
+                        <option value="Internship">Internship</option>
+                        <option value="Freelancer">Freelancer</option>
+                        <option value="Employed">Employed</option>
+                        <option value="Seeking Opportunities">Seeking Opportunities</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Fields: EMPLOYEE */}
+                {accountType === 'EMPLOYEE' && (
+                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
+                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Corporate / Employment Details</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                        Company / Organization <span className="text-emerald-700">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required={accountType === 'EMPLOYEE'}
+                        placeholder="e.g. 3CAPSTECH / Studio Landscape"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Department</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Planning &amp; Infra"
+                          value={department}
+                          onChange={(e) => setDepartment(e.target.value)}
+                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                          Designation <span className="text-emerald-700">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required={accountType === 'EMPLOYEE'}
+                          placeholder="e.g. Senior Architect"
+                          value={designation}
+                          onChange={(e) => setDesignation(e.target.value)}
+                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Fields: HOUSEHOLD */}
+                {accountType === 'HOUSEHOLD' && (
+                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
+                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Home className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Household Learner Details</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                        Household Name / Primary Contact <span className="text-emerald-700">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required={accountType === 'HOUSEHOLD'}
+                        placeholder="e.g. Sharma Family / Primary Contact"
+                        value={householdName}
+                        onChange={(e) => setHouseholdName(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Residential Address</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Jubilee Hills, Hyderabad"
+                        value={residentialAddress}
+                        onChange={(e) => setResidentialAddress(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Family Learners / Members</label>
+                      <select
+                        value={memberCount}
+                        onChange={(e) => setMemberCount(Number(e.target.value))}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                      >
+                        <option value={1}>1 Learner</option>
+                        <option value={2}>2 Learners</option>
+                        <option value={3}>3 Learners</option>
+                        <option value={4}>4+ Learners</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 {/* Coupon Code Input */}
                 <div>
                   <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
@@ -711,7 +1050,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                   </label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-sm">local_offer</span>
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">local_offer</span>
                       <input
                         type="text"
                         placeholder="e.g. ARCHITECT20"
@@ -743,6 +1082,14 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                     <span>Please <a href="#course-catalog" className="underline font-bold">select a course</a> above to enroll.</span>
                   </div>
                 )}
+
+                {/* Automated Account Creation Notice */}
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <strong>Seamless Enrollment:</strong> Your account will be created automatically upon verified payment. Temporary access credentials will be delivered to your email.
+                  </div>
+                </div>
 
                 {/* Submit Checkout Button */}
                 <button
@@ -847,6 +1194,163 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
           </a>
         </div>
       </section>
+
+      {/* 7. POST-PAYMENT RESULT MODAL (SUCCESS / FAILURE WORKFLOW) */}
+      <AnimatePresence>
+        {paymentResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.94, y: 16, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.94, y: 16, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200/90 overflow-hidden ring-1 ring-stone-900/5 text-stone-900 relative"
+            >
+              {paymentResult.type === 'success' ? (
+                <div>
+                  {/* Luxury Top Header Pattern */}
+                  <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white p-6 sm:p-7 relative overflow-hidden text-center">
+                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+                    <div className="relative z-10 flex flex-col items-center">
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mb-3.5 shadow-inner">
+                        <CheckCircle2 className="w-9 h-9 text-emerald-300" />
+                      </div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 text-emerald-200 text-[10px] font-bold tracking-widest uppercase mb-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Payment Verified</span>
+                      </div>
+                      <h3 className="font-serif text-2xl font-bold tracking-tight">Payment Successful!</h3>
+                      <p className="text-xs text-emerald-100/90 mt-1 max-w-xs">
+                        Your masterclass enrollment is confirmed and your account is active.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Body Details */}
+                  <div className="p-6 sm:p-7 space-y-4">
+                    {/* Order Reference Card */}
+                    <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4 text-xs space-y-2">
+                      <div className="flex justify-between items-center py-1 border-b border-stone-200/60">
+                        <span className="text-stone-500 font-medium">Enrolled Course:</span>
+                        <span className="font-bold text-stone-900 text-right truncate max-w-[240px]">{paymentResult.courseTitle}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-stone-200/60">
+                        <span className="text-stone-500 font-medium">Order Reference:</span>
+                        <span className="font-mono font-bold text-stone-800 text-[11px]">{paymentResult.orderId}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-stone-200/60">
+                        <span className="text-stone-500 font-medium">Payment ID:</span>
+                        <span className="font-mono text-stone-600 text-[11px]">{paymentResult.paymentId}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-stone-500 font-medium">Registered Login ID:</span>
+                        <span className="font-bold text-emerald-950">{paymentResult.email}</span>
+                      </div>
+                    </div>
+
+                    {/* Prominent Access Instructions Banner */}
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-950 space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <Mail className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="font-bold block text-emerald-900">Account Access Instructions Dispatched</strong>
+                          <span className="text-[11px] text-emerald-800 leading-relaxed block mt-0.5">
+                            We have automatically provisioned your account. Your login credentials and first-time access instructions have been sent to <b>{paymentResult.email}</b>.
+                          </span>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-emerald-200/60 flex items-center gap-2 text-[10px] text-emerald-700 font-medium">
+                        <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span>For your security, your temporary password is not displayed on this screen.</span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pt-2 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const auth = paymentResult.authData;
+                          setPaymentResult(null);
+                          if (auth && onLoginSuccess) {
+                            onLoginSuccess(auth);
+                          } else {
+                            onNavigate('v2');
+                          }
+                        }}
+                        className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-900 hover:from-emerald-900 hover:to-teal-800 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-emerald-950/20 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <span>Proceed to Student Login</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+
+                      <p className="text-[10px] text-center text-stone-400">
+                        Need help? Contact support at <a href="mailto:contact@landscapemastery.com" className="underline hover:text-stone-700">contact@landscapemastery.com</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Failed / Cancelled State */
+                <div className="p-6 sm:p-7 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center">
+                        <AlertCircle className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl font-bold text-stone-900">Payment Not Completed</h3>
+                        <p className="text-xs text-stone-500">The transaction was cancelled or declined.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentResult(null)}
+                      className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-rose-50/70 border border-rose-200/80 rounded-2xl text-xs text-rose-900 leading-relaxed">
+                    <strong>Transaction Notice:</strong> {paymentResult.message || 'Payment was declined by your bank or checkout was interrupted. Your account was not charged.'}
+                  </div>
+
+                  <p className="text-xs text-stone-600">
+                    Your details have been preserved. You can retry payment with a different UPI app, credit/debit card, or net banking.
+                  </p>
+
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentResult(null);
+                        handlePayment({ preventDefault: () => {} });
+                      }}
+                      className="flex-1 py-3 px-4 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Retry Payment</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentResult(null)}
+                      className="py-3 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs transition-all cursor-pointer"
+                    >
+                      Return to Checkout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

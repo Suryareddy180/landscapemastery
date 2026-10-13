@@ -24,26 +24,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
   const [resetMessage, setResetMessage] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Registration State
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-  const [regData, setRegData] = useState({
-    role: 'STUDENT',
-    full_name: '',
-    email: '',
-    phone: '',
-    password: '',
-    qualification: 'B.Tech',
-    branch: '',
-    passout_year: '2026',
-    college_name: '',
-    company_name: '',
-    department: '',
-    designation: '',
-    household_name: '',
-    residential_address: ''
-  });
-  const [regLoading, setRegLoading] = useState(false);
-
   const executeAuth = async (loginEmail, loginPwd) => {
     setLoading(true);
     setError('');
@@ -115,53 +95,6 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       return;
     }
     executeAuth(email, password);
-  };
-
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setRegLoading(true);
-    setError('');
-
-    if (!regData.email || !regData.password || !regData.full_name) {
-      setError('Please provide your full name, email address, and a secure password.');
-      setRegLoading(false);
-      return;
-    }
-
-    if (regData.password.length < 8) {
-      setError('Password must contain at least 8 characters.');
-      setRegLoading(false);
-      return;
-    }
-    if (!/[A-Z]/.test(regData.password) || !/[a-z]/.test(regData.password) || !/[0-9]/.test(regData.password)) {
-      setError('Password must include at least one uppercase letter, one lowercase letter, and one number.');
-      setRegLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(`${BASE_URL}/api/auth/register/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regData)
-      });
-      const data = await res.json();
-      setRegLoading(false);
-
-      if (res.ok && data.token) {
-        if (onLoginSuccess) {
-          onLoginSuccess(data);
-        } else {
-          onNavigate('v3');
-        }
-      } else {
-        setError(data.error || 'Failed to create account. Please check the details provided.');
-      }
-    } catch (err) {
-      console.error('Registration network error:', err);
-      setRegLoading(false);
-      setError('Unable to reach registration server. Please try again.');
-    }
   };
 
   const handleForgotPasswordRequest = async (e) => {
@@ -320,64 +253,31 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="bg-white/95 border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(28,25,23,0.08),0_1px_3px_rgba(28,25,23,0.04)] backdrop-blur-2xl space-y-5 ring-1 ring-stone-900/[0.04] relative"
         >
-          {/* Card Context Ribbon & Tab Toggle */}
+          {/* Card Context Ribbon */}
           <div className="pb-4 border-b border-stone-100 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900">
-                  {isAdmin
-                    ? 'Administrator Sign In'
-                    : (authMode === 'login' ? 'Account Sign In' : 'Create New Account')}
+                  {isAdmin ? 'Administrator Sign In' : 'Account Sign In'}
                 </h2>
                 <p className="text-xs text-stone-500 mt-0.5">
                   {isAdmin
                     ? 'Enter your director credentials to access the console.'
-                    : (authMode === 'login'
-                      ? 'Enter your registered credentials to resume learning.'
-                      : 'Register your Student, Employee, or Household profile.')}
+                    : 'Enter your registered credentials to resume learning.'}
                 </p>
               </div>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 shrink-0">
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>{isAdmin ? 'Director' : (authMode === 'login' ? 'Member' : 'Universal')}</span>
+                <span>{isAdmin ? 'Director' : 'Member'}</span>
               </span>
             </div>
-
-            {/* Login / Register Toggle Tabs (For non-admin portal) */}
-            {!isAdmin && (
-              <div className="flex bg-stone-100/80 p-1 rounded-xl text-xs font-bold text-stone-600">
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('login'); setError(''); }}
-                  className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
-                    authMode === 'login'
-                      ? 'bg-white text-emerald-950 shadow-2xs font-extrabold'
-                      : 'hover:text-stone-900'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('register'); setError(''); }}
-                  className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
-                    authMode === 'register'
-                      ? 'bg-white text-emerald-950 shadow-2xs font-extrabold'
-                      : 'hover:text-stone-900'
-                  }`}
-                >
-                  Create Account
-                </button>
-              </div>
-            )}
           </div>
 
-          {authMode === 'login' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                {isAdmin ? 'Administrator Email' : 'Student Email Address'}
+                {isAdmin ? 'Administrator Email' : 'Student / Learner Email Address'}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 group-focus-within:text-emerald-700 transition-colors">
@@ -388,7 +288,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-stone-50/90 border border-stone-200/90 hover:border-stone-300 focus:bg-white rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all shadow-xs"
                   type="email"
-                  placeholder={isAdmin ? "admin@domain.com" : "student@domain.com"}
+                  placeholder={isAdmin ? "admin@domain.com" : "learner@domain.com"}
                   autoComplete="email"
                   required
                 />
@@ -467,189 +367,28 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
               </button>
             </div>
           </form>
-          ) : (
-          <form onSubmit={handleRegisterSubmit} className="space-y-4">
-            {/* Account Type Selector */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Account Type <span className="text-rose-500">*</span>
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'STUDENT', label: 'Student' },
-                  { id: 'EMPLOYEE', label: 'Employee' },
-                  { id: 'HOUSEHOLD', label: 'Household' }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setRegData({ ...regData, role: item.id })}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                      regData.role === item.id
-                        ? 'bg-emerald-900 text-white border-emerald-900 shadow-sm'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Full Name */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Full Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                required
-                type="text"
-                value={regData.full_name}
-                onChange={(e) => setRegData({ ...regData, full_name: e.target.value })}
-                placeholder="e.g. Surya Prakash Reddy Nallimilli"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
-              />
-            </div>
-
-            {/* Email Address */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Email Address <span className="text-rose-500">*</span>
-              </label>
-              <input
-                required
-                type="email"
-                value={regData.email}
-                onChange={(e) => setRegData({ ...regData, email: e.target.value })}
-                placeholder="name@domain.com"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
-              />
-            </div>
-
-            {/* Mobile Number */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Mobile Number
-              </label>
-              <input
-                type="tel"
-                value={regData.phone}
-                onChange={(e) => setRegData({ ...regData, phone: e.target.value })}
-                placeholder="+91 8074290125"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
-              />
-            </div>
-
-            {/* Role-Specific Fields */}
-            {regData.role === 'STUDENT' && (
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-100">
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Qualification</label>
-                  <select
-                    value={regData.qualification}
-                    onChange={(e) => setRegData({ ...regData, qualification: e.target.value })}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 cursor-pointer"
-                  >
-                    <option value="B.Tech">B.Tech</option>
-                    <option value="B.Arch">B.Arch</option>
-                    <option value="B.Des">B.Des</option>
-                    <option value="B.Sc">B.Sc</option>
-                    <option value="M.Tech">M.Tech</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">College Name</label>
-                  <input
-                    type="text"
-                    value={regData.college_name}
-                    onChange={(e) => setRegData({ ...regData, college_name: e.target.value })}
-                    placeholder="Sri Vasavi Eng College"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-              </div>
-            )}
-
-            {regData.role === 'EMPLOYEE' && (
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-100">
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Company</label>
-                  <input
-                    type="text"
-                    value={regData.company_name}
-                    onChange={(e) => setRegData({ ...regData, company_name: e.target.value })}
-                    placeholder="3CAPSTECH"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Department</label>
-                  <input
-                    type="text"
-                    value={regData.department}
-                    onChange={(e) => setRegData({ ...regData, department: e.target.value })}
-                    placeholder="Engineering / Cloud"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-              </div>
-            )}
-
-            {regData.role === 'HOUSEHOLD' && (
-              <div className="pt-1 border-t border-stone-100 space-y-2">
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Household Name / Title</label>
-                  <input
-                    type="text"
-                    value={regData.household_name}
-                    onChange={(e) => setRegData({ ...regData, household_name: e.target.value })}
-                    placeholder="Sharma Residence"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Password */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider pl-0.5">
-                Password <span className="text-rose-500">*</span>
-              </label>
-              <input
-                required
-                type="password"
-                value={regData.password}
-                onChange={(e) => setRegData({ ...regData, password: e.target.value })}
-                placeholder="Min 8 chars, uppercase, lowercase, number"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={regLoading}
-              className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-900 hover:from-emerald-900 hover:to-teal-800 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-            >
-              {regLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Creating Account...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create {regData.role === 'STUDENT' ? 'Student' : (regData.role === 'EMPLOYEE' ? 'Employee' : 'Household')} Account</span>
-                  <ArrowRight className="w-4 h-4 opacity-90" />
-                </>
-              )}
-            </button>
-          </form>
-          )}
 
           {/* Card Bottom Links */}
-          <div className="pt-3 border-t border-stone-100 flex flex-col gap-2 text-center text-xs">
+          <div className="pt-3 border-t border-stone-100 flex flex-col gap-2.5 text-center text-xs">
+            {!isAdmin && (
+              <p className="text-stone-500 text-[11px] leading-relaxed">
+                Need access to a course?{' '}
+                <button
+                  type="button"
+                  onClick={() => onNavigate('v1')}
+                  className="text-emerald-700 hover:text-emerald-800 font-bold underline cursor-pointer"
+                >
+                  Explore Courses & Enroll
+                </button>
+                <br />
+                <span className="text-[10px] text-stone-400">
+                  Accounts are automatically created upon successful course enrollment.
+                </span>
+              </p>
+            )}
             <button
               onClick={() => onNavigate('v1')}
-              className="text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer inline-flex items-center justify-center gap-1.5"
+              className="text-stone-500 hover:text-stone-900 transition-colors font-medium cursor-pointer inline-flex items-center justify-center gap-1.5 pt-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Landscape Mastery Landing</span>

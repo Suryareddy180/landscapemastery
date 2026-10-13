@@ -779,60 +779,276 @@ class UniversalProfileManagementTests(TestCase):
         self.assertFalse(self.student.is_active)
         self.assertTrue(self.student.email.startswith('deleted_'))
 
-    def test_universal_registration_student(self):
+    def test_manual_registration_blocked(self):
+        """
+        Requirement 1: Manual registration endpoints must be strictly blocked with HTTP 403.
+        Accounts are created exclusively via verified payment or admin workflow.
+        """
         payload = {
             'role': 'STUDENT',
-            'full_name': 'Deepak Verma',
-            'email': 'deepak.verma@example.com',
+            'full_name': 'Manual User',
+            'email': 'manual.attempt@example.com',
             'phone': '+91 9988776655',
-            'password': 'StrongPass2026!',
+            'password': 'StrongPass2026!'
+        }
+        res = self.client.post('/api/auth/register/', payload, format='json')
+        self.assertEqual(res.status_code, 403)
+        self.assertIn('registration is disabled', res.json().get('error', '').lower())
+
+        res2 = self.client.post('/api/register/', payload, format='json')
+        self.assertEqual(res2.status_code, 403)
+
+    def test_temporary_password_generator_spec(self):
+        """
+        Requirement 5: Generated temporary passwords must be exactly 8 characters
+        and contain at least one uppercase, one lowercase, and one digit.
+        """
+        from api.payment_service import generate_secure_temporary_password
+        for _ in range(50):
+            pwd = generate_secure_temporary_password(8)
+            self.assertEqual(len(pwd), 8)
+            self.assertTrue(any(c.isupper() for c in pwd), f"Password {pwd} missing uppercase")
+            self.assertTrue(any(c.islower() for c in pwd), f"Password {pwd} missing lowercase")
+            self.assertTrue(any(c.isdigit() for c in pwd), f"Password {pwd} missing digit")
+
+    def test_checkout_session_validation_and_creation(self):
+        """
+        Requirement 2 & 8: Checkout session validates learner metadata, requires
+        full name, email, mobile with country code, and creates pending PaymentRecord.
+        """
+        # Missing fields validation
+        res_fail = self.client.post('/api/checkout/session/', {
+            'email': 'test@example.com'
+        }, format='json')
+        self.assertEqual(res_fail.status_code, 400)
+        self.assertIn('Full name is required', res_fail.json().get('error', ''))
+
+        course = Course.objects.create(
+            title='Landscape Architecture Fundamentals',
+            slug='landscape-arch-fundamentals',
+            price=999.00,
+            discount_price=499.00,
+            status='PUBLISHED'
+        )
+
+        res_ok = self.client.post('/api/checkout/session/', {
+            'full_name': 'Sanjay Kumar',
+            'email': 'sanjay.kumar@example.com',
+            'phone': '+91 9876543210',
+            'account_type': 'STUDENT',
+            'course_id': course.id,
             'qualification': 'B.Arch',
-            'branch': 'Architecture & Spatial Planning',
             'college_name': 'School of Planning and Architecture',
-            'passout_year': 2027
-        }
-        res = self.client.post('/api/auth/register/', payload, format='json')
-        self.assertEqual(res.status_code, 201)
-        data = res.json()
-        self.assertIn('token', data)
-        self.assertEqual(data['user']['role'], 'STUDENT')
-        self.assertEqual(data['profile']['qualification'], 'B.Arch')
-        self.assertEqual(data['profile']['passout_year'], 2027)
+            'passout_year': 2026
+        }, format='json')
 
-    def test_universal_registration_employee(self):
-        payload = {
-            'role': 'EMPLOYEE',
-            'full_name': 'Meera Nair',
-            'email': 'meera.nair@3capstech.com',
-            'phone': '+91 9123456780',
-            'password': 'StrongPass2026!',
+        self.assertEqual(res_ok.status_code, 200)
+        data = res_ok.json()
+        self.assertTrue(data.get('success'))
+        self.assertIn('orderId', data)
+        self.assertEqual(data.get('amount'), 49900)  # in paise
+
+        # Check pending PaymentRecord created
+        record = PaymentRecord.objects.filter(order_id=data['orderId']).first()
+        self.assertIsNotNone(record)
+        self.assertEqual(record.status, 'PENDING')
+        self.assertEqual(record.customer_email, 'sanjay.kumar@example.com')
+        self.assertEqual(record.customer_name, 'Sanjay Kumar')
+        self.assertEqual(record.account_type, 'STUDENT')
+        self.assertEqual(record.checkout_metadata.get('qualification'), 'B.Arch')
+
+    def test_payment_verification_and_automatic_student_account_creation(self):
+        """
+        Requirements 3, 4, 5, 6, 8:
+        Authoritative cryptographic payment verification creates Student account,
+        hashes credentials, enrolls in course, and dispatches email.
+        """
+        course = Course.objects.create(
+            title='Executive Landscape Masterclass',
+            slug='executive-landscape-masterclass',
+            price=799.00,
+            discount_price=499.00,
+            status='PUBLISHED'
+        )
+
+        # 1. Create checkout session
+        order_res = self.client.post('/api/checkout/session/', {
+            'full_name': 'Divya Sharma',
+            'email': 'divya.sharma@example.com',
+            'phone': '+91 9123456789',
+            'account_type': 'STUDENT',
+            'course_id': course.id,
+            'qualification': 'B.Des',
+            'branch': 'Spatial Design',
+            'college_name': 'National Institute of Design',
+            'passout_year': 2025
+        }, format='json')
+        self.assertEqual(order_res.status_code, 200)
+        order_id = order_res.json()['orderId']
+        payment_id = f"pay_test_{int(time.time())}"
+
+        # 2. Compute valid Razorpay HMAC SHA-256 signature
+        sec = getattr(settings, 'RAZORPAY_KEY_SECRET', 'test_secret')
+        signature = hmac.new(
+            sec.encode('utf-8'),
+            f"{order_id}|{payment_id}".encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+
+        # 3. Verify payment
+        verify_res = self.client.post('/api/checkout/verify/', {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature,
+            'email': 'divya.sharma@example.com',
+            'full_name': 'Divya Sharma',
+            'phone': '+91 9123456789',
+            'account_type': 'STUDENT',
+            'course_id': course.id
+        }, format='json')
+
+        self.assertEqual(verify_res.status_code, 200)
+        data = verify_res.json()
+        self.assertTrue(data.get('success'))
+        self.assertTrue(data.get('is_new_user'))
+        self.assertEqual(data.get('order_id'), order_id)
+        # Verify plaintext password is NEVER exposed in the response
+        self.assertNotIn('temporary_password', data)
+        self.assertNotIn('password', data)
+
+        # 4. Verify user in database
+        usr = Usr.objects.get(email='divya.sharma@example.com')
+        self.assertEqual(usr.role, 'STUDENT')
+        self.assertTrue(usr.paid)
+        self.assertEqual(usr.full_name, 'Divya Sharma')
+
+        # 5. Verify StudentProfile created with metadata
+        profile = usr.profile
+        self.assertEqual(profile.qualification, 'B.Des')
+        self.assertEqual(profile.college_name, 'National Institute of Design')
+
+        # 6. Verify enrollment
+        enrollment = Enrollment.objects.filter(user=usr, course=course).first()
+        self.assertIsNotNone(enrollment)
+
+        # 7. Verify PaymentRecord updated to SUCCESS
+        record = PaymentRecord.objects.get(order_id=order_id)
+        self.assertEqual(record.status, 'SUCCESS')
+        self.assertEqual(record.payment_id, payment_id)
+
+    def test_payment_verification_employee_and_household(self):
+        """
+        Verify automatic account creation for EMPLOYEE and HOUSEHOLD account types.
+        """
+        course = Course.objects.create(
+            title='Universal Spatial Strategy',
+            slug='universal-spatial-strategy',
+            price=999.00,
+            status='PUBLISHED'
+        )
+
+        sec = getattr(settings, 'RAZORPAY_KEY_SECRET', 'test_secret')
+
+        # Employee
+        emp_order_res = self.client.post('/api/checkout/session/', {
+            'full_name': 'Kiran Rao',
+            'email': 'kiran.rao@3capstech.com',
+            'phone': '+91 9888877777',
+            'account_type': 'EMPLOYEE',
+            'course_id': course.id,
             'company_name': '3CAPSTECH',
-            'department': 'DevOps & Infrastructure',
-            'designation': 'Lead Cloud Engineer'
-        }
-        res = self.client.post('/api/auth/register/', payload, format='json')
-        self.assertEqual(res.status_code, 201)
-        data = res.json()
-        self.assertIn('token', data)
-        self.assertEqual(data['user']['role'], 'EMPLOYEE')
-        self.assertEqual(data['profile']['company_name'], '3CAPSTECH')
-        self.assertEqual(data['profile']['designation'], 'Lead Cloud Engineer')
+            'department': 'Cloud Architecture',
+            'designation': 'Principal Architect'
+        }, format='json')
+        emp_order_id = emp_order_res.json()['orderId']
+        emp_pay_id = f"pay_emp_{int(time.time())}"
+        emp_sig = hmac.new(sec.encode('utf-8'), f"{emp_order_id}|{emp_pay_id}".encode('utf-8'), hashlib.sha256).hexdigest()
 
-    def test_universal_registration_household(self):
-        payload = {
-            'role': 'HOUSEHOLD',
-            'full_name': 'Ramesh Reddy',
-            'email': 'ramesh.reddy@example.com',
-            'phone': '+91 9848012345',
-            'password': 'StrongPass2026!',
-            'household_name': 'Reddy Nilayam',
-            'residential_address': 'Plot 45, Jubilee Hills, Hyderabad'
+        emp_verify = self.client.post('/api/checkout/verify/', {
+            'razorpay_order_id': emp_order_id,
+            'razorpay_payment_id': emp_pay_id,
+            'razorpay_signature': emp_sig,
+            'email': 'kiran.rao@3capstech.com'
+        }, format='json')
+        self.assertEqual(emp_verify.status_code, 200)
+
+        emp_user = Usr.objects.get(email='kiran.rao@3capstech.com')
+        self.assertEqual(emp_user.role, 'EMPLOYEE')
+        self.assertEqual(emp_user.profile.company_name, '3CAPSTECH')
+        self.assertEqual(emp_user.profile.designation, 'Principal Architect')
+
+        # Household
+        hh_order_res = self.client.post('/api/checkout/session/', {
+            'full_name': 'Ananya Rao',
+            'email': 'ananya.household@example.com',
+            'phone': '+91 9777766666',
+            'account_type': 'HOUSEHOLD',
+            'course_id': course.id,
+            'household_name': 'Rao Residence',
+            'residential_address': 'Road No 10, Banjara Hills',
+            'member_count': 3
+        }, format='json')
+        hh_order_id = hh_order_res.json()['orderId']
+        hh_pay_id = f"pay_hh_{int(time.time())}"
+        hh_sig = hmac.new(sec.encode('utf-8'), f"{hh_order_id}|{hh_pay_id}".encode('utf-8'), hashlib.sha256).hexdigest()
+
+        hh_verify = self.client.post('/api/checkout/verify/', {
+            'razorpay_order_id': hh_order_id,
+            'razorpay_payment_id': hh_pay_id,
+            'razorpay_signature': hh_sig,
+            'email': 'ananya.household@example.com'
+        }, format='json')
+        self.assertEqual(hh_verify.status_code, 200)
+
+        hh_user = Usr.objects.get(email='ananya.household@example.com')
+        self.assertEqual(hh_user.role, 'HOUSEHOLD')
+        self.assertEqual(hh_user.profile.household_name, 'Rao Residence')
+        self.assertEqual(hh_user.profile.member_count, 3)
+
+    def test_payment_idempotency_no_duplicate_accounts_or_enrollments(self):
+        """
+        Requirement 3 & 4: Webhooks or repeat calls with identical order/payment IDs
+        must be strictly idempotent and not create duplicate users, enrollments, or errors.
+        """
+        course = Course.objects.create(
+            title='Idempotency Masterclass',
+            slug='idempotency-masterclass',
+            price=499.00,
+            status='PUBLISHED'
+        )
+        sec = getattr(settings, 'RAZORPAY_KEY_SECRET', 'test_secret')
+
+        order_res = self.client.post('/api/checkout/session/', {
+            'full_name': 'Neha Gupta',
+            'email': 'neha.gupta@example.com',
+            'phone': '+91 9000011111',
+            'account_type': 'STUDENT',
+            'course_id': course.id,
+            'college_name': 'IIT Kharagpur'
+        }, format='json')
+        order_id = order_res.json()['orderId']
+        pay_id = f"pay_idem_{int(time.time())}"
+        sig = hmac.new(sec.encode('utf-8'), f"{order_id}|{pay_id}".encode('utf-8'), hashlib.sha256).hexdigest()
+
+        verify_payload = {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': pay_id,
+            'razorpay_signature': sig,
+            'email': 'neha.gupta@example.com'
         }
-        res = self.client.post('/api/auth/register/', payload, format='json')
-        self.assertEqual(res.status_code, 201)
-        data = res.json()
-        self.assertIn('token', data)
-        self.assertEqual(data['user']['role'], 'HOUSEHOLD')
-        self.assertEqual(data['profile']['household_name'], 'Reddy Nilayam')
+
+        # First Call
+        res1 = self.client.post('/api/checkout/verify/', verify_payload, format='json')
+        self.assertEqual(res1.status_code, 200)
+
+        # Second Identical Call (e.g. repeated webhook or retry)
+        res2 = self.client.post('/api/checkout/verify/', verify_payload, format='json')
+        self.assertEqual(res2.status_code, 200)
+
+        # Verify only 1 user exists and only 1 enrollment exists
+        users = Usr.objects.filter(email='neha.gupta@example.com')
+        self.assertEqual(users.count(), 1)
+        enrollments = Enrollment.objects.filter(user=users.first(), course=course)
+        self.assertEqual(enrollments.count(), 1)
 
 
