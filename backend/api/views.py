@@ -563,7 +563,7 @@ def my_enrollments(req):
             'banner': c.banner or '',
             'enrolled_at': enr.enrolled_at.strftime('%Y-%m-%d') if enr.enrolled_at else 'N/A',
             'access_type': enr.access_type,
-            'instructor_name': c.instructor.name if c.instructor else 'Frontlines EduTech',
+            'instructor_name': c.instructor.name if c.instructor else '',
             'instructor_title': c.instructor.title if c.instructor else 'Industry Expert',
             'progress_percent': progress_percent,
             'completed_lessons': completed_lessons,

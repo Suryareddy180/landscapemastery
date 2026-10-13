@@ -48,9 +48,8 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           const pubData = await pubRes.json();
           const mapped = (pubData.courses || []).map((c) => ({
             ...c,
-            instructor_name: 'Frontlines EduTech',
+            instructor_name: c.instructor_name || '',
             progress_percent: 0,
-            valid_until: 'Feb 28, 2027',
             status: 'ACTIVE'
           }));
           setCoursesData({ active: mapped, archived: [] });
@@ -380,16 +379,13 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
                     {/* Course Content Info */}
                     <div className="p-4 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h3 className="font-bold text-sm text-stone-900 line-clamp-2 mb-1 group-hover:text-amber-700 transition-colors">
+                      <div className="mb-4">
+                        <h3 className="font-bold text-sm text-stone-900 line-clamp-2 group-hover:text-amber-700 transition-colors">
                           {c.title}
                         </h3>
-                        <p className="text-xs text-stone-500 mb-4 font-medium">
-                          {c.instructor_name || 'Frontlines EduTech'}
-                        </p>
                       </div>
 
-                      {/* Progress Bar & Validity Date */}
+                      {/* Progress Bar */}
                       <div>
                         <div className="w-full bg-stone-100 rounded-full h-2 mb-2 overflow-hidden">
                           <div
@@ -400,9 +396,6 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                         <div className="flex items-center justify-between text-[11px] font-semibold">
                           <span className="text-amber-600 font-bold">
                             {c.progress_percent || 0}% completed
-                          </span>
-                          <span className="text-stone-400">
-                            Valid Till: <span className="text-emerald-600 font-bold">{c.valid_until || 'Feb 28, 2027'}</span>
                           </span>
                         </div>
                       </div>
