@@ -662,251 +662,265 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
       {/* 4.5. COURSE CATALOG */}
       <CourseCatalog courses={catalogCourses} onSelectCourse={handleSelectCourse} enrolledCourseIds={enrolledCourseIds} />
 
-      {/* 5. PRICING & INSTANT ENROLLMENT CARD */}
-      <section id="enroll-card" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-[#063327] via-[#022119] to-[#01140f] text-white rounded-3xl p-6 sm:p-10 lg:p-12 shadow-[0_24px_70px_-12px_rgba(2,44,33,0.5)] border border-emerald-500/25 relative overflow-hidden">
+      {/* 5. PRICING & ENHANCED ENROLLMENT CARD */}
+      <section id="enroll-card" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-br from-[#063327] via-[#022119] to-[#01140f] text-white rounded-3xl p-6 sm:p-10 shadow-[0_24px_70px_-12px_rgba(2,44,33,0.5)] border border-emerald-500/25 relative overflow-hidden">
           {/* Subtle Ambient Radial Lighting */}
           <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
-            {/* Left Value Column */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 bg-emerald-900/80 text-emerald-200 text-[11px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest border border-emerald-600/40 shadow-inner">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{selectedCourse ? selectedCourse.title : 'Executive Architectural Access • 2026 Pass'}</span>
-              </div>
+          {/* Section Header with Live Course & Investment Details */}
+          <div className="relative z-10 text-center max-w-2xl mx-auto mb-8 space-y-3">
+            <div className="inline-flex items-center gap-2 bg-emerald-900/80 text-emerald-200 text-[11px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest border border-emerald-600/40 shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{selectedCourse ? selectedCourse.title : 'Executive Architectural Access'}</span>
+            </div>
 
-              <div className="space-y-2">
-                <h2 className="font-serif text-3xl sm:text-4xl lg:text-4.5xl font-bold text-white leading-[1.18] tracking-tight">
-                  {selectedCourse ? (
-                    <>{selectedCourse.title.split(' ').slice(0, 3).join(' ')} <br />
-                    <span className="italic font-normal text-emerald-300">{selectedCourse.title.split(' ').slice(3).join(' ') || 'Masterclass'}</span></>
-                  ) : (
-                    <>Unlock Complete <br />
-                    <span className="italic font-normal text-emerald-300">Masterclass Access</span></>
-                  )}
-                </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/80 font-light leading-relaxed max-w-md">
-                  {selectedCourse?.short_desc || 'Comprehensive spatial design, CAD execution schematics, and botanical curation tailored for practitioners.'}
-                </p>
-              </div>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              {selectedCourse ? `Enroll in ${selectedCourse.title}` : 'Instant Course Enrollment'}
+            </h2>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3 text-xs sm:text-sm text-emerald-50">
-                  <span className="material-symbols-outlined text-emerald-400 text-lg flex-shrink-0 mt-0.5">verified</span>
-                  <div>
-                    <strong className="text-white font-semibold">Structured Video Masterclasses:</strong>
-                    <span className="text-emerald-200/80 block text-xs">High-definition DRM video modules covering grading, masonry, drainage &amp; lighting.</span>
-                  </div>
-                </div>
+            <p className="text-xs sm:text-sm text-emerald-100/80 font-light leading-relaxed">
+              Complete your registration below. Upon verified payment, your learner portal account is created automatically and credentials are sent to your email.
+            </p>
 
-                <div className="flex items-start gap-3 text-xs sm:text-sm text-emerald-50">
-                  <span className="material-symbols-outlined text-emerald-400 text-lg flex-shrink-0 mt-0.5">architecture</span>
-                  <div>
-                    <strong className="text-white font-semibold">Downloadable CAD Blueprints:</strong>
-                    <span className="text-emerald-200/80 block text-xs">AutoCAD DWG &amp; PDF structural cross-sections and spec sheets.</span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 text-xs sm:text-sm text-emerald-50">
-                  <span className="material-symbols-outlined text-emerald-400 text-lg flex-shrink-0 mt-0.5">construction</span>
-                  <div>
-                    <strong className="text-white font-semibold">Practical Field Toolkits:</strong>
-                    <span className="text-emerald-200/80 block text-xs">Soil mechanics formulas, retaining wall calculations &amp; contractor specification guides.</span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 text-xs sm:text-sm text-emerald-50">
-                  <span className="material-symbols-outlined text-emerald-400 text-lg flex-shrink-0 mt-0.5">all_inclusive</span>
-                  <div>
-                    <strong className="text-white font-semibold">100% Lifetime Access:</strong>
-                    <span className="text-emerald-200/80 block text-xs">Zero recurring fees. Access all future curriculum expansions.</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price Display */}
-              <div className="pt-4 border-t border-emerald-800/80 flex flex-wrap items-baseline gap-3.5">
-                <span className="text-4xl sm:text-5xl font-bold font-serif text-white tracking-tight">₹{price}</span>
+            {/* Live Pricing Ribbon */}
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              <div className="inline-flex items-baseline gap-2 bg-emerald-950/80 border border-emerald-500/30 px-5 py-2 rounded-2xl shadow-inner">
+                <span className="text-3xl sm:text-4xl font-bold font-serif text-white tracking-tight">₹{price}</span>
                 {(discountPct > 0 || (selectedCourse && selectedCourse.discount_price < selectedCourse.price)) ? (
-                  <span className="text-lg line-through text-emerald-400/60 font-sans">₹{selectedCourse ? selectedCourse.price : basePrice}</span>
+                  <span className="text-sm line-through text-emerald-400/60 font-sans">
+                    ₹{selectedCourse ? selectedCourse.price : basePrice}
+                  </span>
                 ) : null}
-                <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">One-Time Investment • Lifetime Access</span>
-                
+                <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-wider ml-1">
+                  • Lifetime Access
+                </span>
                 {discountPct > 0 && (
-                  <span className="inline-block text-[11px] font-bold bg-emerald-400 text-emerald-950 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                    {discountPct}% Discount Applied
+                  <span className="text-[10px] font-bold bg-emerald-400 text-emerald-950 px-2 py-0.5 rounded-full uppercase tracking-wider ml-1 shadow-sm">
+                    {discountPct}% OFF
                   </span>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Right Form Card */}
-            <div className="lg:col-span-5 bg-white text-stone-900 p-6 sm:p-8 rounded-3xl shadow-2xl border border-stone-100 space-y-4">
-              <div className="flex justify-between items-start pb-2 border-b border-stone-100">
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-stone-900">
-                    {selectedCourse ? 'Enroll in Course' : 'Instant Enrollment'}
-                  </h3>
-                  <p className="text-[11px] text-stone-500 mt-0.5">
-                    {selectedCourse ? selectedCourse.title : 'Select a course above or enroll directly.'}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200">
+          {/* Enhanced Executive Form Card */}
+          <div className="relative z-10 bg-white text-stone-900 p-6 sm:p-10 rounded-3xl shadow-2xl border border-stone-100 space-y-6">
+            <div className="flex flex-wrap justify-between items-center pb-4 border-b border-stone-100 gap-2">
+              <div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
+                  {selectedCourse ? 'Enrollment Details' : 'Learner Registration'}
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  {selectedCourse ? selectedCourse.title : 'Select a course or enroll directly.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-md border border-emerald-200">
                   <span className="material-symbols-outlined text-xs">lock</span>
                   256-Bit SSL
                 </span>
+                <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 text-[11px] font-bold px-2.5 py-1 rounded-md border border-stone-200">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  Auto-Account
+                </span>
               </div>
+            </div>
 
-              {statusMessage && (
-                <div className={`p-3.5 rounded-xl text-xs font-semibold ${
-                  statusMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-800' :
-                  statusMessage.type === 'warning' ? 'bg-amber-50 border border-amber-200 text-amber-900' :
-                  'bg-emerald-50 border border-emerald-200 text-emerald-900'
-                }`}>
-                  {statusMessage.text}
+            {statusMessage && (
+              <div className={`p-4 rounded-xl text-xs sm:text-sm font-semibold ${
+                statusMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-800' :
+                statusMessage.type === 'warning' ? 'bg-amber-50 border border-amber-200 text-amber-900' :
+                'bg-emerald-50 border border-emerald-200 text-emerald-900'
+              }`}>
+                {statusMessage.text}
+              </div>
+            )}
+
+            <form onSubmit={handlePayment} className="space-y-6">
+              {/* Optional Course Selector if catalog courses available */}
+              {catalogCourses.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Course Selection <span className="text-emerald-700">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedCourse?.id || ''}
+                      onChange={(e) => {
+                        const found = catalogCourses.find(c => c.id === Number(e.target.value));
+                        if (found) handleSelectCourse(found);
+                      }}
+                      className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all cursor-pointer"
+                    >
+                      <option value="" disabled>-- Select a Course from Catalog --</option>
+                      {catalogCourses.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.title} — ₹{c.discount_price || c.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 
-              <form onSubmit={handlePayment} className="space-y-3.5">
-                {/* Account Type Selector */}
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                    Account Type <span className="text-emerald-700">*</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'STUDENT', label: 'Student', icon: GraduationCap },
-                      { id: 'EMPLOYEE', label: 'Employee', icon: Building2 },
-                      { id: 'HOUSEHOLD', label: 'Household', icon: Home }
-                    ].map((item) => {
-                      const Icon = item.icon;
-                      const isSelected = accountType === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setAccountType(item.id)}
-                          className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-900 text-white border-emerald-900 shadow-sm'
-                              : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* 1. Account Type Selector */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                  1. Learner Classification <span className="text-emerald-700">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'STUDENT', label: 'Student', sub: 'University / College', icon: GraduationCap },
+                    { id: 'EMPLOYEE', label: 'Employee', sub: 'Corporate / Firm', icon: Building2 },
+                    { id: 'HOUSEHOLD', label: 'Household', sub: 'Family / Individual', icon: Home }
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const isSelected = accountType === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setAccountType(item.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-emerald-950 to-emerald-900 text-white border-emerald-900 shadow-md ring-2 ring-emerald-500/30'
+                            : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 hover:border-stone-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <Icon className={`w-5 h-5 ${isSelected ? 'text-emerald-300' : 'text-stone-500'}`} />
+                          {isSelected && <span className="w-2 h-2 rounded-full bg-emerald-400" />}
+                        </div>
+                        <div>
+                          <div className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>
+                            {item.label}
+                          </div>
+                          <div className={`text-[11px] ${isSelected ? 'text-emerald-200/80' : 'text-stone-400'}`}>
+                            {item.sub}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* Full Name */}
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Full Name <span className="text-emerald-700">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">person</span>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Surya Prakash Reddy"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Email Address */}
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Email Address <span className="text-emerald-700">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mail</span>
-                    <input
-                      type="email"
-                      required
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
-                    />
-                  </div>
-                  <span className="text-[10px] text-stone-400 mt-0.5 block">
-                    Account credentials &amp; login instructions will be dispatched to this email.
-                  </span>
-                </div>
-
-                {/* Mobile Number with country code */}
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Mobile Number <span className="text-emerald-700">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">phone_iphone</span>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Conditional Fields: STUDENT */}
-                {accountType === 'STUDENT' && (
-                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
-                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                      <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Student Academic Details</span>
+              {/* 2. Personal & Contact Information */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                  2. Personal &amp; Contact Information <span className="text-emerald-700">*</span>
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                      Full Name <span className="text-emerald-700">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">person</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Surya Prakash Reddy"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
+                      />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Qualification</label>
-                        <select
-                          value={qualification}
-                          onChange={(e) => setQualification(e.target.value)}
-                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
-                        >
-                          <option value="B.Arch">B.Arch</option>
-                          <option value="B.Tech">B.Tech</option>
-                          <option value="B.Des">B.Des</option>
-                          <option value="B.Sc">B.Sc</option>
-                          <option value="M.Arch">M.Arch</option>
-                          <option value="M.Tech">M.Tech</option>
-                          <option value="Diploma">Diploma</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Passout Year</label>
-                        <select
-                          value={passoutYear}
-                          onChange={(e) => setPassoutYear(e.target.value)}
-                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
-                        >
-                          <option value="2027">2027</option>
-                          <option value="2026">2026</option>
-                          <option value="2025">2025</option>
-                          <option value="2024">2024</option>
-                          <option value="2023">2023</option>
-                          <option value="Earlier">Earlier</option>
-                        </select>
-                      </div>
+                  {/* Email Address */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                      Email Address <span className="text-emerald-700">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">mail</span>
+                      <input
+                        type="email"
+                        required
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile Number */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                      Mobile Number <span className="text-emerald-700">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">phone_iphone</span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10.5px] text-stone-400 mt-1 block">
+                  Access credentials and order invoices will be delivered to this email and mobile number.
+                </span>
+              </div>
+
+              {/* 3. Role-Specific Profile Details */}
+              {/* Conditional Fields: STUDENT */}
+              {accountType === 'STUDENT' && (
+                <div className="p-4 sm:p-5 bg-stone-50/90 rounded-2xl border border-stone-200/90 space-y-3.5">
+                  <div className="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-emerald-700" />
+                    <span>3. Student Academic Profile</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Qualification</label>
+                      <select
+                        value={qualification}
+                        onChange={(e) => setQualification(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                      >
+                        <option value="B.Arch">B.Arch</option>
+                        <option value="B.Tech">B.Tech</option>
+                        <option value="B.Des">B.Des</option>
+                        <option value="B.Sc">B.Sc</option>
+                        <option value="M.Arch">M.Arch</option>
+                        <option value="M.Tech">M.Tech</option>
+                        <option value="Diploma">Diploma</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Branch / Department</label>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Passout Year</label>
+                      <select
+                        value={passoutYear}
+                        onChange={(e) => setPassoutYear(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                      >
+                        <option value="2027">2027</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="Earlier">Earlier</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Branch / Dept</label>
                       <input
                         type="text"
-                        placeholder="e.g. Architecture / Civil / Design"
+                        placeholder="e.g. Architecture / Civil"
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -914,25 +928,11 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
-                        College / University Name <span className="text-emerald-700">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required={accountType === 'STUDENT'}
-                        placeholder="e.g. School of Planning and Architecture"
-                        value={collegeName}
-                        onChange={(e) => setCollegeName(e.target.value)}
-                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Current Working Status</label>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Current Status</label>
                       <select
                         value={studentStatus}
                         onChange={(e) => setStudentStatus(e.target.value)}
-                        className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
                       >
                         <option value="Still Studying">Still Studying</option>
                         <option value="Internship">Internship</option>
@@ -942,18 +942,34 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                       </select>
                     </div>
                   </div>
-                )}
 
-                {/* Conditional Fields: EMPLOYEE */}
-                {accountType === 'EMPLOYEE' && (
-                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
-                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Corporate / Employment Details</span>
-                    </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                      College / University Name <span className="text-emerald-700">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required={accountType === 'STUDENT'}
+                      placeholder="e.g. School of Planning and Architecture"
+                      value={collegeName}
+                      onChange={(e) => setCollegeName(e.target.value)}
+                      className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                    />
+                  </div>
+                </div>
+              )}
 
+              {/* Conditional Fields: EMPLOYEE */}
+              {accountType === 'EMPLOYEE' && (
+                <div className="p-4 sm:p-5 bg-stone-50/90 rounded-2xl border border-stone-200/90 space-y-3.5">
+                  <div className="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-emerald-700" />
+                    <span>3. Corporate / Employment Details</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
                         Company / Organization <span className="text-emerald-700">*</span>
                       </label>
                       <input
@@ -966,50 +982,51 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Department</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Planning &amp; Infra"
-                          value={department}
-                          onChange={(e) => setDepartment(e.target.value)}
-                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
-                          Designation <span className="text-emerald-700">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required={accountType === 'EMPLOYEE'}
-                          placeholder="e.g. Senior Architect"
-                          value={designation}
-                          onChange={(e) => setDesignation(e.target.value)}
-                          className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Conditional Fields: HOUSEHOLD */}
-                {accountType === 'HOUSEHOLD' && (
-                  <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-2.5">
-                    <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                      <Home className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Household Learner Details</span>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Department</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Planning &amp; Infrastructure"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
-                        Household Name / Primary Contact <span className="text-emerald-700">*</span>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                        Designation <span className="text-emerald-700">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required={accountType === 'EMPLOYEE'}
+                        placeholder="e.g. Senior Architect"
+                        value={designation}
+                        onChange={(e) => setDesignation(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Conditional Fields: HOUSEHOLD */}
+              {accountType === 'HOUSEHOLD' && (
+                <div className="p-4 sm:p-5 bg-stone-50/90 rounded-2xl border border-stone-200/90 space-y-3.5">
+                  <div className="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                    <Home className="w-4 h-4 text-emerald-700" />
+                    <span>3. Household Learner Details</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                        Household Name / Contact <span className="text-emerald-700">*</span>
                       </label>
                       <input
                         type="text"
                         required={accountType === 'HOUSEHOLD'}
-                        placeholder="e.g. Sharma Family / Primary Contact"
+                        placeholder="e.g. Reddy Family / Primary Contact"
                         value={householdName}
                         onChange={(e) => setHouseholdName(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -1017,7 +1034,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Residential Address</label>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Residential Address</label>
                       <input
                         type="text"
                         placeholder="e.g. Jubilee Hills, Hyderabad"
@@ -1028,11 +1045,11 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Family Learners / Members</label>
+                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">Family Learners</label>
                       <select
                         value={memberCount}
                         onChange={(e) => setMemberCount(Number(e.target.value))}
-                        className="w-full bg-white border border-stone-200 rounded-xl px-2.5 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
+                        className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
                       >
                         <option value={1}>1 Learner</option>
                         <option value={2}>2 Learners</option>
@@ -1041,12 +1058,15 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                       </select>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
+              {/* 4. Privilege Coupon Code & Order Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start pt-2">
                 {/* Coupon Code Input */}
                 <div>
-                  <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Have a Coupon Code?
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                    Have a Privilege Coupon?
                   </label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
@@ -1056,61 +1076,93 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                         placeholder="e.g. ARCHITECT20"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white uppercase"
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white uppercase"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
                       disabled={couponLoading || !couponCode.trim()}
-                      className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold px-4 py-2 rounded-xl transition-all border border-stone-300 cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[65px]"
+                      className="bg-emerald-900 hover:bg-emerald-950 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all border border-emerald-800 cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[75px]"
                     >
                       {couponLoading ? '...' : 'Apply'}
                     </button>
                   </div>
                   {couponMessage && (
-                    <div className={`mt-1.5 text-[11px] font-semibold ${couponMessage.type === 'success' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    <div className={`mt-1.5 text-xs font-semibold ${couponMessage.type === 'success' ? 'text-emerald-700' : 'text-rose-600'}`}>
                       {couponMessage.text}
                     </div>
                   )}
                 </div>
 
-                {/* Course Selection Prompt (if no course selected) */}
-                {!selectedCourse && catalogCourses.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 font-medium flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">info</span>
-                    <span>Please <a href="#course-catalog" className="underline font-bold">select a course</a> above to enroll.</span>
+                {/* Investment Summary Box */}
+                <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/90 space-y-2">
+                  <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                    Investment Breakdown
                   </div>
-                )}
-
-                {/* Automated Account Creation Notice */}
-                <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                  <div className="leading-relaxed">
-                    <strong>Seamless Enrollment:</strong> Your account will be created automatically upon verified payment. Temporary access credentials will be delivered to your email.
+                  <div className="flex justify-between text-xs text-stone-600">
+                    <span>Base Course Price</span>
+                    <span className="font-semibold">₹{selectedCourse ? selectedCourse.price : basePrice}</span>
+                  </div>
+                  {discountPct > 0 && (
+                    <div className="flex justify-between text-xs text-emerald-700 font-semibold">
+                      <span>Privilege Coupon Discount ({discountPct}%)</span>
+                      <span>-₹{Math.round(basePrice * (discountPct / 100))}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
+                    <span className="text-xs font-bold text-stone-900 uppercase">Total Payable</span>
+                    <span className="text-xl font-bold font-serif text-emerald-950">₹{price}</span>
                   </div>
                 </div>
-
-                {/* Submit Checkout Button */}
-                <button
-                  type="submit"
-                  disabled={loading || (!selectedCourse && catalogCourses.length > 0)}
-                  className="w-full bg-gradient-to-r from-emerald-900 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-xs sm:text-sm py-3.5 rounded-xl shadow-lg shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-3 btn-shine disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <span className="material-symbols-outlined text-base">lock</span>
-                  <span>{loading ? 'Connecting Payment Gateway...' : `Proceed to Secure Payment • ₹${price}`}</span>
-                </button>
-              </form>
-
-              {/* Payment Security / Trust Footer */}
-              <div className="pt-3 border-t border-stone-100 flex items-center justify-center gap-3 text-[10px] text-stone-400 font-semibold uppercase tracking-wider">
-                <span>Razorpay Verified</span>
-                <span>•</span>
-                <span>UPI &amp; Cards</span>
-                <span>•</span>
-                <span>Instant Access</span>
               </div>
-            </div>
+
+              {/* Prompt if no course selected and catalog exists */}
+              {!selectedCourse && catalogCourses.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-800 font-medium flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">info</span>
+                  <span>Please select a course from the catalog dropdown above or the course section to continue.</span>
+                </div>
+              )}
+
+              {/* Instant Automated Provisioning Notice */}
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-900 flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong>Instant Automated Account Provisioning:</strong> Your learner portal account is created automatically upon verified payment. Temporary access credentials and login instructions will be delivered immediately to <strong>{email || 'your email'}</strong>.
+                </div>
+              </div>
+
+              {/* Submit / Proceed to Payment Button */}
+              <button
+                type="submit"
+                disabled={loading || (!selectedCourse && catalogCourses.length > 0)}
+                className="w-full bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-sm sm:text-base py-4 rounded-2xl shadow-xl shadow-emerald-950/25 transition-all flex items-center justify-center gap-2.5 cursor-pointer btn-shine disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-lg">lock</span>
+                <span>{loading ? 'Initializing Secure Payment Gateway...' : `Proceed to Secure Payment • ₹${price}`}</span>
+              </button>
+
+              {/* Trust & Verification Badges */}
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-stone-500 font-semibold uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-700 text-sm">verified</span>
+                  Razorpay Verified Gateway
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-700 text-sm">lock</span>
+                  256-Bit SSL Encryption
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-700 text-sm">credit_card</span>
+                  UPI, Cards &amp; NetBanking
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-700 text-sm">all_inclusive</span>
+                  Zero Recurring Fees
+                </span>
+              </div>
+            </form>
           </div>
         </div>
       </section>
