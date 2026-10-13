@@ -460,6 +460,12 @@ def register(req):
         profile.household_name = req.data.get('household_name', f"{full_name}'s Household")
         profile.primary_contact_name = req.data.get('primary_contact_name', full_name)
         profile.residential_address = req.data.get('residential_address', '')
+        mc = req.data.get('member_count')
+        if mc:
+            try:
+                profile.member_count = int(mc)
+            except (ValueError, TypeError):
+                pass
         profile.household_id = f"HH-{usr.id:04d}"
 
     profile.save()
