@@ -27,6 +27,13 @@ export default function CourseBuilderSection({ token }) {
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCoursePrice, setNewCoursePrice] = useState('499.00');
   const [newModuleTitle, setNewModuleTitle] = useState('');
+
+  // Course Edit Modal (Pricing & Title)
+  const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
+  const [editCourseTitle, setEditCourseTitle] = useState('');
+  const [editCoursePrice, setEditCoursePrice] = useState('499.00');
+  const [editCourseDiscountPrice, setEditCourseDiscountPrice] = useState('499.00');
+  const [editCourseSubmitting, setEditCourseSubmitting] = useState(false);
   const [newLessonTitle, setNewLessonTitle] = useState('');
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [newAsset, setNewAsset] = useState({ title: '', asset_type: 'long_video', duration: '2 hrs', url: '' });
@@ -195,6 +202,71 @@ export default function CourseBuilderSection({ token }) {
       setMutationMessage({ type: 'error', text: 'Network error while deleting course.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // COURSE PRICING & TITLE EDIT MANAGEMENT
+  // ---------------------------------------------------------------------------
+  const handleOpenEditModal = (course) => {
+    if (!course) return;
+    setEditCourseTitle(course.title || '');
+    setEditCoursePrice(String(course.price || '499.00'));
+    setEditCourseDiscountPrice(String(course.discount_price || course.price || '499.00'));
+    setEditCourseModalOpen(true);
+  };
+
+  const handleSaveCoursePrice = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!selectedCourse) return;
+
+    const parsedPrice = parseFloat(editCoursePrice);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      setMutationMessage({ type: 'error', text: 'Please enter a valid positive price (e.g. 499).' });
+      return;
+    }
+
+    setEditCourseSubmitting(true);
+    setMutationMessage(null);
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+
+      const payload = {
+        price: parsedPrice,
+        discount_price: parseFloat(editCourseDiscountPrice) || parsedPrice
+      };
+      if (editCourseTitle.trim()) {
+        payload.title = editCourseTitle.trim();
+      }
+
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${selectedCourse.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setMutationMessage({
+          type: 'success',
+          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated to ₹${parsedPrice} successfully!`
+        });
+        setEditCourseModalOpen(false);
+        await fetchCourses();
+        loadCourseDetail(selectedCourse.id);
+      } else {
+        const errData = await res.json();
+        setMutationMessage({ type: 'error', text: errData.error || 'Failed to update course pricing.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while updating course pricing.' });
+    } finally {
+      setEditCourseSubmitting(false);
     }
   };
 
@@ -679,18 +751,29 @@ export default function CourseBuilderSection({ token }) {
           </p>
         </div>
 
-        <form onSubmit={handleCreateCourse} className="flex items-center gap-2 w-full md:w-auto">
+        <form onSubmit={handleCreateCourse} className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <input
             type="text"
             placeholder="New Course Title..."
             value={newCourseTitle}
             onChange={(e) => setNewCourseTitle(e.target.value)}
-            className="bg-stone-50 border border-stone-300 rounded-xl px-4 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none w-64 shadow-inner"
+            className="bg-stone-50 border border-stone-300 rounded-xl px-4 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none w-52 shadow-inner"
           />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-bold">₹</span>
+            <input
+              type="number"
+              min="1"
+              placeholder="Price"
+              value={newCoursePrice}
+              onChange={(e) => setNewCoursePrice(e.target.value)}
+              className="bg-stone-50 border border-stone-300 rounded-xl pl-6 pr-3 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none w-24 shadow-inner"
+            />
+          </div>
           <button 
             type="submit" 
             disabled={loading}
-            className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+            className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5 flex-shrink-0"
           >
             <span className="material-symbols-outlined text-sm">add_circle</span>
             {loading ? 'Creating...' : 'Create Course'}
@@ -808,16 +891,43 @@ export default function CourseBuilderSection({ token }) {
               {/* Course Header with Status & Activation Controls */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-stone-200 gap-4">
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900">{selectedCourse.title}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-stone-900">{selectedCourse.title}</h2>
+                    <button
+                      onClick={() => handleOpenEditModal(selectedCourse)}
+                      className="p-1 rounded-lg text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                      title="Edit Course Title & Price"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-mono text-emerald-700">/{selectedCourse.slug}</span>
                     <span className="text-stone-300">•</span>
-                    <span className="text-xs font-semibold text-stone-500">₹{selectedCourse.price}</span>
+                    <button
+                      onClick={() => handleOpenEditModal(selectedCourse)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all cursor-pointer group shadow-2xs"
+                      title="Click to edit course price"
+                    >
+                      <span className="material-symbols-outlined text-xs text-emerald-600">payments</span>
+                      <span>₹{selectedCourse.price}</span>
+                      <span className="material-symbols-outlined text-[13px] opacity-70 group-hover:opacity-100">edit</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* Status & Deactivate/Activate Actions */}
                 <div className="flex flex-wrap items-center gap-2.5">
+                  {/* Edit Pricing & Title Button */}
+                  <button
+                    onClick={() => handleOpenEditModal(selectedCourse)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-emerald-50/60 text-stone-700 hover:text-emerald-800 border border-stone-200 hover:border-emerald-300 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    title="Edit course price and title"
+                  >
+                    <span className="material-symbols-outlined text-base text-emerald-700">currency_rupee</span>
+                    <span>Edit Price</span>
+                  </button>
+
                   {/* Status Dropdown */}
                   <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-300 rounded-xl px-3 py-1.5">
                     <span className="text-[11px] font-semibold text-stone-500">Status:</span>
@@ -1561,6 +1671,124 @@ export default function CourseBuilderSection({ token }) {
                 Confirm Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT COURSE PRICE & TITLE MODAL */}
+      {editCourseModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-stone-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-lg">currency_rupee</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-stone-900">Edit Course Pricing &amp; Details</h3>
+                  <p className="text-[11px] text-stone-500">Update course selling price and title</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditCourseModalOpen(false)}
+                className="text-stone-400 hover:text-stone-700 p-1 rounded-lg cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCoursePrice} className="space-y-4">
+              {/* Course Title */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                  Course Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editCourseTitle}
+                  onChange={(e) => setEditCourseTitle(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                />
+              </div>
+
+              {/* Course Price */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                  Selling Price (INR ₹) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    required
+                    value={editCoursePrice}
+                    onChange={(e) => {
+                      setEditCoursePrice(e.target.value);
+                      setEditCourseDiscountPrice(e.target.value);
+                    }}
+                    placeholder="499"
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3.5 py-2.5 text-sm font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                  />
+                </div>
+                <p className="text-[10px] text-stone-400">
+                  This amount will be charged at Razorpay checkout and shown on public course cards.
+                </p>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Quick Price Presets:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[299, 499, 799, 999, 1499, 1999, 2499, 4999].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        setEditCoursePrice(String(preset));
+                        setEditCourseDiscountPrice(String(preset));
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        String(editCoursePrice) === String(preset)
+                          ? 'bg-emerald-800 text-white shadow-xs'
+                          : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                      }`}
+                    >
+                      ₹{preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setEditCourseModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editCourseSubmitting}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {editCourseSubmitting ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm">check</span>
+                      <span>Update Price</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

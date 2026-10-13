@@ -923,6 +923,7 @@ def admin_courses(req):
                 'title': c.title,
                 'slug': c.slug,
                 'price': float(c.price),
+                'discount_price': float(c.discount_price or c.price),
                 'status': c.status,
                 'thumbnail': c.thumbnail or '',
                 'banner': c.banner or '',
@@ -944,12 +945,13 @@ def admin_courses(req):
         short_desc = req.data.get('short_desc', '')
         full_desc = req.data.get('full_desc', '')
         price = req.data.get('price', 499.00)
+        discount_price = req.data.get('discount_price', price)
         thumbnail = req.data.get('thumbnail', '')
         course = Course.objects.create(
-            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, status='PUBLISHED', thumbnail=thumbnail
+            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, discount_price=discount_price, status='PUBLISHED', thumbnail=thumbnail
         )
         log_admin_action(req.user, "COURSE_CREATED", target=course.title, details=f"ID: {course.id}", ip=req.META.get('REMOTE_ADDR'))
-        return Response({'status': 'created', 'id': course.id, 'title': course.title, 'slug': course.slug, 'price': float(course.price), 'thumbnail': course.thumbnail or ''})
+        return Response({'status': 'created', 'id': course.id, 'title': course.title, 'slug': course.slug, 'price': float(course.price), 'discount_price': float(course.discount_price or course.price), 'thumbnail': course.thumbnail or ''})
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -987,6 +989,7 @@ def admin_course_detail(req, pk):
             'title': course.title,
             'slug': course.slug,
             'price': float(course.price),
+            'discount_price': float(course.discount_price or course.price),
             'status': course.status,
             'thumbnail': course.thumbnail or '',
             'banner': course.banner or '',
@@ -999,12 +1002,16 @@ def admin_course_detail(req, pk):
         return Response({'status': 'deleted'})
     elif req.method == 'PATCH':
         if 'title' in req.data: course.title = req.data['title']
-        if 'price' in req.data: course.price = req.data['price']
+        if 'price' in req.data:
+            course.price = req.data['price']
+            if 'discount_price' not in req.data:
+                course.discount_price = req.data['price']
+        if 'discount_price' in req.data: course.discount_price = req.data['discount_price']
         if 'status' in req.data: course.status = req.data['status']
         if 'thumbnail' in req.data: course.thumbnail = req.data['thumbnail']
         if 'banner' in req.data: course.banner = req.data['banner']
         course.save()
-        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
+        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
             'status': 'updated',
             'course': {
@@ -1012,6 +1019,7 @@ def admin_course_detail(req, pk):
                 'title': course.title,
                 'slug': course.slug,
                 'price': float(course.price),
+                'discount_price': float(course.discount_price or course.price),
                 'status': course.status,
                 'thumbnail': course.thumbnail or '',
                 'banner': course.banner or ''
