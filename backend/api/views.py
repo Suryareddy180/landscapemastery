@@ -499,25 +499,90 @@ def public_course_detail(req, slug):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_enrollments(req):
-    """Returns all courses the current user is enrolled in."""
+    """
+    Returns all courses the current user is enrolled in.
+    Supports both legacy 'enrollments' array and categorized 'active' / 'archived'
+    lists with dynamic completion percentage, validity dates, and instructor metadata.
+    """
+    from datetime import timedelta
+
+    # Auto-provision primary published course if paid user has no explicit enrollment record
+    if getattr(req.user, 'paid', False) and not Enrollment.objects.filter(user=req.user).exists():
+        first_published = Course.objects.filter(status='PUBLISHED').first()
+        if first_published:
+            Enrollment.objects.get_or_create(user=req.user, course=first_published, defaults={'status': 'ACTIVE', 'access_type': 'PAID'})
+
+    # Fetch completed lesson IDs for this specific user
+    user_completed_lesson_ids = set(
+        LessonProgress.objects.filter(user=req.user, completed=True)
+        .values_list('lesson_id', flat=True)
+    )
+
+    enrollments_qs = (
+        Enrollment.objects.filter(user=req.user)
+        .select_related('course', 'course__instructor')
+        .prefetch_related('course__modules__lessons')
+        .order_by('-enrolled_at')
+    )
+
     enrolled_courses = []
-    for enr in Enrollment.objects.filter(user=req.user, status='ACTIVE').select_related('course'):
-        if enr.course:
-            c = enr.course
-            enrolled_courses.append({
-                'id': c.id,
-                'title': c.title,
-                'slug': c.slug,
-                'short_desc': c.short_desc or '',
-                'price': float(c.price),
-                'discount_price': float(c.discount_price),
-                'duration_hrs': c.duration_hrs,
-                'level': c.level,
-                'thumbnail': c.thumbnail or '',
-                'enrolled_at': enr.enrolled_at.strftime('%Y-%m-%d') if enr.enrolled_at else 'N/A',
-                'access_type': enr.access_type
-            })
-    return Response({'enrollments': enrolled_courses})
+    active_courses = []
+    archived_courses = []
+
+    for enr in enrollments_qs:
+        if not enr.course:
+            continue
+        c = enr.course
+
+        # Count total published lessons and calculate user completion percentage
+        all_lessons = []
+        for mod in c.modules.all():
+            all_lessons.extend([l for l in mod.lessons.all() if l.is_published])
+
+        total_lessons = len(all_lessons)
+        completed_lessons = sum(1 for l in all_lessons if l.id in user_completed_lesson_ids)
+        progress_percent = int(round((completed_lessons / total_lessons * 100))) if total_lessons > 0 else 0
+
+        # Calculate validity date (default: 1 year from enrollment or default future date)
+        if enr.enrolled_at:
+            valid_until_date = enr.enrolled_at + timedelta(days=365)
+            valid_until_str = valid_until_date.strftime('%b %d, %Y')
+        else:
+            valid_until_str = 'Feb 28, 2027'
+
+        course_item = {
+            'id': c.id,
+            'title': c.title,
+            'slug': c.slug,
+            'short_desc': c.short_desc or '',
+            'price': float(c.price),
+            'discount_price': float(c.discount_price),
+            'duration_hrs': c.duration_hrs,
+            'level': c.level,
+            'thumbnail': c.thumbnail or c.banner or '/course_thumb_landscape.jpg',
+            'banner': c.banner or '',
+            'enrolled_at': enr.enrolled_at.strftime('%Y-%m-%d') if enr.enrolled_at else 'N/A',
+            'access_type': enr.access_type,
+            'instructor_name': c.instructor.name if c.instructor else 'Frontlines EduTech',
+            'instructor_title': c.instructor.title if c.instructor else 'Industry Expert',
+            'progress_percent': progress_percent,
+            'completed_lessons': completed_lessons,
+            'total_lessons': total_lessons,
+            'valid_until': valid_until_str,
+            'status': enr.status
+        }
+
+        enrolled_courses.append(course_item)
+        if enr.status == 'ARCHIVED':
+            archived_courses.append(course_item)
+        else:
+            active_courses.append(course_item)
+
+    return Response({
+        'enrollments': enrolled_courses,
+        'active': active_courses,
+        'archived': archived_courses
+    })
 
 # ---------------------------------------------------------
 # DRM VIDEO STREAMING & PROGRESS TRACKING

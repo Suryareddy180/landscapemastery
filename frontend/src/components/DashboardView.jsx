@@ -3,76 +3,116 @@ import { BASE_URL } from '../lib/api.js';
 import CourseVideoPlayer from './CourseVideoPlayer.jsx';
 
 export default function DashboardView({ onNavigate, token, user, onLogout, logoUrl }) {
-  const [courses, setCourses] = useState([]);
+  // Navigation State: null = Photo 1 (Active Courses), Object = Photo 2 (Course Learning Workspace)
   const [selectedCourse, setSelectedCourse] = useState(null);
+
+  // Photo 1 States (Active / Archived Courses List)
+  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'archived'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [coursesData, setCoursesData] = useState({ active: [], archived: [] });
+  const [loading, setLoading] = useState(true);
+
+  // Photo 2 States (Curriculum & Video Player)
+  const [curriculum, setCurriculum] = useState(null);
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
   const [playbackData, setPlaybackData] = useState(null);
   const [playbackLoading, setPlaybackLoading] = useState(false);
   const [playbackError, setPlaybackError] = useState(null);
   const [completedLessonIds, setCompletedLessonIds] = useState(new Set());
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const isAdmin = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
 
   useEffect(() => {
-    fetchCourseData();
+    fetchEnrolledCourses();
   }, [token]);
 
-  const fetchCourseData = async () => {
+  // --- Fetch Enrolled Courses for Photo 1 ---
+  const fetchEnrolledCourses = async () => {
+    setLoading(true);
     try {
-      // 1. Fetch student enrolled course IDs
-      let enrolledIds = [];
-      if (token && !isAdmin) {
-        try {
-          const enrollRes = await fetch(`${BASE_URL}/api/my/enrollments/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (enrollRes.ok) {
-            const enrollData = await enrollRes.json();
-            enrolledIds = (enrollData.enrollments || []).map(e => e.id);
-            setEnrolledCourseIds(enrolledIds);
-          }
-        } catch (e) {
-          // fallback
-        }
-      }
-
-      // 2. Fetch all published courses with modules & lessons
-      const res = await fetch(`${BASE_URL}/api/public/settings/`);
+      const res = await fetch(`${BASE_URL}/api/my/enrollments/`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data.courses && data.courses.length > 0) {
-          let visibleCourses = data.courses;
-          if (!isAdmin && enrolledIds.length > 0) {
-            // Priority to enrolled courses, but keep all if user has paid access
-            const enrolledOnly = data.courses.filter(c => enrolledIds.includes(c.id));
-            if (enrolledOnly.length > 0) {
-              visibleCourses = enrolledOnly;
-            }
-          }
-
-          setCourses(visibleCourses);
-          const firstCourse = visibleCourses[0];
-          setSelectedCourse(firstCourse);
-
-          if (firstCourse.modules && firstCourse.modules.length > 0) {
-            const firstMod = firstCourse.modules[0];
-            setActiveModuleId(firstMod.id);
-            if (firstMod.lessons && firstMod.lessons.length > 0) {
-              selectLesson(firstMod.lessons[0], firstCourse);
-            }
-          }
+        // Fallback to enrollments array if active/archived are not segregated
+        const activeList = data.active || data.enrollments || [];
+        const archivedList = data.archived || [];
+        setCoursesData({ active: activeList, archived: archivedList });
+      } else {
+        // Fallback: load public courses if student has not bought yet or guest
+        const pubRes = await fetch(`${BASE_URL}/api/public/courses/`);
+        if (pubRes.ok) {
+          const pubData = await pubRes.json();
+          const mapped = (pubData.courses || []).map((c) => ({
+            ...c,
+            instructor_name: 'Frontlines EduTech',
+            progress_percent: 0,
+            valid_until: 'Feb 28, 2027',
+            status: 'ACTIVE'
+          }));
+          setCoursesData({ active: mapped, archived: [] });
         }
       }
-    } catch (e) {
-      console.error('Failed to load courses:', e);
+    } catch (err) {
+      console.error('Error fetching enrolled courses:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const selectLesson = async (lesson, courseOverride = null) => {
-    const course = courseOverride || selectedCourse;
-    if (!lesson || !course) return;
+  // --- Select Course: Transition from Photo 1 to Photo 2 ---
+  const handleOpenCourse = async (course) => {
+    setSelectedCourse(course);
+    setPlaybackLoading(true);
+    setPlaybackError(null);
+    setPlaybackData(null);
+
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${BASE_URL}/api/courses/${course.id}/curriculum/`, {
+        headers
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurriculum(data);
+
+        // Extract completed lessons from curriculum
+        const completedIds = new Set();
+        data.modules?.forEach((m) => {
+          m.lessons?.forEach((l) => {
+            if (l.is_completed) completedIds.add(l.id);
+          });
+        });
+        setCompletedLessonIds(completedIds);
+
+        // Auto-select first module and first lesson
+        if (data.modules && data.modules.length > 0) {
+          const firstMod = data.modules[0];
+          setActiveModuleId(firstMod.id);
+          const firstLesson = firstMod.lessons?.[0];
+          if (firstLesson) {
+            handleSelectLesson(firstLesson, course.id);
+          }
+        }
+      } else {
+        setPlaybackError({ error: 'Unable to load course modules. Please contact support.' });
+      }
+    } catch (err) {
+      console.error('Error loading course curriculum:', err);
+      setPlaybackError({ error: 'Network error loading curriculum.' });
+    } finally {
+      setPlaybackLoading(false);
+    }
+  };
+
+  // --- Select Lesson in Photo 2 ---
+  const handleSelectLesson = async (lesson, courseIdOverride = null) => {
+    const courseId = courseIdOverride || selectedCourse?.id;
+    if (!lesson || !courseId) return;
 
     setActiveLesson(lesson);
     setPlaybackLoading(true);
@@ -80,8 +120,8 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
     setPlaybackData(null);
 
     try {
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(`${BASE_URL}/api/courses/${course.id}/lessons/${lesson.id}/playback/`, {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${BASE_URL}/api/courses/${courseId}/lessons/${lesson.id}/playback/`, {
         headers
       });
       const data = await res.json();
@@ -92,425 +132,478 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
         setPlaybackError(data);
       }
     } catch (err) {
-      setPlaybackError({ error: 'Unable to connect to streaming server. Please try again.' });
+      console.error('Error fetching lesson playback:', err);
+      setPlaybackError({ error: 'Unable to load video stream. Please try again.' });
     } finally {
       setPlaybackLoading(false);
     }
   };
 
-  const handleToggleComplete = async () => {
-    if (!activeLesson || !token) return;
-    const isCompleted = completedLessonIds.has(activeLesson.id);
+  // --- Toggle Lesson Completion (Updates checkmark & live recalculates %) ---
+  const handleToggleComplete = async (lessonId) => {
+    if (!token) return;
+    const isCompleted = completedLessonIds.has(lessonId);
 
     try {
       const res = await fetch(`${BASE_URL}/api/lesson/complete/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          lesson_id: activeLesson.id,
-          completed: !isCompleted
-        })
+        body: JSON.stringify({ lesson_id: lessonId, completed: !isCompleted })
       });
 
       if (res.ok) {
-        setCompletedLessonIds(prev => {
-          const next = new Set(prev);
-          if (isCompleted) next.delete(activeLesson.id);
-          else next.add(activeLesson.id);
-          return next;
+        setCompletedLessonIds((prev) => {
+          const updated = new Set(prev);
+          if (isCompleted) updated.delete(lessonId);
+          else updated.add(lessonId);
+          return updated;
         });
+
+        // Also update the enrolled course card progress percentage in state
+        if (selectedCourse && allLessons.length > 0) {
+          const newCompletedCount = isCompleted
+            ? Math.max(0, completedLessonIds.size - 1)
+            : completedLessonIds.size + 1;
+          const newPct = Math.round((newCompletedCount / allLessons.length) * 100);
+          setSelectedCourse((prev) => (prev ? { ...prev, progress_percent: newPct } : null));
+          setCoursesData((prev) => ({
+            ...prev,
+            active: (prev.active || []).map((c) =>
+              c.id === selectedCourse.id ? { ...c, progress_percent: newPct } : c
+            )
+          }));
+        }
       }
     } catch (e) {
-      console.error('Failed to update lesson completion status:', e);
+      console.error('Failed to toggle completion:', e);
     }
   };
 
-  // Linear lesson navigation
-  const allLessons = selectedCourse?.modules?.flatMap(m => m.lessons || []) || [];
-  const currentLessonIndex = allLessons.findIndex(l => l.id === activeLesson?.id);
-  const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
-  const nextLesson = currentLessonIndex >= 0 && currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
+  // Linear Navigation (Previous / Next Lessons)
+  const allLessons = curriculum?.modules?.flatMap((m) => m.lessons || []) || [];
+  const currentIndex = allLessons.findIndex((l) => l.id === activeLesson?.id);
+  const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex >= 0 && currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-  const isUserEnrolledInCurrentCourse = isAdmin || user?.paid || (selectedCourse && enrolledCourseIds.includes(selectedCourse.id));
+  // Filter courses for Photo 1 based on active tab and search query
+  const currentTabCourses = coursesData[activeTab] || [];
+  const filteredCourses = currentTabCourses.filter((c) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      (c.title && c.title.toLowerCase().includes(query)) ||
+      (c.instructor_name && c.instructor_name.toLowerCase().includes(query)) ||
+      (c.short_desc && c.short_desc.toLowerCase().includes(query))
+    );
+  });
+
+  // Calculate live completion percentage for Photo 2
+  const liveCompletedPercent = allLessons.length > 0
+    ? Math.round((completedLessonIds.size / allLessons.length) * 100)
+    : selectedCourse?.progress_percent || 0;
 
   return (
-    <div className="flex w-full h-full bg-stone-100 text-stone-900 overflow-hidden font-body-md">
-      {/* SIDEBAR CURRICULUM NAVIGATION */}
-      <aside className="w-80 h-full bg-white border-r border-stone-200 flex flex-col flex-shrink-0 z-20 shadow-xs">
-        {/* Brand & Portal Header */}
-        <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-white border border-stone-200 p-1 shadow-xs overflow-hidden flex items-center justify-center">
-              <img
-                src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'}
-                alt="Logo"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div>
-              <div className="font-serif text-xs font-bold text-stone-900">Landscape Mastery</div>
-              <div className={`text-[10px] font-semibold flex items-center gap-1.5 ${
-                isAdmin ? 'text-amber-700' : 'text-emerald-700'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  isAdmin ? 'bg-amber-600 animate-pulse' : 'bg-emerald-600 animate-pulse'
-                }`} />
-                {isAdmin ? 'Super Admin Mode' : isUserEnrolledInCurrentCourse ? 'Enrolled Student' : 'Free Preview Mode'}
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="flex w-full h-screen bg-[#F8F9FA] overflow-hidden text-stone-900 font-sans select-none">
 
-        {/* User Identity Chip */}
-        <div className="px-4 py-2 bg-stone-50 border-b border-stone-200 flex items-center justify-between text-xs text-stone-600">
-          <span className="truncate max-w-[170px] font-medium">{user?.email || 'Guest Explorer'}</span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-            isAdmin
-              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-              : isUserEnrolledInCurrentCourse
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              : 'bg-stone-200 text-stone-700'
-          }`}>
-            {isAdmin ? 'ADMIN' : isUserEnrolledInCurrentCourse ? 'PAID' : 'EXPLORE'}
-          </span>
-        </div>
-
-        {/* Course Switcher */}
-        {courses.length > 1 ? (
-          <div className="p-3 mx-3 mt-3 bg-stone-50 rounded-xl border border-stone-200/90 space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
-              <span>Current Course</span>
-              <span className="text-stone-400 font-normal">{courses.length} courses</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-8 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
-                <img
-                  src={(selectedCourse?.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `${BASE_URL}${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
-                  alt=""
-                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <select
-                value={selectedCourse?.id || ''}
-                onChange={(e) => {
-                  const target = courses.find(c => String(c.id) === e.target.value);
-                  if (target) {
-                    setSelectedCourse(target);
-                    if (target.modules && target.modules.length > 0) {
-                      setActiveModuleId(target.modules[0].id);
-                      if (target.modules[0].lessons && target.modules[0].lessons.length > 0) {
-                        selectLesson(target.modules[0].lessons[0], target);
-                      }
-                    }
-                  }
-                }}
-                className="flex-1 bg-white border border-stone-300 rounded-lg text-xs font-semibold text-stone-800 px-2 py-1.5 focus:outline-none focus:border-emerald-600 truncate"
-              >
-                {courses.map(c => (
-                  <option key={c.id} value={c.id}>{c.title}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ) : selectedCourse ? (
-          <div className="p-3 mx-3 mt-3 bg-stone-50 rounded-xl border border-stone-200/90 flex items-center gap-2.5">
-            <div className="w-12 h-9 rounded-lg overflow-hidden bg-stone-800 flex-shrink-0 border border-stone-200 shadow-2xs">
-              <img
-                src={(selectedCourse.thumbnail && (selectedCourse.thumbnail.startsWith('/media/') ? `${BASE_URL}${selectedCourse.thumbnail}` : selectedCourse.thumbnail)) || '/course_thumb_landscape.jpg'}
-                alt=""
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">Course Curriculum</span>
-              <span className="font-bold text-xs text-stone-900 truncate block">{selectedCourse.title}</span>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Curriculum Modules & Lessons Accordion */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-          {selectedCourse?.modules && selectedCourse.modules.length > 0 ? (
-            selectedCourse.modules.map((mod) => (
-              <div key={mod.id} className="space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveModuleId(activeModuleId === mod.id ? null : mod.id)}
-                  className="w-full text-left font-bold text-xs text-stone-800 hover:text-emerald-900 flex justify-between items-center py-2 px-2.5 rounded-xl hover:bg-stone-100 transition-colors"
-                >
-                  <span className="truncate">{mod.title}</span>
-                  <span className="material-symbols-outlined text-sm text-stone-400">
-                    {activeModuleId === mod.id ? 'expand_less' : 'expand_more'}
-                  </span>
-                </button>
-
-                {activeModuleId === mod.id && (
-                  <div className="space-y-1 pl-2 border-l-2 border-emerald-700/30 ml-2">
-                    {mod.lessons && mod.lessons.map((les) => {
-                      const isSelected = activeLesson?.id === les.id;
-                      const isCompleted = completedLessonIds.has(les.id);
-                      const isLocked = !isUserEnrolledInCurrentCourse && !les.is_free_preview;
-
-                      return (
-                        <div key={les.id} className="space-y-1">
-                          <button
-                            type="button"
-                            onClick={() => selectLesson(les)}
-                            className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-800 text-white font-semibold shadow-xs'
-                                : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'
-                            }`}
-                          >
-                            {/* Icon: Completed / Locked / Play */}
-                            <span className={`material-symbols-outlined text-sm flex-shrink-0 ${
-                              isSelected
-                                ? 'text-white'
-                                : isCompleted
-                                ? 'text-emerald-600'
-                                : isLocked
-                                ? 'text-amber-500'
-                                : 'text-emerald-700'
-                            }`}>
-                              {isCompleted
-                                ? 'check_circle'
-                                : isLocked
-                                ? 'lock'
-                                : 'play_circle'}
-                            </span>
-
-                            {/* Title */}
-                            <span className="truncate flex-1 font-medium">{les.title}</span>
-
-                            {/* Free Preview Pill */}
-                            {les.is_free_preview && (
-                              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase ${
-                                isSelected ? 'bg-emerald-700 text-emerald-100' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                Preview
-                              </span>
-                            )}
-
-                            {/* Duration */}
-                            {les.duration && (
-                              <span className={`text-[10px] flex-shrink-0 ${
-                                isSelected ? 'text-emerald-100' : 'text-stone-400'
-                              }`}>
-                                {les.duration}
-                              </span>
-                            )}
-                          </button>
-
-                          {/* Secondary attached files (e.g. PDF Blueprints) */}
-                          {les.assets && les.assets.filter(a => a.asset_type === 'pdf').map(asset => (
-                            <a
-                              key={asset.id}
-                              href={asset.url || '/media/Landscape_Architecture_Syllabus_2026.pdf'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full text-left pl-6 pr-2 py-1 text-[11px] text-stone-500 hover:text-emerald-800 flex items-center gap-1.5 transition-colors"
-                            >
-                              <span className="material-symbols-outlined text-xs text-rose-500">picture_as_pdf</span>
-                              <span className="truncate flex-1">{asset.title}</span>
-                            </a>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-10 px-4 text-stone-500 text-xs">
-              <span className="material-symbols-outlined text-3xl text-stone-400 mb-2 block">auto_stories</span>
-              No curriculum modules published yet for this course.
-            </div>
-          )}
-        </div>
-
-        {/* Exit & Sign Out Footer */}
-        <div className="p-3 border-t border-stone-200 bg-stone-50 space-y-1">
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => onNavigate('admin')}
-              className="w-full bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs mb-1"
-            >
-              <span className="material-symbols-outlined text-base text-emerald-200">admin_panel_settings</span>
-              <span>← Return to Admin Panel</span>
-            </button>
-          )}
-
+      {/* ============================================================== */}
+      {/* 1. PERSISTENT LEFT APP RAIL (Matching Photo 1)                 */}
+      {/* ============================================================== */}
+      <aside className="w-16 h-full bg-white border-r border-stone-200 flex flex-col items-center justify-between py-4 flex-shrink-0 z-30 shadow-2xs">
+        <div className="flex flex-col items-center gap-5 w-full">
+          {/* LMS Brand Logo */}
           <button
-            type="button"
-            onClick={() => onNavigate('v1')}
-            className="w-full text-stone-700 hover:text-stone-950 hover:bg-stone-200/70 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={() => setSelectedCourse(null)}
+            title="My Courses Dashboard"
+            className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center p-1 hover:opacity-85 transition-opacity"
           >
-            <span className="material-symbols-outlined text-sm text-stone-500">home</span>
-            <span>Return to Landing Page</span>
+            <img
+              src={logoUrl || '/lm_logo.png'}
+              alt="Logo"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
+              className="w-full h-full object-contain"
+            />
           </button>
 
-          {onLogout && (
-            <button
-              type="button"
-              onClick={onLogout}
-              className="w-full text-rose-700 hover:text-rose-800 hover:bg-rose-50 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm text-rose-500">logout</span>
-              <span>Sign Out</span>
-            </button>
-          )}
+          {/* Book / My Courses (Active in Photo 1) */}
+          <button
+            onClick={() => setSelectedCourse(null)}
+            title="Active Courses"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              !selectedCourse
+                ? 'bg-blue-50 text-blue-600 font-bold shadow-2xs'
+                : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xl">menu_book</span>
+          </button>
+
+          {/* Practice / Quizzes Icon */}
+          <button
+            title="Practice & Assignments"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xl">shuffle</span>
+          </button>
+
+          {/* Bookmarks Icon */}
+          <button
+            title="Saved Notes & Bookmarks"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xl">bookmark_border</span>
+          </button>
+
+          {/* Community Chat Icon */}
+          <button
+            title="Course Community"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xl">chat_bubble_outline</span>
+          </button>
+        </div>
+
+        {/* Bottom Actions: Storefront & User Profile */}
+        <div className="flex flex-col items-center gap-4">
+          <button
+            onClick={() => onNavigate('v1')}
+            title="Browse All Courses"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xl">storefront</span>
+          </button>
+
+          {/* Student Profile Avatar */}
+          <button
+            onClick={onLogout}
+            title={`${user?.email || 'Student'} (Click to Logout)`}
+            className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-xs hover:ring-2 hover:ring-emerald-400 transition-all"
+          >
+            {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'S'}
+          </button>
         </div>
       </aside>
 
-      {/* MAIN CINEMATIC PLAYER VIEW */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto bg-stone-50">
-        {/* Top Header */}
-        <header className="bg-white/95 backdrop-blur-md border-b border-stone-200 px-6 py-3.5 flex justify-between items-center z-10 sticky top-0 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              {playbackData?.is_free_preview ? 'Free Preview' : 'Curriculum Masterclass'}
-            </span>
-            <span className="text-stone-400">/</span>
-            <h1 className="text-xs sm:text-sm font-bold text-stone-900 truncate max-w-md">
-              {activeLesson?.title || 'Select a Masterclass Lesson'}
-            </h1>
-          </div>
+      {/* ============================================================== */}
+      {/* 2. DYNAMIC WORKSPACE (PHOTO 1 vs PHOTO 2)                      */}
+      {/* ============================================================== */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
 
-          <div className="flex items-center gap-2.5">
-            {isAdmin && (
+        {/* ------------------------------------------------------------ */}
+        {/* VIEW 1: ACTIVE COURSES DASHBOARD (PHOTO 1)                   */}
+        {/* ------------------------------------------------------------ */}
+        {!selectedCourse ? (
+          <div className="flex-1 flex flex-col h-full overflow-y-auto px-6 md:px-12 py-8 bg-[#FAFAFA] relative">
+            
+            {/* Header: Active Courses */}
+            <h1 className="text-2xl font-bold text-stone-900 mb-6 tracking-tight">Active Courses</h1>
+
+            {/* Filter Tabs: Active | Archived */}
+            <div className="flex items-center gap-8 border-b border-stone-200 mb-6">
               <button
-                type="button"
-                onClick={() => onNavigate('admin')}
-                className="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs mr-2"
-              >
-                <span className="material-symbols-outlined text-sm text-emerald-700">admin_panel_settings</span>
-                <span>Admin Console</span>
-              </button>
-            )}
-
-            <span className="text-[10px] bg-emerald-50 text-emerald-900 border border-emerald-200 px-2.5 py-1 rounded-full font-bold uppercase flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs text-emerald-700">lock</span>
-              <span>VEED Secure Player</span>
-            </span>
-          </div>
-        </header>
-
-        {/* Video Player & Curriculum Content Area */}
-        <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full flex-1 flex flex-col justify-start space-y-6">
-          {/* Reusable React Video Player Component */}
-          <CourseVideoPlayer
-            playbackData={playbackData}
-            isLoading={playbackLoading}
-            error={playbackError}
-            onRetry={() => selectLesson(activeLesson)}
-            onPurchaseClick={() => onNavigate('v1')}
-          />
-
-          {/* Navigation Controls & Lesson Status Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {/* Previous Lesson Button */}
-              <button
-                type="button"
-                disabled={!prevLesson}
-                onClick={() => prevLesson && selectLesson(prevLesson)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold border border-stone-200 text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:hover:bg-transparent flex items-center gap-1 cursor-pointer transition-all"
-              >
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                <span>Previous Lesson</span>
-              </button>
-
-              {/* Next Lesson Button */}
-              <button
-                type="button"
-                disabled={!nextLesson}
-                onClick={() => nextLesson && selectLesson(nextLesson)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold border border-stone-200 text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:hover:bg-transparent flex items-center gap-1 cursor-pointer transition-all"
-              >
-                <span>Next Lesson</span>
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-              </button>
-            </div>
-
-            {/* Mark as Completed Toggle */}
-            {activeLesson && token && (
-              <button
-                type="button"
-                onClick={handleToggleComplete}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
-                  completedLessonIds.has(activeLesson.id)
-                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                    : 'bg-emerald-800 hover:bg-emerald-900 text-white'
+                onClick={() => setActiveTab('active')}
+                className={`pb-3 font-semibold text-sm transition-all relative ${
+                  activeTab === 'active' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-600'
                 }`}
               >
-                <span className="material-symbols-outlined text-base">
-                  {completedLessonIds.has(activeLesson.id) ? 'check_circle' : 'radio_button_unchecked'}
-                </span>
-                <span>
-                  {completedLessonIds.has(activeLesson.id) ? 'Lesson Completed' : 'Mark as Completed'}
-                </span>
+                Active
+                {activeTab === 'active' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-full" />
+                )}
               </button>
-            )}
-          </div>
-
-          {/* Lesson Overview & Blueprint Downloads Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-2">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                <span className="material-symbols-outlined text-base">architecture</span>
-                <span>Architectural Framework &amp; Synopsis</span>
-              </div>
-              <h3 className="font-serif text-base font-bold text-stone-900">
-                {activeLesson?.title || 'Masterclass Overview'}
-              </h3>
-              <p className="text-xs text-stone-600 leading-relaxed whitespace-pre-line">
-                {activeLesson?.description ||
-                  'Master spatial topography, topographical grading, site ecology, and vegetative integration across architectural masterclass modules.'}
-              </p>
-              {activeLesson?.duration && (
-                <div className="text-[11px] text-stone-400 font-mono pt-1">
-                  Duration: {activeLesson.duration}
-                </div>
-              )}
+              <button
+                onClick={() => setActiveTab('archived')}
+                className={`pb-3 font-semibold text-sm transition-all relative ${
+                  activeTab === 'archived' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-600'
+                }`}
+              >
+                Archived
+                {activeTab === 'archived' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-full" />
+                )}
+              </button>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-3 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                  <span className="material-symbols-outlined text-base">folder_zip</span>
-                  <span>CAD Blueprints &amp; Toolkits</span>
-                </div>
-                <h3 className="font-serif text-base font-bold text-stone-900 mt-1">
-                  Resource &amp; Material Specifications
-                </h3>
-                <p className="text-xs text-stone-600">
-                  Download structural vector prints, DWG blueprints, and grading cross-sections.
+            {/* Search Input Bar */}
+            <div className="relative mb-8 max-w-4xl">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for a chapter, course or package"
+                className="w-full bg-white border border-stone-200 rounded-lg px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 pr-12 shadow-2xs"
+              />
+              <span className="material-symbols-outlined absolute right-4 top-3.5 text-stone-400 pointer-events-none">
+                search
+              </span>
+            </div>
+
+            {/* Enrolled Courses Grid */}
+            {loading ? (
+              <div className="flex items-center gap-3 py-12 text-stone-400 font-medium">
+                <div className="w-5 h-5 border-2 border-stone-300 border-t-amber-500 rounded-full animate-spin" />
+                <span>Loading your courses...</span>
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <div className="bg-white border border-stone-200 rounded-2xl p-12 text-center max-w-md mx-auto my-8">
+                <span className="material-symbols-outlined text-5xl text-stone-300 mb-3 block">school</span>
+                <h3 className="font-bold text-stone-800 mb-1">No courses found</h3>
+                <p className="text-xs text-stone-500 mb-6">
+                  {searchQuery ? 'Try adjusting your search terms.' : 'Explore available courses to start learning.'}
                 </p>
-              </div>
-              <div>
-                <a
-                  href="/media/Landscape_Architecture_Syllabus_2026.pdf"
-                  download="Landscape_Architecture_Syllabus_2026.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                <button
+                  onClick={() => onNavigate('v1')}
+                  className="px-5 py-2.5 rounded-lg bg-stone-900 text-white font-semibold text-xs hover:bg-black transition-colors"
                 >
-                  <span className="material-symbols-outlined text-sm">download</span>
-                  <span>Download Blueprint Package (PDF)</span>
-                </a>
+                  Browse Course Catalog
+                </button>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl pb-16">
+                {filteredCourses.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => handleOpenCourse(c)}
+                    className="bg-white border border-stone-200/90 rounded-xl overflow-hidden hover:shadow-xl hover:border-stone-300 transition-all cursor-pointer flex flex-col group"
+                  >
+                    {/* Course Banner Thumbnail (16:9 ratio) */}
+                    <div className="relative w-full aspect-video bg-stone-900 overflow-hidden">
+                      <img
+                        src={c.thumbnail}
+                        alt={c.title}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                      />
+                    </div>
+
+                    {/* Course Content Info */}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-bold text-sm text-stone-900 line-clamp-2 mb-1 group-hover:text-amber-700 transition-colors">
+                          {c.title}
+                        </h3>
+                        <p className="text-xs text-stone-500 mb-4 font-medium">
+                          {c.instructor_name || 'Frontlines EduTech'}
+                        </p>
+                      </div>
+
+                      {/* Progress Bar & Validity Date */}
+                      <div>
+                        <div className="w-full bg-stone-100 rounded-full h-2 mb-2 overflow-hidden">
+                          <div
+                            className="bg-amber-500 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(0, c.progress_percent || 0))}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-semibold">
+                          <span className="text-amber-600 font-bold">
+                            {c.progress_percent || 0}% completed
+                          </span>
+                          <span className="text-stone-400">
+                            Valid Till: <span className="text-emerald-600 font-bold">{c.valid_until || 'Feb 28, 2027'}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Floating Support & Chat Widgets (Matching Photo 1) */}
+            <div className="fixed bottom-6 right-6 flex items-center gap-3 z-50">
+              <a
+                href="https://wa.me/919999999999"
+                target="_blank"
+                rel="noreferrer"
+                title="WhatsApp Support"
+                className="w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+              >
+                <span className="material-symbols-outlined text-2xl">call</span>
+              </a>
+              <button
+                title="Live Chat Support"
+                className="w-13 h-13 rounded-full bg-[#0052CC] hover:bg-[#0047B3] text-white flex items-center justify-center shadow-xl transition-transform hover:scale-105"
+              >
+                <span className="material-symbols-outlined text-2xl">chat</span>
+              </button>
             </div>
           </div>
-        </div>
-      </main>
+        ) : (
+
+        /* ------------------------------------------------------------ */
+        /* VIEW 2: COURSE LEARNING WORKSPACE (PHOTO 2)                  */
+        /* ------------------------------------------------------------ */
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+
+            {/* Top Learning Navigation Bar */}
+            <div className="h-14 border-b border-stone-200 px-4 flex items-center justify-between bg-white flex-shrink-0 z-20">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Back Arrow to Photo 1 */}
+                <button
+                  onClick={() => setSelectedCourse(null)}
+                  title="Back to Active Courses"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-stone-700 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xl">arrow_back</span>
+                </button>
+
+                {/* Left Drawer Toggle (Hamburger Icon) */}
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  title="Toggle Curriculum Sidebar"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-amber-600 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xl">menu</span>
+                </button>
+
+                {/* Course Title Header */}
+                <h2 className="font-bold text-sm text-stone-900 truncate max-w-sm md:max-w-xl">
+                  {selectedCourse.title}
+                </h2>
+              </div>
+
+              {/* Prev / Next Buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  disabled={!prevLesson}
+                  onClick={() => prevLesson && handleSelectLesson(prevLesson)}
+                  className="px-3 py-1.5 rounded-md border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  <span>Previous</span>
+                </button>
+                <button
+                  disabled={!nextLesson}
+                  onClick={() => nextLesson && handleSelectLesson(nextLesson)}
+                  className="px-4 py-1.5 rounded-md bg-stone-900 hover:bg-black text-white text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors shadow-2xs"
+                >
+                  <span>Next</span>
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Main Stage & Curriculum Split View */}
+            <div className="flex-1 flex overflow-hidden">
+
+              {/* Left Curriculum Sidebar (Collapsible Drawer) */}
+              {sidebarOpen && (
+                <aside className="w-80 md:w-88 h-full border-r border-stone-200 bg-white flex flex-col flex-shrink-0 overflow-hidden z-10 animate-in slide-in-from-left duration-200">
+                  
+                  {/* Progress Header */}
+                  <div className="p-4 border-b border-stone-100 bg-[#FAFAFA]">
+                    <div className="w-full bg-stone-200 rounded-full h-1.5 mb-2 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${liveCompletedPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-stone-800">
+                      {liveCompletedPercent}% completed in {selectedCourse.duration_hrs || '48h 39m'}
+                    </span>
+                  </div>
+
+                  {/* Course Discussions Link */}
+                  <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between text-xs font-semibold text-blue-600 hover:bg-blue-50/50 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">forum</span>
+                      <span>Course Discussions</span>
+                    </div>
+                    <span className="material-symbols-outlined text-xs text-stone-400">open_in_new</span>
+                  </div>
+
+                  {/* Curriculum Modules & Lessons Accordion */}
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                    {curriculum?.modules?.map((mod) => (
+                      <div key={mod.id} className="rounded-lg overflow-hidden">
+                        
+                        {/* Module Accordion Header */}
+                        <button
+                          onClick={() => setActiveModuleId(activeModuleId === mod.id ? null : mod.id)}
+                          className="w-full px-3 py-2.5 text-left font-bold text-xs text-stone-800 flex items-center justify-between hover:bg-stone-50 transition-colors"
+                        >
+                          <span className="truncate pr-2">{mod.title}</span>
+                          <span className="material-symbols-outlined text-base text-stone-400 flex-shrink-0">
+                            {activeModuleId === mod.id ? 'expand_less' : 'expand_more'}
+                          </span>
+                        </button>
+
+                        {/* Lessons in Module */}
+                        {activeModuleId === mod.id && (
+                          <div className="space-y-0.5 pb-2 pl-1">
+                            {mod.lessons?.map((les) => {
+                              const isSelected = activeLesson?.id === les.id;
+                              const isCompleted = completedLessonIds.has(les.id);
+
+                              return (
+                                <div
+                                  key={les.id}
+                                  onClick={() => handleSelectLesson(les)}
+                                  className={`px-3 py-2.5 text-xs flex items-center justify-between cursor-pointer rounded-md transition-all ${
+                                    isSelected
+                                      ? 'bg-stone-100 font-bold text-stone-900 border-l-3 border-stone-900 shadow-2xs'
+                                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    {/* Completion Check Badge */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleComplete(les.id);
+                                      }}
+                                      title={isCompleted ? 'Mark Incomplete' : 'Mark Completed'}
+                                      className="flex-shrink-0 text-stone-400 hover:text-emerald-600 transition-colors"
+                                    >
+                                      <span
+                                        className={`material-symbols-outlined text-base ${
+                                          isCompleted ? 'text-emerald-500 font-bold' : 'text-stone-300'
+                                        }`}
+                                      >
+                                        {isCompleted ? 'check_circle' : 'radio_button_unchecked'}
+                                      </span>
+                                    </button>
+
+                                    {/* Lesson Title */}
+                                    <span className="truncate flex-1">{les.title}</span>
+                                  </div>
+
+                                  {/* Duration Badge */}
+                                  {les.duration && (
+                                    <span className="text-[10px] text-stone-400 ml-2 flex-shrink-0 font-mono">
+                                      {les.duration}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </aside>
+              )}
+
+              {/* Center Main Content Stage (Video Player) */}
+              <main className="flex-1 bg-stone-950 flex flex-col items-center justify-center relative p-4 overflow-hidden">
+                <CourseVideoPlayer
+                  playbackData={playbackData}
+                  isLoading={playbackLoading}
+                  error={playbackError}
+                  className="w-full h-full max-h-[88vh] rounded-xl shadow-2xl"
+                />
+              </main>
+
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
