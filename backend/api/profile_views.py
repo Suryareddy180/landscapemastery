@@ -404,6 +404,10 @@ def register(req):
     email = str(req.data.get('email', '')).strip().lower()
     pwd = req.data.get('password', '')
     full_name = str(req.data.get('full_name', '')).strip()
+    if not full_name:
+        fname = str(req.data.get('first_name', '')).strip()
+        lname = str(req.data.get('last_name', '')).strip()
+        full_name = f"{fname} {lname}".strip()
     phone = str(req.data.get('phone', '')).strip()
     role = str(req.data.get('role', 'STUDENT')).upper().strip()
 
