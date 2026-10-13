@@ -6,6 +6,7 @@ import { BASE_URL } from './lib/api.js';
 import Header from './components/Header.jsx';
 import LandingView from './components/LandingView.jsx';
 import LoginView from './components/LoginView.jsx';
+import EnrollView from './components/EnrollView.jsx';
 import Footer from './components/Footer.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 
@@ -37,14 +38,18 @@ function LandscapeApp({ initialView = 'v1' }) {
     if (location.pathname.endsWith('/login') || location.pathname === '/login' || initialView === 'v2') {
       return 'v2';
     }
+    if (location.pathname.includes('/enroll') || initialView === 'enroll') {
+      return 'enroll';
+    }
     const viewParam = searchParams.get('view');
-    if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
+    if (viewParam && ['v1', 'v2', 'v3', 'admin', 'enroll'].includes(viewParam)) {
       return viewParam;
     }
     return initialView;
   };
 
   const [activeView, setActiveView] = useState(getEffectiveView);
+  const [selectedEnrollCourse, setSelectedEnrollCourse] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const [token, setToken] = useState(() => localStorage.getItem('lm_auth_token') || '');
@@ -68,6 +73,8 @@ function LandscapeApp({ initialView = 'v1' }) {
   useEffect(() => {
     document.title = activeView === 'admin'
       ? "Landscape Mastery | Administrator Console"
+      : activeView === 'enroll'
+      ? "Landscape Mastery | Course Enrollment & Checkout"
       : "Landscape Mastery | Architectural Masterclass";
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.add('light');
@@ -85,9 +92,15 @@ function LandscapeApp({ initialView = 'v1' }) {
       return;
     }
 
+    // Priority 2.5: Enrollment Standalone Page
+    if (location.pathname.includes('/enroll') || initialView === 'enroll') {
+      setActiveView('enroll');
+      return;
+    }
+
     // Check if explicit view query parameter was provided
     const viewParam = searchParams.get('view');
-    if (viewParam && ['v1', 'v2', 'v3', 'admin'].includes(viewParam)) {
+    if (viewParam && ['v1', 'v2', 'v3', 'admin', 'enroll'].includes(viewParam)) {
       setActiveView(viewParam);
       return;
     }
@@ -147,6 +160,17 @@ function LandscapeApp({ initialView = 'v1' }) {
     setActiveView('v1');
   };
 
+  const handleNavigate = (view, payload = null) => {
+    if (view === 'enroll') {
+      if (payload) {
+        setSelectedEnrollCourse(payload);
+      }
+      setActiveView('enroll');
+      return;
+    }
+    setActiveView(view);
+  };
+
   const handleLogout = () => {
     setToken('');
     setUser(null);
@@ -161,8 +185,19 @@ function LandscapeApp({ initialView = 'v1' }) {
       {/* Landing Page (Screen 1) */}
       {activeView === 'v1' && (
         <div className="view-section active">
-          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
-          <LandingView onNavigate={setActiveView} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} />
+          <Header activeView={activeView} onNavigate={handleNavigate} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
+          <LandingView onNavigate={handleNavigate} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} />
+          <Footer />
+        </div>
+      )}
+
+      {/* Standalone Course Enrollment Page */}
+      {activeView === 'enroll' && (
+        <div className="view-section active min-h-screen flex flex-col bg-[#FAF9F5]">
+          <Header activeView={activeView} onNavigate={handleNavigate} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
+          <main className="flex-1">
+            <EnrollView onNavigate={handleNavigate} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} initialCourse={selectedEnrollCourse} />
+          </main>
           <Footer />
         </div>
       )}
@@ -170,8 +205,8 @@ function LandscapeApp({ initialView = 'v1' }) {
       {/* Login Portal (Screen 2) */}
       {activeView === 'v2' && (
         <div className="view-section active min-h-screen flex flex-col">
-          <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
-          <LoginView onNavigate={setActiveView} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} />
+          <Header activeView={activeView} onNavigate={handleNavigate} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
+          <LoginView onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} />
         </div>
       )}
 
@@ -179,7 +214,7 @@ function LandscapeApp({ initialView = 'v1' }) {
       {activeView === 'v3' && (
         <Suspense fallback={<ViewLoader />}>
           <div className="view-section active h-screen flex overflow-hidden bg-surface">
-            <DashboardView onNavigate={setActiveView} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} onOpenProfile={() => setProfileModalOpen(true)} />
+            <DashboardView onNavigate={handleNavigate} token={token} user={user} onLogout={handleLogout} logoUrl={siteSettings.logoUrl} onOpenProfile={() => setProfileModalOpen(true)} />
           </div>
         </Suspense>
       )}
@@ -190,11 +225,11 @@ function LandscapeApp({ initialView = 'v1' }) {
           <div className="view-section active h-screen flex flex-col bg-stone-50 overflow-hidden">
             {(!token || !user || !ADMIN_ROLES.includes(user?.role)) ? (
               <div className="min-h-screen flex flex-col overflow-y-auto bg-gradient-to-b from-[#FAF9F5] via-[#F4F3ED] to-[#ECEAE3]">
-                <Header activeView={activeView} onNavigate={setActiveView} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
-                <LoginView onNavigate={setActiveView} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} isAdminPortal={true} />
+                <Header activeView={activeView} onNavigate={handleNavigate} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
+                <LoginView onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} logoUrl={siteSettings.logoUrl} isAdminPortal={true} />
               </div>
             ) : (
-              <AdminView user={user} onNavigate={setActiveView} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} onOpenProfile={() => setProfileModalOpen(true)} />
+              <AdminView user={user} onNavigate={handleNavigate} token={token} onLogout={handleLogout} onSettingsUpdated={fetchSiteSettings} onOpenProfile={() => setProfileModalOpen(true)} />
             )}
           </div>
         </Suspense>
@@ -249,11 +284,11 @@ export default function App() {
 
         {/* Product: Landscape Mastery Architectural Masterclass & LMS (Photo 2) */}
         <Route path="/landscapemastery" element={<LandscapeApp key="lm-v1" initialView="v1" />} />
-        <Route path="/landscapemastery/enroll" element={<LandscapeApp key="lm-enroll" initialView="v1" />} />
-        <Route path="/landscapemastery/enroll/:courseId" element={<LandscapeApp key="lm-enroll-id" initialView="v1" />} />
+        <Route path="/landscapemastery/enroll" element={<LandscapeApp key="lm-enroll" initialView="enroll" />} />
+        <Route path="/landscapemastery/enroll/:courseId" element={<LandscapeApp key="lm-enroll-id" initialView="enroll" />} />
         <Route path="/landscapemastery/courses" element={<LandscapeApp key="lm-courses" initialView="v1" />} />
         <Route path="/landscapemastery/courses/:courseId" element={<LandscapeApp key="lm-course-id" initialView="v1" />} />
-        <Route path="/landscapemastery/courses/:courseId/enroll" element={<LandscapeApp key="lm-course-enroll" initialView="v1" />} />
+        <Route path="/landscapemastery/courses/:courseId/enroll" element={<LandscapeApp key="lm-course-enroll" initialView="enroll" />} />
         <Route path="/landscapemastery/login" element={<LandscapeApp key="lm-v2" initialView="v2" />} />
         <Route path="/landscapemastery/portal" element={<LandscapeApp key="lm-v3" initialView="v3" />} />
         <Route path="/landscapemastery/dashboard" element={<LandscapeApp key="lm-v3-dash" initialView="v3" />} />
@@ -261,11 +296,11 @@ export default function App() {
         <Route path="/landscapemastery/profile" element={<LandscapeApp key="lm-profile" initialView="profile" />} />
 
         {/* Direct Shortcuts for Landscape Mastery & Enrollment (Photo 2) */}
-        <Route path="/enroll" element={<LandscapeApp key="short-enroll" initialView="v1" />} />
-        <Route path="/enroll/:courseId" element={<LandscapeApp key="short-enroll-id" initialView="v1" />} />
+        <Route path="/enroll" element={<LandscapeApp key="short-enroll" initialView="enroll" />} />
+        <Route path="/enroll/:courseId" element={<LandscapeApp key="short-enroll-id" initialView="enroll" />} />
         <Route path="/courses" element={<LandscapeApp key="short-courses" initialView="v1" />} />
         <Route path="/courses/:courseId" element={<LandscapeApp key="short-course-id" initialView="v1" />} />
-        <Route path="/courses/:courseId/enroll" element={<LandscapeApp key="short-course-enroll" initialView="v1" />} />
+        <Route path="/courses/:courseId/enroll" element={<LandscapeApp key="short-course-enroll" initialView="enroll" />} />
         <Route path="/login" element={<LandscapeApp key="short-v2" initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp key="short-v3" initialView="v3" />} />
         <Route path="/dashboard" element={<LandscapeApp key="short-v3-dash" initialView="v3" />} />

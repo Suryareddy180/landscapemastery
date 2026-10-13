@@ -87,10 +87,10 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
             Courses
           </button>
           <button 
-            onClick={() => scrollToSection('enroll-card')}
+            onClick={() => onNavigate('enroll')}
             className="text-stone-700 hover:text-emerald-950 hover:bg-white text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-none hover:shadow-sm"
           >
-            Pricing &amp; Access
+            Enroll Now
           </button>
           <Link 
             to="/"
@@ -268,10 +268,10 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
                 <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
               </button>
               <button 
-                onClick={() => scrollToSection('enroll-card')}
+                onClick={() => { setMobileMenuOpen(false); onNavigate('enroll'); }}
                 className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors"
               >
-                <span>Pricing &amp; Access</span>
+                <span>Enroll Now</span>
                 <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
               </button>
               <Link 
