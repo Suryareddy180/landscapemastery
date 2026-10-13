@@ -108,15 +108,30 @@ jobs:
           host: ${{ secrets.VPS_HOST || '200.141.0.241' }}
           username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY || secrets.SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          passphrase: ${{ secrets.VPS_PASSPHRASE || '' }}
+          password: ${{ secrets.VPS_PASSWORD || secrets.SSH_PASSWORD || '' }}
+          port: ${{ secrets.VPS_PORT || 22 }}
           timeout: 120s
           command_timeout: 30m
           script_stop: true
           script: |
+            echo "===> Resolving deployment directory on VPS..."
+            if [ -d "/opt/3capstech" ]; then
+              cd /opt/3capstech
+            elif [ -d "/opt/landscapemastery" ]; then
+              cd /opt/landscapemastery
+            else
+              echo "===> Deployment directory (/opt/3capstech or /opt/landscapemastery) not found! Checking /opt..."
+              ls -la /opt
+              exit 1
+            fi
+
             echo "===> Pulling latest changes from GitHub main..."
-            cd /opt/3capstech
             git fetch origin main
             git reset --hard origin/main
+
+            echo "===> Ensuring shared external network exists..."
+            docker network create shared-gateway 2>/dev/null || true
 
             echo "===> Cleaning any conflicting or dangling frontend container..."
             docker rm -f landscapemastery_frontend || true
@@ -129,7 +144,7 @@ jobs:
             docker network connect shared-gateway landscapemastery_frontend 2>/dev/null || true
 
             echo "===> Reloading gateway Nginx proxy..."
-            docker exec attendance_app-nginx-1 nginx -s reload || true
+            docker exec attendance_app-nginx-1 nginx -s reload 2>/dev/null || sudo systemctl reload nginx 2>/dev/null || true
 
             echo "===> Checking container status..."
             docker compose -f docker-compose.prod.yml ps
