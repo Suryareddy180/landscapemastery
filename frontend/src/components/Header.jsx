@@ -20,15 +20,24 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
 
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
+    const doScroll = () => {
+      const el = document.getElementById(id);
+      if (el) {
+        const headerOffset = 80;
+        const elementPosition = el.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth'
+        });
+      }
+    };
+
     if (activeView !== 'v1') {
       onNavigate('v1');
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 120);
+      setTimeout(doScroll, 120);
     } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      doScroll();
     }
   };
 

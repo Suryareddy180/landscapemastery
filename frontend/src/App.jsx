@@ -222,10 +222,12 @@ export default function App() {
   useEffect(() => {
     const isLandscape =
       location.pathname.startsWith('/landscapemastery') ||
+      location.pathname.startsWith('/enroll') ||
+      location.pathname.startsWith('/courses') ||
       location.pathname === '/login' ||
       location.pathname === '/portal' ||
       location.pathname === '/dashboard' ||
-      location.pathname === '/courses' ||
+      location.pathname === '/profile' ||
       location.pathname === '/portal-admin' ||
       location.pathname === '/portal/admin';
 
@@ -247,20 +249,29 @@ export default function App() {
 
         {/* Product: Landscape Mastery Architectural Masterclass & LMS (Photo 2) */}
         <Route path="/landscapemastery" element={<LandscapeApp key="lm-v1" initialView="v1" />} />
+        <Route path="/landscapemastery/enroll" element={<LandscapeApp key="lm-enroll" initialView="v1" />} />
+        <Route path="/landscapemastery/enroll/:courseId" element={<LandscapeApp key="lm-enroll-id" initialView="v1" />} />
+        <Route path="/landscapemastery/courses" element={<LandscapeApp key="lm-courses" initialView="v1" />} />
+        <Route path="/landscapemastery/courses/:courseId" element={<LandscapeApp key="lm-course-id" initialView="v1" />} />
+        <Route path="/landscapemastery/courses/:courseId/enroll" element={<LandscapeApp key="lm-course-enroll" initialView="v1" />} />
         <Route path="/landscapemastery/login" element={<LandscapeApp key="lm-v2" initialView="v2" />} />
         <Route path="/landscapemastery/portal" element={<LandscapeApp key="lm-v3" initialView="v3" />} />
         <Route path="/landscapemastery/dashboard" element={<LandscapeApp key="lm-v3-dash" initialView="v3" />} />
         <Route path="/landscapemastery/admin" element={<LandscapeApp key="lm-admin" initialView="admin" />} />
         <Route path="/landscapemastery/profile" element={<LandscapeApp key="lm-profile" initialView="profile" />} />
 
-        {/* Shortcuts for Landscape Mastery */}
+        {/* Direct Shortcuts for Landscape Mastery & Enrollment (Photo 2) */}
+        <Route path="/enroll" element={<LandscapeApp key="short-enroll" initialView="v1" />} />
+        <Route path="/enroll/:courseId" element={<LandscapeApp key="short-enroll-id" initialView="v1" />} />
+        <Route path="/courses" element={<LandscapeApp key="short-courses" initialView="v1" />} />
+        <Route path="/courses/:courseId" element={<LandscapeApp key="short-course-id" initialView="v1" />} />
+        <Route path="/courses/:courseId/enroll" element={<LandscapeApp key="short-course-enroll" initialView="v1" />} />
         <Route path="/login" element={<LandscapeApp key="short-v2" initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp key="short-v3" initialView="v3" />} />
         <Route path="/dashboard" element={<LandscapeApp key="short-v3-dash" initialView="v3" />} />
         <Route path="/profile" element={<LandscapeApp key="short-profile" initialView="profile" />} />
         <Route path="/portal/admin" element={<LandscapeApp key="short-admin1" initialView="admin" />} />
         <Route path="/portal-admin" element={<LandscapeApp key="short-admin2" initialView="admin" />} />
-        <Route path="/courses" element={<Navigate to="/landscapemastery#courses" replace />} />
 
         {/* Convenience Direct Aliases for 3CAPSTECH corporate sections */}
         <Route path="/services" element={<Navigate to="/#services" replace />} />

@@ -66,18 +66,107 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
     }
   };
 
-  const handleSelectCourse = (course) => {
+  const scrollToEnrollForm = () => {
+    const el = document.getElementById('enroll-card');
+    if (el) {
+      const headerOffset = 80;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleSelectCourse = (course, shouldScroll = true) => {
+    if (!course) return;
     setSelectedCourse(course);
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponMessage(null);
     setStatusMessage(null);
-    // Scroll to enrollment form
-    setTimeout(() => {
-      const el = document.getElementById('enroll-card');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+
+    // Update browser URL cleanly to reflect enrollment in this course
+    try {
+      const currentPath = window.location.pathname;
+      const isLmPath = currentPath.startsWith('/landscapemastery');
+      const targetBase = isLmPath ? '/landscapemastery/enroll' : '/enroll';
+      const targetUrl = `${targetBase}?course=${course.id}`;
+      if (currentPath + window.location.search !== targetUrl) {
+        window.history.pushState({ courseId: course.id }, '', targetUrl);
+      }
+    } catch (e) {
+      // Continue safely
+    }
+
+    // Scroll smoothly to top of enroll card so Photo 2 form is in full view
+    if (shouldScroll) {
+      setTimeout(scrollToEnrollForm, 60);
+    }
   };
+
+  // Deep URL Parsing: Automatically select course & focus form if /enroll or ?course=... is accessed
+  useEffect(() => {
+    if (catalogCourses.length === 0) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const courseParam = searchParams.get('course') || searchParams.get('course_id') || searchParams.get('id');
+
+    // Also support path-based URLs like /enroll/:id or /courses/:id/enroll
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    let pathCourseId = null;
+    const enrollIdx = pathParts.indexOf('enroll');
+    const coursesIdx = pathParts.indexOf('courses');
+    if (enrollIdx !== -1 && pathParts[enrollIdx + 1] && !isNaN(pathParts[enrollIdx + 1])) {
+      pathCourseId = pathParts[enrollIdx + 1];
+    } else if (coursesIdx !== -1 && pathParts[coursesIdx + 1] && !isNaN(pathParts[coursesIdx + 1])) {
+      pathCourseId = pathParts[coursesIdx + 1];
+    }
+
+    const targetId = courseParam || pathCourseId;
+    let matchedCourse = null;
+
+    if (targetId) {
+      matchedCourse = catalogCourses.find(c => 
+        String(c.id) === String(targetId) ||
+        c.title.toLowerCase().includes(String(targetId).toLowerCase())
+      );
+    }
+
+    if (matchedCourse) {
+      setSelectedCourse(matchedCourse);
+    } else if (!selectedCourse && catalogCourses.length > 0 && window.location.pathname.includes('/enroll')) {
+      setSelectedCourse(catalogCourses[0]);
+    }
+
+    // If accessed with enroll intent, scroll smoothly to the Photo 2 form
+    const hasEnrollIntent =
+      window.location.pathname.includes('/enroll') ||
+      window.location.hash === '#enroll-card' ||
+      Boolean(targetId);
+
+    if (hasEnrollIntent) {
+      setTimeout(scrollToEnrollForm, 250);
+    }
+  }, [catalogCourses]);
+
+  // Handle browser back and forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const courseParam = searchParams.get('course') || searchParams.get('course_id');
+      if (courseParam && catalogCourses.length > 0) {
+        const found = catalogCourses.find(c => String(c.id) === String(courseParam));
+        if (found) {
+          setSelectedCourse(found);
+          scrollToEnrollForm();
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [catalogCourses]);
 
   const basePrice = selectedCourse ? (selectedCourse.discount_price || selectedCourse.price) : (siteSettings?.coursePrice || 499);
   const discountPct = appliedCoupon?.discount_pct || 0;
@@ -750,7 +839,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                       value={selectedCourse?.id || ''}
                       onChange={(e) => {
                         const found = catalogCourses.find(c => c.id === Number(e.target.value));
-                        if (found) handleSelectCourse(found);
+                        if (found) handleSelectCourse(found, false);
                       }}
                       className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all cursor-pointer"
                     >
