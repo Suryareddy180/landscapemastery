@@ -61,8 +61,12 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - landscapemastery_net
-      - shared-gateway
+      landscapemastery_net:
+        aliases:
+          - frontend
+      shared-gateway:
+        aliases:
+          - landscapemastery_frontend
 
 networks:
   landscapemastery_net:

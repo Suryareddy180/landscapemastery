@@ -141,7 +141,7 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
             echo "===> Ensuring shared gateway connectivity..."
-            docker network connect shared-gateway landscapemastery_frontend 2>/dev/null || true
+            docker network connect --alias landscapemastery_frontend shared-gateway landscapemastery_frontend 2>/dev/null || true
 
             echo "===> Reloading gateway Nginx proxy..."
             docker exec attendance_app-nginx-1 nginx -s reload 2>/dev/null || sudo systemctl reload nginx 2>/dev/null || true
