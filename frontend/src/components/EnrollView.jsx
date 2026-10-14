@@ -18,11 +18,11 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
   const [accountType, setAccountType] = useState('STUDENT'); // STUDENT | EMPLOYEE | HOUSEHOLD
 
   // Student-specific fields
-  const [qualification, setQualification] = useState('B.Arch');
-  const [branch, setBranch] = useState('Landscape Architecture');
+  const [qualification, setQualification] = useState('');
+  const [branch, setBranch] = useState('');
   const [collegeName, setCollegeName] = useState('');
-  const [passoutYear, setPassoutYear] = useState('2025');
-  const [studentStatus, setStudentStatus] = useState('Still Studying');
+  const [passoutYear, setPassoutYear] = useState('');
+  const [studentStatus, setStudentStatus] = useState('');
 
   // Employee-specific fields
   const [companyName, setCompanyName] = useState('');
@@ -180,7 +180,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
       return;
     }
     if (!cleanPhone || cleanPhone.length < 8) {
-      setStatusMessage({ type: 'error', text: 'Please provide a valid mobile number with country code (e.g. +91 9876543210).' });
+      setStatusMessage({ type: 'error', text: 'Please provide a valid mobile number with country code.' });
       return;
     }
 
@@ -546,7 +546,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Surya Prakash Reddy"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
@@ -564,7 +563,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="email"
                         required
-                        placeholder="name@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
@@ -582,7 +580,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="tel"
                         required
-                        placeholder="+91 98765 43210"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
@@ -612,6 +609,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                         onChange={(e) => setQualification(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
                       >
+                        <option value="">Select Qualification</option>
                         <option value="B.Arch">B.Arch</option>
                         <option value="B.Tech">B.Tech</option>
                         <option value="B.Des">B.Des</option>
@@ -630,6 +628,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                         onChange={(e) => setPassoutYear(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
                       >
+                        <option value="">Select Passout Year</option>
                         <option value="2027">2027</option>
                         <option value="2026">2026</option>
                         <option value="2025">2025</option>
@@ -643,7 +642,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <label className="block text-[11px] font-semibold text-stone-600 mb-1">Branch / Dept</label>
                       <input
                         type="text"
-                        placeholder="e.g. Architecture / Civil"
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -657,6 +655,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                         onChange={(e) => setStudentStatus(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700 cursor-pointer"
                       >
+                        <option value="">Select Current Status</option>
                         <option value="Still Studying">Still Studying</option>
                         <option value="Internship">Internship</option>
                         <option value="Freelancer">Freelancer</option>
@@ -673,7 +672,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                     <input
                       type="text"
                       required={accountType === 'STUDENT'}
-                      placeholder="e.g. School of Planning and Architecture"
                       value={collegeName}
                       onChange={(e) => setCollegeName(e.target.value)}
                       className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -698,7 +696,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="text"
                         required={accountType === 'EMPLOYEE'}
-                        placeholder="e.g. 3CAPSTECH / Studio Landscape"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -709,7 +706,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <label className="block text-[11px] font-semibold text-stone-600 mb-1">Department</label>
                       <input
                         type="text"
-                        placeholder="e.g. Planning &amp; Infrastructure"
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -723,7 +719,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="text"
                         required={accountType === 'EMPLOYEE'}
-                        placeholder="e.g. Senior Architect"
                         value={designation}
                         onChange={(e) => setDesignation(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -749,7 +744,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <input
                         type="text"
                         required={accountType === 'HOUSEHOLD'}
-                        placeholder="e.g. Reddy Family / Primary Contact"
                         value={householdName}
                         onChange={(e) => setHouseholdName(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -760,7 +754,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <label className="block text-[11px] font-semibold text-stone-600 mb-1">Residential Address</label>
                       <input
                         type="text"
-                        placeholder="e.g. Jubilee Hills, Hyderabad"
                         value={residentialAddress}
                         onChange={(e) => setResidentialAddress(e.target.value)}
                         className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-700"
@@ -796,7 +789,6 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">local_offer</span>
                       <input
                         type="text"
-                        placeholder="e.g. ARCHITECT20"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                         className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white uppercase"

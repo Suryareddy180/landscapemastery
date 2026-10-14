@@ -992,7 +992,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
               <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">Coupon Code</label>
               <input
                 type="text"
-                placeholder="e.g. ARCHITECT20"
+                placeholder=""
                 required
                 value={newCoupon.code}
                 onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}

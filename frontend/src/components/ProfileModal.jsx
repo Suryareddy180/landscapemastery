@@ -622,7 +622,6 @@ export default function ProfileModal({
                       required
                       value={formData.full_name}
                       onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      placeholder="e.g. Surya Prakash Reddy Nallimilli"
                       className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                     />
                   </div>
@@ -636,7 +635,6 @@ export default function ProfileModal({
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="name@domain.com"
                       className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                     />
                   </div>
@@ -650,7 +648,6 @@ export default function ProfileModal({
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="e.g. +91 8074290125"
                       className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                     />
                   </div>
@@ -713,7 +710,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.branch}
                         onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                        placeholder="e.g. AI & DS, CSE, ECE, Civil, Architecture"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                       />
                     </div>
@@ -726,7 +722,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.college_name}
                         onChange={(e) => setFormData({ ...formData, college_name: e.target.value })}
-                        placeholder="e.g. Sri Vasavi Engineering College"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                       />
                     </div>
@@ -742,7 +737,6 @@ export default function ProfileModal({
                           max="2040"
                           value={formData.passout_year}
                           onChange={(e) => setFormData({ ...formData, passout_year: e.target.value })}
-                          placeholder="e.g. 2026"
                           className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 font-medium"
                         />
                       </div>
@@ -788,7 +782,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.company_name}
                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                        placeholder="e.g. 3CAPSTECH Solutions Pvt Ltd"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 font-medium"
                       />
                     </div>
@@ -801,7 +794,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.department}
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                        placeholder="e.g. Cloud Architecture, Design, Engineering"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 font-medium"
                       />
                     </div>
@@ -814,7 +806,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.designation}
                         onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                        placeholder="e.g. Senior Software Architect"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 font-medium"
                       />
                     </div>
@@ -860,7 +851,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.household_name}
                         onChange={(e) => setFormData({ ...formData, household_name: e.target.value })}
-                        placeholder="e.g. Sharma Family Residence"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-700 focus:ring-2 focus:ring-amber-700/10 font-medium"
                       />
                     </div>
@@ -873,7 +863,6 @@ export default function ProfileModal({
                         type="text"
                         value={formData.primary_contact_name}
                         onChange={(e) => setFormData({ ...formData, primary_contact_name: e.target.value })}
-                        placeholder="e.g. Anil Sharma"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-700 focus:ring-2 focus:ring-amber-700/10 font-medium"
                       />
                     </div>
@@ -886,7 +875,6 @@ export default function ProfileModal({
                         rows={2}
                         value={formData.residential_address}
                         onChange={(e) => setFormData({ ...formData, residential_address: e.target.value })}
-                        placeholder="Apartment / House number, Street, Landmark, City, Pincode"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:bg-white focus:outline-none focus:border-amber-700 focus:ring-2 focus:ring-amber-700/10 font-medium resize-none"
                       />
                     </div>

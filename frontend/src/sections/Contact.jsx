@@ -321,7 +321,7 @@ export default function Contact() {
                       value={form.name}
                       onChange={set("name")}
                       required
-                      placeholder="Alex Morgan"
+                      placeholder=""
                       testid="contact-name"
                     />
                     <InputField
@@ -331,7 +331,7 @@ export default function Contact() {
                       value={form.email}
                       onChange={set("email")}
                       required
-                      placeholder="alex@company.com"
+                      placeholder=""
                       testid="contact-email"
                     />
                   </div>
@@ -344,7 +344,7 @@ export default function Contact() {
                       icon={Building2}
                       value={form.company}
                       onChange={set("company")}
-                      placeholder="Your company or organization"
+                      placeholder=""
                       testid="contact-company"
                     />
                   </div>
