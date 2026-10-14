@@ -23,6 +23,7 @@ from .payment_service import fulfill_verified_payment
 from .signed_url_service import generate_signed_stream_token, verify_signed_stream_token
 from .audit_service import log_admin_action
 from .veed_service import extract_veed_video_id, normalize_veed_embed_url, validate_veed_source
+from .duration_utils import parse_duration_to_seconds, format_seconds_to_duration, get_mp4_duration_seconds, update_course_duration
 
 logger = logging.getLogger(__name__)
 JWT_SECRET = settings.SECRET_KEY
@@ -521,7 +522,7 @@ def public_settings(req):
             'full_desc': c.full_desc,
             'price': float(c.price),
             'discount_price': float(c.discount_price),
-            'duration_hrs': c.duration_hrs,
+            'duration_hrs': c.get_duration(),
             'level': c.level,
             'thumbnail': c.thumbnail or '',
             'banner': c.banner or '',
@@ -562,7 +563,7 @@ def public_courses(req):
             'full_desc': c.full_desc or '',
             'price': float(c.price),
             'discount_price': float(c.discount_price),
-            'duration_hrs': c.duration_hrs,
+            'duration_hrs': c.get_duration(),
             'level': c.level,
             'thumbnail': c.thumbnail or '',
             'banner': c.banner or '',
@@ -613,7 +614,7 @@ def public_course_detail(req, slug):
         'full_desc': c.full_desc or '',
         'price': float(c.price),
         'discount_price': float(c.discount_price),
-        'duration_hrs': c.duration_hrs,
+        'duration_hrs': c.get_duration(),
         'level': c.level,
         'thumbnail': c.thumbnail or '',
         'banner': c.banner or '',
@@ -681,7 +682,7 @@ def my_enrollments(req):
             'short_desc': c.short_desc or '',
             'price': float(c.price),
             'discount_price': float(c.discount_price),
-            'duration_hrs': c.duration_hrs,
+            'duration_hrs': c.get_duration(),
             'level': c.level,
             'thumbnail': c.thumbnail or c.banner or '/course_thumb_landscape.jpg',
             'banner': c.banner or '',
@@ -1267,6 +1268,13 @@ def admin_add_lesson(req, module_id):
     video_source = (req.data.get('video_url') or req.data.get('video_id') or req.data.get('embed_code') or '').strip()
     duration = req.data.get('duration', '').strip()
     duration_seconds = int(req.data.get('duration_seconds') or 0)
+    if duration and not duration_seconds:
+        duration_seconds = parse_duration_to_seconds(duration)
+    elif duration_seconds and not duration:
+        duration = format_seconds_to_duration(duration_seconds)
+    elif not duration and not duration_seconds and video_source:
+        duration = '45 mins'
+        duration_seconds = 45 * 60
     order = req.data.get('order') or (module.lessons.count() + 1)
     is_free_preview = bool(req.data.get('is_free_preview', False))
     is_published = bool(req.data.get('is_published', True))
@@ -1294,6 +1302,8 @@ def admin_add_lesson(req, module_id):
         is_published=is_published,
         created_by=req.user
     )
+    if module.course_id:
+        update_course_duration(module.course, save=True)
     log_admin_action(req.user, "LESSON_CREATED", target=title, details=f"Module ID: {module_id}, Video ID: {video_id or 'none'}")
     return Response({'status': 'created', 'lesson': serialize_lesson_data(les, include_video_url=True)})
 
@@ -1346,8 +1356,12 @@ def admin_lesson_detail(req, pk):
             les.video_provider = str(req.data['video_provider']).strip() or 'veed'
         if 'duration' in req.data:
             les.duration = str(req.data['duration']).strip()
+            if 'duration_seconds' not in req.data:
+                les.duration_seconds = parse_duration_to_seconds(les.duration)
         if 'duration_seconds' in req.data:
             les.duration_seconds = int(req.data['duration_seconds'] or 0)
+            if 'duration' not in req.data and les.duration_seconds > 0:
+                les.duration = format_seconds_to_duration(les.duration_seconds)
         if 'order' in req.data:
             les.order = int(req.data['order'])
         if 'is_free_preview' in req.data:
@@ -1629,9 +1643,17 @@ def admin_add_asset(req, lesson_id):
     title = req.data.get('title', 'New Asset')
     asset_type = req.data.get('asset_type', 'short_video')
     url = req.data.get('url', '')
-    duration = req.data.get('duration', '45 mins')
+    duration = req.data.get('duration', '').strip()
     file_obj = req.FILES.get('file')
+    if not duration and file_obj:
+        detected_sec = get_mp4_duration_seconds(file_obj)
+        if detected_sec > 0:
+            duration = format_seconds_to_duration(detected_sec)
+    if not duration:
+        duration = '45 mins'
     asset = MediaAsset.objects.create(lesson=lesson, title=title, asset_type=asset_type, url=url, duration=duration, file=file_obj)
+    if lesson.module and lesson.module.course_id:
+        update_course_duration(lesson.module.course, save=True)
     log_admin_action(req.user, "ASSET_ATTACHED", target=title, details=f"Lesson ID: {lesson_id}")
     return Response({'status': 'created', 'asset': {'id': asset.id, 'title': asset.title, 'asset_type': asset.asset_type, 'duration': asset.duration, 'url': asset.url}})
 

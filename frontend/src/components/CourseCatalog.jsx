@@ -111,7 +111,7 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm text-emerald-700">schedule</span>
-                    {course.duration_hrs}
+                    {course.duration_hrs || '45 mins'}
                   </span>
                 </div>
 

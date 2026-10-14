@@ -63,12 +63,22 @@ class Course(models.Model):
     banner = models.CharField(max_length=500, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
-    duration_hrs = models.CharField(max_length=50, default='12.5 hrs')
+    duration_hrs = models.CharField(max_length=50, default='45 mins')
     level = models.CharField(max_length=50, default='All Levels')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED')
     seo_title = models.CharField(max_length=255, blank=True, null=True)
     seo_desc = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    def get_duration(self):
+        """
+        Dynamically calculates and returns the course duration based on uploaded videos/lessons.
+        """
+        try:
+            from .duration_utils import update_course_duration
+            return update_course_duration(self, save=True)
+        except Exception:
+            return self.duration_hrs or '45 mins'
 
 class Module(models.Model):
     course = models.ForeignKey(Course, related_name='modules', on_delete=models.CASCADE)
@@ -94,6 +104,25 @@ class Lesson(models.Model):
     class Meta:
         ordering = ['order', 'id']
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        try:
+            from .duration_utils import update_course_duration
+            if self.module_id and getattr(self, 'module', None) and self.module.course_id:
+                update_course_duration(self.module.course, save=True)
+        except Exception:
+            pass
+
+    def delete(self, *args, **kwargs):
+        course = getattr(getattr(self, 'module', None), 'course', None)
+        super().delete(*args, **kwargs)
+        try:
+            from .duration_utils import update_course_duration
+            if course:
+                update_course_duration(course, save=True)
+        except Exception:
+            pass
+
 class MediaAsset(models.Model):
     TYPE_CHOICES = (
         ('short_video', 'Short Video (1-10 mins)'),
@@ -110,6 +139,25 @@ class MediaAsset(models.Model):
     duration = models.CharField(max_length=50, default='45 mins')
     size_bytes = models.BigIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        try:
+            from .duration_utils import update_course_duration
+            if self.lesson and self.lesson.module and self.lesson.module.course:
+                update_course_duration(self.lesson.module.course, save=True)
+        except Exception:
+            pass
+
+    def delete(self, *args, **kwargs):
+        course = getattr(getattr(getattr(self, 'lesson', None), 'module', None), 'course', None)
+        super().delete(*args, **kwargs)
+        try:
+            from .duration_utils import update_course_duration
+            if course:
+                update_course_duration(course, save=True)
+        except Exception:
+            pass
 
 class ContentItem(models.Model):
     TYPE_CHOICES = (('short_video', 'Short Video (1-10 mins)'), ('long_video', 'Long Video (2+ hrs)'), ('pdf', 'PDF Blueprint / Document'))
