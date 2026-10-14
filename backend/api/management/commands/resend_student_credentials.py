@@ -1,7 +1,7 @@
 import logging
 from django.core.management.base import BaseCommand
 from api.models import Usr, Course, Enrollment, PaymentRecord
-from api.payment_service import send_account_access_email, generate_temporary_password
+from api.payment_service import send_account_access_email, generate_secure_temporary_password
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class Command(BaseCommand):
             order_ref = payment_rec.order_id if payment_rec else f"ENR_{user.id}"
 
             # Set a clear, secure temporary password so student can log in immediately
-            temp_password = forced_password or generate_temporary_password(8)
+            temp_password = forced_password or generate_secure_temporary_password(8)
             user.set_password(temp_password)
             user.paid = True
             user.is_active = True
