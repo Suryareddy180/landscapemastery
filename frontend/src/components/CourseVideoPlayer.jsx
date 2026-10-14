@@ -320,42 +320,6 @@ export default function CourseVideoPlayer({
         />
       )}
 
-      {/* 7. BOTTOM ANTI-SKIP STATUS & AUTO-COMPLETION ACTION STRIP */}
-      {!error && embedUrl && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-4 py-3 flex items-center justify-between z-20 pointer-events-auto">
-          <div className="flex items-center gap-2">
-            {isCompleted ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-xs shadow-sm">
-                <span className="material-symbols-outlined text-sm text-emerald-400">check_circle</span>
-                <span>Video Completed</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900/90 text-amber-300 font-medium border border-amber-500/30 text-xs shadow-sm">
-                <span className="material-symbols-outlined text-sm text-amber-400 animate-pulse">lock</span>
-                <span>Skipping Disabled • Complete video to progress</span>
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              completionReportedRef.current = true;
-              onVideoComplete?.(playbackData?.lesson_id);
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
-              isCompleted
-                ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-500/30 cursor-default'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-102 active:scale-98'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">
-              {isCompleted ? 'task_alt' : 'check'}
-            </span>
-            <span>{isCompleted ? 'Completed ✓' : 'Mark as Completed'}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -667,6 +667,24 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                   </span>
                 </button>
 
+                {/* Mark Completed Toggle in Header */}
+                <button
+                  onClick={() => activeLesson && handleToggleComplete(activeLesson.id)}
+                  title={completedLessonIds.has(activeLesson?.id) ? 'Completed' : 'Mark this Lecture as Completed'}
+                  className={`px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    completedLessonIds.has(activeLesson?.id)
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm text-emerald-600">
+                    {completedLessonIds.has(activeLesson?.id) ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {completedLessonIds.has(activeLesson?.id) ? 'Completed' : 'Mark Completed'}
+                  </span>
+                </button>
+
                 <button
                   disabled={!nextLesson || !completedLessonIds.has(activeLesson?.id)}
                   onClick={() => {
