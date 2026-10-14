@@ -47,17 +47,24 @@ export default function CourseVideoPlayer({
   error = null,
   onRetry = null,
   onPurchaseClick = null,
+  onVideoComplete = null,
+  isCompleted = false,
   className = ''
 }) {
   const containerRef = useRef(null);
+  const videoElementRef = useRef(null);
+  const maxTimeWatchedRef = useRef(0);
+  const completionReportedRef = useRef(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Reset iframe loading state whenever the active video/lesson changes
+  // Reset tracking state whenever active video/lesson changes
   useEffect(() => {
     setIframeLoaded(false);
     setLoadTimedOut(false);
+    maxTimeWatchedRef.current = 0;
+    completionReportedRef.current = false;
 
     // Timeout fallback: if VEED iframe doesn't fire onLoad within 15 seconds, don't keep spinner forever
     const timer = setTimeout(() => {
@@ -66,6 +73,79 @@ export default function CourseVideoPlayer({
 
     return () => clearTimeout(timer);
   }, [playbackData?.lesson_id, playbackData?.embed_url, playbackData?.video_id]);
+
+  // Listen for iframe completion events (e.g., VEED or embedded HTML5 video players)
+  useEffect(() => {
+    const handleMessage = (e) => {
+      try {
+        let msg = e.data;
+        if (typeof msg === 'string') {
+          try { msg = JSON.parse(msg); } catch { /* ignore non-JSON */ }
+        }
+        if (!msg) return;
+
+        const eventName = (msg.event || msg.type || msg.action || msg.status || '').toString().toLowerCase();
+        if (['ended', 'complete', 'finish', 'video_ended', 'completed'].includes(eventName)) {
+          if (!completionReportedRef.current) {
+            completionReportedRef.current = true;
+            onVideoComplete?.(playbackData?.lesson_id);
+          }
+        }
+
+        // Time updates from player
+        if (msg.currentTime !== undefined && msg.duration !== undefined) {
+          const curr = Number(msg.currentTime);
+          const dur = Number(msg.duration);
+          if (dur > 0 && (curr >= dur * 0.95 || curr >= dur - 2)) {
+            if (!completionReportedRef.current) {
+              completionReportedRef.current = true;
+              onVideoComplete?.(playbackData?.lesson_id);
+            }
+          }
+        }
+      } catch {
+        // safe ignore
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [playbackData?.lesson_id, onVideoComplete]);
+
+  // Direct video element handlers (disallow skipping forward)
+  const handleVideoTimeUpdate = (e) => {
+    const video = e.target;
+    if (!video) return;
+
+    if (video.currentTime > maxTimeWatchedRef.current) {
+      maxTimeWatchedRef.current = video.currentTime;
+    }
+
+    if (video.duration && video.duration > 0) {
+      if (video.currentTime >= video.duration * 0.95 || video.currentTime >= video.duration - 2) {
+        if (!completionReportedRef.current) {
+          completionReportedRef.current = true;
+          onVideoComplete?.(playbackData?.lesson_id);
+        }
+      }
+    }
+  };
+
+  const handleVideoSeeking = (e) => {
+    const video = e.target;
+    if (!video) return;
+    // Disallow seeking forward past the furthest point watched
+    if (video.currentTime > maxTimeWatchedRef.current + 1.5) {
+      video.currentTime = maxTimeWatchedRef.current;
+    }
+  };
+
+  const handleVideoEnded = () => {
+    if (!completionReportedRef.current) {
+      completionReportedRef.current = true;
+      onVideoComplete?.(playbackData?.lesson_id);
+    }
+  };
 
   // Fullscreen change listener
   useEffect(() => {
@@ -228,11 +308,53 @@ export default function CourseVideoPlayer({
       {/* 6. DIRECT FILE / MEDIA ASSET FALLBACK (BACKWARD COMPATIBILITY) */}
       {!error && embedUrl && !isVeed && !isApprovedUrl && (
         <video
+          ref={videoElementRef}
           src={embedUrl}
           controls
+          onTimeUpdate={handleVideoTimeUpdate}
+          onSeeking={handleVideoSeeking}
+          onEnded={handleVideoEnded}
           className="w-full h-full object-contain"
-          controlsList="nodownload"
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
         />
+      )}
+
+      {/* 7. BOTTOM ANTI-SKIP STATUS & AUTO-COMPLETION ACTION STRIP */}
+      {!error && embedUrl && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-4 py-3 flex items-center justify-between z-20 pointer-events-auto">
+          <div className="flex items-center gap-2">
+            {isCompleted ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-xs shadow-sm">
+                <span className="material-symbols-outlined text-sm text-emerald-400">check_circle</span>
+                <span>Video Completed</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900/90 text-amber-300 font-medium border border-amber-500/30 text-xs shadow-sm">
+                <span className="material-symbols-outlined text-sm text-amber-400 animate-pulse">lock</span>
+                <span>Skipping Disabled • Complete video to progress</span>
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              completionReportedRef.current = true;
+              onVideoComplete?.(playbackData?.lesson_id);
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+              isCompleted
+                ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-500/30 cursor-default'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-102 active:scale-98'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">
+              {isCompleted ? 'task_alt' : 'check'}
+            </span>
+            <span>{isCompleted ? 'Completed ✓' : 'Mark as Completed'}</span>
+          </button>
+        </div>
       )}
     </div>
   );

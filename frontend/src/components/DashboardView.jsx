@@ -28,6 +28,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
   const [playbackError, setPlaybackError] = useState(null);
   const [completedLessonIds, setCompletedLessonIds] = useState(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [toastMessage, setToastMessage] = useState(null);
 
   // Real-time Bookmarks persistence across portal and player
   const [bookmarkedLessonIds, setBookmarkedLessonIds] = useState(() => {
@@ -158,9 +159,10 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
   };
 
   // --- Toggle Lesson Completion (Updates checkmark & live recalculates %) ---
-  const handleToggleComplete = async (lessonId) => {
+  const handleToggleComplete = async (lessonId, targetState = null) => {
     if (!token) return;
     const isCompleted = completedLessonIds.has(lessonId);
+    const newCompleted = targetState !== null ? targetState : !isCompleted;
 
     try {
       const res = await fetch(`${BASE_URL}/api/lesson/complete/`, {
@@ -169,22 +171,24 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ lesson_id: lessonId, completed: !isCompleted })
+        body: JSON.stringify({ lesson_id: lessonId, completed: newCompleted })
       });
 
       if (res.ok) {
         setCompletedLessonIds((prev) => {
           const updated = new Set(prev);
-          if (isCompleted) updated.delete(lessonId);
-          else updated.add(lessonId);
+          if (newCompleted) updated.add(lessonId);
+          else updated.delete(lessonId);
           return updated;
         });
 
         // Also update the enrolled course card progress percentage in state
         if (selectedCourse && allLessons.length > 0) {
-          const newCompletedCount = isCompleted
-            ? Math.max(0, completedLessonIds.size - 1)
-            : completedLessonIds.size + 1;
+          const currentSize = completedLessonIds.size;
+          let newCompletedCount = currentSize;
+          if (newCompleted && !isCompleted) newCompletedCount = currentSize + 1;
+          else if (!newCompleted && isCompleted) newCompletedCount = Math.max(0, currentSize - 1);
+
           const newPct = Math.round((newCompletedCount / allLessons.length) * 100);
           setSelectedCourse((prev) => (prev ? { ...prev, progress_percent: newPct } : null));
           setCoursesData((prev) => ({
@@ -198,6 +202,18 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
     } catch (e) {
       console.error('Failed to toggle completion:', e);
     }
+  };
+
+  // --- Auto-mark Completed on Video Completion ---
+  const handleAutoMarkComplete = async (lessonId) => {
+    const targetId = lessonId || activeLesson?.id;
+    if (!targetId || completedLessonIds.has(targetId)) return;
+    await handleToggleComplete(targetId, true);
+    setToastMessage({
+      type: 'success',
+      text: '🎉 Video completed! Progress marked as complete.'
+    });
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   // --- Bookmark Toggle Helper ---
@@ -277,8 +293,9 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
   });
 
   // Calculate live completion percentage for Photo 2
+  const completedCount = allLessons.filter((l) => completedLessonIds.has(l.id)).length;
   const liveCompletedPercent = allLessons.length > 0
-    ? Math.round((completedLessonIds.size / allLessons.length) * 100)
+    ? Math.round((completedCount / allLessons.length) * 100)
     : selectedCourse?.progress_percent || 0;
 
   return (
@@ -651,12 +668,29 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                 </button>
 
                 <button
-                  disabled={!nextLesson}
-                  onClick={() => nextLesson && handleSelectLesson(nextLesson)}
-                  className="px-4 py-1.5 rounded-md bg-stone-900 hover:bg-black text-white text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                  disabled={!nextLesson || !completedLessonIds.has(activeLesson?.id)}
+                  onClick={() => {
+                    if (nextLesson && completedLessonIds.has(activeLesson?.id)) {
+                      handleSelectLesson(nextLesson);
+                    }
+                  }}
+                  title={
+                    !nextLesson
+                      ? 'No next lecture'
+                      : !completedLessonIds.has(activeLesson?.id)
+                      ? 'Please complete the current video to unlock next lecture'
+                      : 'Proceed to Next Lecture'
+                  }
+                  className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs ${
+                    !nextLesson || !completedLessonIds.has(activeLesson?.id)
+                      ? 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed opacity-60'
+                      : 'bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer hover:shadow-sm'
+                  }`}
                 >
                   <span className="hidden sm:inline">Next</span>
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {!completedLessonIds.has(activeLesson?.id) ? 'lock' : 'chevron_right'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -668,17 +702,20 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
               {sidebarOpen && (
                 <aside className="w-80 md:w-88 h-full border-r border-stone-200 bg-white flex flex-col flex-shrink-0 overflow-hidden z-10 animate-in slide-in-from-left duration-200">
                   
-                  {/* Progress Header */}
+                  {/* Progress Header (Accurate Progress & Removed "in 12.5 hrs") */}
                   <div className="p-4 border-b border-stone-100 bg-[#FAFAFA]">
-                    <div className="w-full bg-stone-200 rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div className="w-full bg-stone-200 rounded-full h-2 mb-2 overflow-hidden shadow-inner">
                       <div
-                        className="bg-blue-600 h-full rounded-full transition-all duration-300"
-                        style={{ width: `${liveCompletedPercent}%` }}
+                        className="bg-emerald-600 h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${Math.min(100, Math.max(0, liveCompletedPercent))}%` }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-stone-800">
-                      {liveCompletedPercent}% completed in {selectedCourse.duration_hrs || '48h 39m'}
-                    </span>
+                    <div className="flex items-center justify-between text-xs font-bold text-stone-800">
+                      <span>{liveCompletedPercent}% Completed</span>
+                      <span className="text-[11px] font-medium text-stone-500">
+                        {completedCount} of {allLessons.length} {allLessons.length === 1 ? 'Lecture' : 'Lectures'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Course Discussions Link (One click to Community tab) */}
@@ -719,15 +756,29 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                               const isSelected = activeLesson?.id === les.id;
                               const isCompleted = completedLessonIds.has(les.id);
                               const isBookmarked = bookmarkedLessonIds.has(les.id);
+                              const lessonIndex = allLessons.findIndex((l) => l.id === les.id);
+                              const isUnlocked = lessonIndex === 0 || completedLessonIds.has(les.id) || (lessonIndex > 0 && completedLessonIds.has(allLessons[lessonIndex - 1]?.id));
 
                               return (
                                 <div
                                   key={les.id}
-                                  onClick={() => handleSelectLesson(les)}
-                                  className={`px-3 py-2.5 text-xs flex items-center justify-between cursor-pointer rounded-md transition-all ${
+                                  onClick={() => {
+                                    if (isUnlocked) {
+                                      handleSelectLesson(les);
+                                    } else {
+                                      setToastMessage({
+                                        type: 'info',
+                                        text: '🔒 Please finish watching previous lectures before unlocking this video.'
+                                      });
+                                      setTimeout(() => setToastMessage(null), 3500);
+                                    }
+                                  }}
+                                  className={`px-3 py-2.5 text-xs flex items-center justify-between rounded-md transition-all ${
                                     isSelected
-                                      ? 'bg-stone-100 font-bold text-stone-900 border-l-3 border-stone-900 shadow-2xs'
-                                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                      ? 'bg-stone-100 font-bold text-stone-900 border-l-3 border-stone-900 shadow-2xs cursor-pointer'
+                                      : !isUnlocked
+                                      ? 'text-stone-400 bg-stone-50/60 cursor-not-allowed opacity-75'
+                                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900 cursor-pointer'
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -736,17 +787,23 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleToggleComplete(les.id);
+                                        if (isUnlocked) {
+                                          handleToggleComplete(les.id);
+                                        }
                                       }}
-                                      title={isCompleted ? 'Mark Incomplete' : 'Mark Completed'}
-                                      className="flex-shrink-0 text-stone-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                                      title={isCompleted ? 'Mark Incomplete' : isUnlocked ? 'Mark Completed' : 'Locked'}
+                                      className={`flex-shrink-0 transition-colors ${isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                     >
                                       <span
                                         className={`material-symbols-outlined text-base ${
-                                          isCompleted ? 'text-emerald-500 font-bold' : 'text-stone-300'
+                                          isCompleted
+                                            ? 'text-emerald-500 font-bold'
+                                            : !isUnlocked
+                                            ? 'text-stone-300'
+                                            : 'text-stone-300 hover:text-emerald-500'
                                         }`}
                                       >
-                                        {isCompleted ? 'check_circle' : 'radio_button_unchecked'}
+                                        {isCompleted ? 'check_circle' : !isUnlocked ? 'lock' : 'radio_button_unchecked'}
                                       </span>
                                     </button>
 
@@ -794,6 +851,8 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                   playbackData={playbackData}
                   isLoading={playbackLoading}
                   error={playbackError}
+                  isCompleted={completedLessonIds.has(activeLesson?.id)}
+                  onVideoComplete={handleAutoMarkComplete}
                   className="w-full h-full max-h-[88vh] rounded-xl shadow-2xl"
                 />
               </main>
@@ -802,6 +861,19 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           </div>
         )}
 
+      {/* Floating Toast Notification (Video Auto-completed / Lock Feedback) */}
+      {toastMessage && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-xl shadow-xl border text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 ${
+          toastMessage.type === 'success'
+            ? 'bg-emerald-950/95 text-emerald-100 border-emerald-600/80 backdrop-blur-md'
+            : 'bg-stone-900/95 text-amber-200 border-stone-700 backdrop-blur-md'
+        }`}>
+          <span className="material-symbols-outlined text-base text-emerald-400">
+            {toastMessage.type === 'success' ? 'check_circle' : 'lock'}
+          </span>
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
       </div>
     </div>
   );
