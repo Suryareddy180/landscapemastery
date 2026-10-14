@@ -137,7 +137,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       if (res.ok) {
         setResetMessage({
           type: 'success',
-          text: data.message || 'If an account matches this email, secure password reset instructions have been dispatched.'
+          text: (data.message || 'If an account matches this email, secure password reset instructions have been dispatched.') + ' Please check your Spam or Junk folder if not seen in Inbox.'
         });
         setResetStep('submit');
       } else {
