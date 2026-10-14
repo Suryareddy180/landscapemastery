@@ -901,10 +901,10 @@ export default function CourseBuilderSection({ token }) {
           {selectedCourse ? (
             <div className="bg-white p-6 rounded-2xl border border-stone-200/90 shadow-xs space-y-6">
               {/* Course Header with Status & Activation Controls */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-stone-200/80 gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 truncate">{selectedCourse.title}</h2>
+              <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center pb-5 border-b border-stone-200/80 gap-4">
+                <div className="min-w-0 max-w-full">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 break-words">{selectedCourse.title}</h2>
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
                       className="p-1 rounded-lg text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer flex-shrink-0"
@@ -915,10 +915,10 @@ export default function CourseBuilderSection({ token }) {
                   </div>
 
                   {/* Clean Non-wrapping URL and Price Badges */}
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100/80 border border-stone-200 text-stone-700 text-xs font-mono">
                       <span className="material-symbols-outlined text-xs text-stone-400">link</span>
-                      <span className="text-emerald-800 font-semibold truncate max-w-xs">/{selectedCourse.slug}</span>
+                      <span className="text-emerald-800 font-semibold font-mono">/{selectedCourse.slug}</span>
                     </span>
 
                     <button
