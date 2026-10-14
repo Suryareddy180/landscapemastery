@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { BASE_URL } from './lib/api.js';
 
 // Landscape Mastery Core Components (loaded immediately for instant first-contentful-paint)
@@ -30,6 +30,7 @@ const ViewLoader = () => (
 function LandscapeApp({ initialView = 'v1' }) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getEffectiveView = () => {
     if (location.pathname.endsWith('/admin') || location.pathname === '/admin' || initialView === 'admin') {
@@ -113,9 +114,13 @@ function LandscapeApp({ initialView = 'v1' }) {
     // Auto-restore view if token and user exist
     if (token && user) {
       if (ADMIN_ROLES.includes(user.role)) {
-        setActiveView('admin');
+        if (location.pathname.endsWith('/admin') || location.pathname.endsWith('/login')) {
+          setActiveView('admin');
+        }
       } else if (user.role === 'STUDENT' && user.paid) {
-        setActiveView('v3');
+        if (location.pathname.endsWith('/portal') || location.pathname.endsWith('/dashboard') || location.pathname.endsWith('/login')) {
+          setActiveView('v3');
+        }
       }
     }
   }, [location.pathname, initialView, searchParams]);
@@ -166,18 +171,47 @@ function LandscapeApp({ initialView = 'v1' }) {
         setSelectedEnrollCourse(payload);
       }
       setActiveView('enroll');
+      if (navigate && location.pathname !== '/landscapemastery/enroll' && location.pathname !== '/enroll') {
+        navigate('/landscapemastery/enroll');
+      }
+      return;
+    }
+    if (view === 'v1') {
+      setActiveView('v1');
+      if (navigate && (location.pathname.endsWith('/admin') || location.pathname.endsWith('/login') || location.pathname.includes('/portal'))) {
+        navigate('/landscapemastery');
+      }
+      return;
+    }
+    if (view === 'admin') {
+      setActiveView('admin');
+      if (navigate && !location.pathname.endsWith('/admin')) {
+        navigate('/landscapemastery/admin');
+      }
+      return;
+    }
+    if (view === 'v3') {
+      setActiveView('v3');
+      if (navigate && !location.pathname.endsWith('/portal') && !location.pathname.endsWith('/dashboard')) {
+        navigate('/landscapemastery/portal');
+      }
       return;
     }
     setActiveView(view);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (exitDestination = '/landscapemastery') => {
+    const destination = typeof exitDestination === 'string' ? exitDestination : '/landscapemastery';
     setToken('');
     setUser(null);
     localStorage.removeItem('lm_auth_token');
     localStorage.removeItem('admin_token');
     localStorage.removeItem('lm_auth_user');
+    sessionStorage.clear();
     setActiveView('v1');
+    if (navigate) {
+      navigate(destination, { replace: true });
+    }
   };
 
   return (

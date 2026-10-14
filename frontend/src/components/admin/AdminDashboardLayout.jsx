@@ -116,11 +116,20 @@ export default function AdminDashboardLayout({
           {/* Footer Actions */}
           <div className="p-4 border-t border-stone-200 bg-stone-50/60 space-y-1.5">
             <button
+              type="button"
               onClick={() => onNavigate('v3')}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-base text-stone-500">preview</span>
               Student Portal View
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('v1')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base text-stone-500">public</span>
+              View Live Website
             </button>
             <a
               href="/admin"
@@ -130,10 +139,18 @@ export default function AdminDashboardLayout({
               3CAPSTECH Admin Console
             </a>
             <button
-              onClick={() => onNavigate('v1')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+              type="button"
+              onClick={() => {
+                if (onLogout) {
+                  onLogout('/landscapemastery');
+                } else if (onNavigate) {
+                  onNavigate('v1');
+                }
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50/80 hover:bg-rose-100 border border-rose-200/80 transition-all cursor-pointer"
+              title="Securely log out and exit admin panel"
             >
-              <span className="material-symbols-outlined text-base">logout</span>
+              <span className="material-symbols-outlined text-base text-rose-600">logout</span>
               Logout &amp; Exit
             </button>
           </div>
@@ -244,8 +261,16 @@ export default function AdminDashboardLayout({
 
             {/* Logout Action Button */}
             <button
-              onClick={onLogout || (() => onNavigate('v1'))}
-              className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-stone-200 cursor-pointer"
+              type="button"
+              onClick={() => {
+                if (onLogout) {
+                  onLogout('/landscapemastery');
+                } else if (onNavigate) {
+                  onNavigate('v1');
+                }
+              }}
+              className="bg-stone-100 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 text-stone-700 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-stone-200 cursor-pointer shadow-2xs"
+              title="Sign out of Admin Operations"
             >
               <span className="material-symbols-outlined text-sm">logout</span>
               Logout
