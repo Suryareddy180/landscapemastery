@@ -34,11 +34,11 @@ class Command(BaseCommand):
             },
             {
                 'email': 'md.3capstech@gmail.com',
-                'password': os.environ.get('MD_ADMIN_PASSWORD', os.environ.get('ADMIN_PASSWORD', 'LandscapeAdmin2026!')),
+                'password': os.environ.get('MD_ADMIN_PASSWORD', 'Mypswd@225'),
                 'name': 'Managing Director (3CAPSTECH)',
-                'role': 'SUPER_ADMIN',
+                'role': 'THREECAPS_ADMIN',
                 'is_staff': True,
-                'is_superuser': True,
+                'is_superuser': False,
                 'phone': '+91 94409 99908'
             },
             {
