@@ -1086,10 +1086,6 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
         </div>
       )}
 
-      {/* SECTION: 3CAPSTECH CONFIGURATION & GOVERNANCE */}
-      {activeSection === '3caps' && (
-        <CompanyConfigSection token={token} />
-      )}
 
       {/* SECTION: COMMUNITY MANAGEMENT (Super Admin & Content Manager) */}
       {activeSection === 'community' && (

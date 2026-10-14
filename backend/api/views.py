@@ -41,6 +41,10 @@ def get_tokens_for_user(usr):
 def check_admin_permission(usr, allowed_roles=None):
     if not usr or not usr.is_authenticated:
         return False
+    # 3CAPSTECH admin belongs strictly to 3CAPSTECH corporate configuration
+    email = usr.email.strip().lower()
+    if usr.role == 'THREECAPS_ADMIN' or email == 'admin@3capstech.com':
+        return False
     if usr.is_superuser or usr.role == 'SUPER_ADMIN':
         return True
     if allowed_roles:

@@ -40,8 +40,7 @@ export default function AdminLogin() {
       if (authToken) {
         localStorage.setItem("admin_token", authToken);
         if (res.user) {
-          localStorage.setItem("lm_auth_token", authToken);
-          localStorage.setItem("lm_auth_user", JSON.stringify(res.user));
+          localStorage.setItem("admin_user", JSON.stringify(res.user));
         }
         navigate("/admin");
       } else {

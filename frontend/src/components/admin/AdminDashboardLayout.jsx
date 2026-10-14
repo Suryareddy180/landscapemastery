@@ -26,7 +26,6 @@ export default function AdminDashboardLayout({
     { id: 'coupons', label: 'Coupons & Offers', icon: 'local_offer', badge: null },
     { id: 'testimonials', label: 'Testimonials & FAQs', icon: 'chat_bubble_outline', badge: null },
     { id: 'community', label: 'Community Management', icon: 'forum', badge: 'Mod' },
-    { id: '3caps', label: '3CAPSTECH Configuration', icon: 'domain', badge: '3CAPS' },
     { id: 'audit', label: 'Security Audit Logs', icon: 'security', badge: 'Logs' },
     { id: 'settings', label: 'System Settings', icon: 'settings', badge: null }
   ];
@@ -148,18 +147,6 @@ export default function AdminDashboardLayout({
               </button>
             </div>
 
-            <a
-              href="/admin"
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 bg-white hover:bg-emerald-50 hover:text-emerald-950 hover:border-emerald-200 border border-stone-200/90 shadow-2xs transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="material-symbols-outlined text-base text-emerald-700">hub</span>
-                <span className="truncate">3CAPSTECH Console</span>
-              </div>
-              <span className="material-symbols-outlined text-sm text-stone-400 group-hover:text-emerald-700 group-hover:translate-x-0.5 transition-transform flex-shrink-0">
-                arrow_forward
-              </span>
-            </a>
 
             <button
               type="button"

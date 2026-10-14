@@ -9,18 +9,27 @@ from rest_framework.permissions import IsAdminUser, AllowAny, BasePermission
 from rest_framework_simplejwt.tokens import RefreshToken
 from api.models import Usr
 
-class IsPortalAdminOrStaff(BasePermission):
+class Is3CapsAdmin(BasePermission):
     """
-    Allows access to superusers, staff, or users with administrative roles
-    (SUPER_ADMIN, CONTENT_MANAGER, SUPPORT_ADMIN, ADMIN).
+    Allows access strictly to 3CAPSTECH Corporate Administrators.
+    Landscape Mastery administrators are explicitly forbidden from configuring 3CAPSTECH.
     """
     def has_permission(self, request, view):
-        usr = request.user
+        usr = getattr(request, 'user', None)
         if not usr or not usr.is_authenticated:
             return False
-        if usr.is_superuser or usr.is_staff or getattr(usr, 'role', '') in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']:
-            return True
-        return False
+        email = (getattr(usr, 'email', '') or '').strip().lower()
+        role = getattr(usr, 'role', '')
+        # Landscape Mastery administrators cannot configure 3CAPSTECH
+        if email in ['nani.reddy225@gmail.com', 'admin@landscapemastery.com'] or email.endswith('@landscapemastery.com'):
+            return False
+        # Must be designated 3CAPSTECH corporate administrator
+        return (
+            role == 'THREECAPS_ADMIN' or
+            email in ['admin@3capstech.com', 'md.3capstech@gmail.com'] or
+            email.endswith('@3capstech.com')
+        )
+
 
 from .models import (
     Contact,
@@ -77,10 +86,8 @@ def api_brand_config(request):
     })
 
     if request.method in ["POST", "PUT"]:
-        usr = request.user
-        is_admin = usr and usr.is_authenticated and (usr.is_superuser or usr.is_staff or getattr(usr, 'role', '') in ['SUPER_ADMIN', 'ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN'])
-        if not is_admin:
-            return Response({"error": "Administrative permissions required to update brand configuration."}, status=status.HTTP_403_FORBIDDEN)
+        if not Is3CapsAdmin().has_permission(request, None):
+            return Response({"error": "3CAPSTECH corporate administrator permissions required to update brand configuration."}, status=status.HTTP_403_FORBIDDEN)
         
         for k, v in request.data.items():
             if v is not None:
@@ -311,53 +318,53 @@ def api_solutions(request):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class TestimonialViewSet(viewsets.ModelViewSet):
     queryset = CompanyTestimonial.objects.all()
     serializer_class = TestimonialSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class LeaderProfileViewSet(viewsets.ModelViewSet):
     queryset = LeaderProfile.objects.all()
     serializer_class = LeaderProfileSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class EnterpriseSolutionViewSet(viewsets.ModelViewSet):
     queryset = EnterpriseSolution.objects.all()
     serializer_class = EnterpriseSolutionSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all().order_by('-created_at')
     serializer_class = ContactSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class NewsletterViewSet(viewsets.ModelViewSet):
     queryset = Newsletter.objects.all().order_by('-created_at')
     serializer_class = NewsletterModelSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 class WebsiteSettingViewSet(viewsets.ModelViewSet):
     queryset = WebsiteSetting.objects.all()
     serializer_class = WebsiteSettingSerializer
-    permission_classes = [IsPortalAdminOrStaff]
+    permission_classes = [Is3CapsAdmin]
 
 
 @api_view(["GET"])
-@permission_classes([IsPortalAdminOrStaff])
+@permission_classes([Is3CapsAdmin])
 def api_admin_summary(request):
     recent_contacts = Contact.objects.all().order_by('-created_at')[:6]
     contact_serializer = ContactSerializer(recent_contacts, many=True)
@@ -433,10 +440,22 @@ def api_admin_login(request):
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-    is_admin = usr.is_staff or usr.is_superuser or usr.role in ['SUPER_ADMIN', 'ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN']
-    if not is_admin:
+    email = usr.email.strip().lower()
+    # Explicitly prevent Landscape Mastery admin from configuring 3CAPSTECH
+    if email in ['nani.reddy225@gmail.com', 'admin@landscapemastery.com'] or email.endswith('@landscapemastery.com'):
         return Response(
-            {"detail": "Access restricted: Administrative privileges required.", "error": "Forbidden."},
+            {"detail": "Landscape Mastery administrators are not permitted to configure 3CAPSTECH. Please log in with 3CAPSTECH administrator credentials.", "error": "Forbidden."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    is_3caps = (
+        usr.role == 'THREECAPS_ADMIN' or
+        email in ['admin@3capstech.com', 'md.3capstech@gmail.com'] or
+        email.endswith('@3capstech.com')
+    )
+    if not is_3caps:
+        return Response(
+            {"detail": "Access restricted: 3CAPSTECH corporate administrator credentials required.", "error": "Forbidden."},
             status=status.HTTP_403_FORBIDDEN
         )
 

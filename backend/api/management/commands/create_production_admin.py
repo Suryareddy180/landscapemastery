@@ -45,9 +45,9 @@ class Command(BaseCommand):
                 'email': 'admin@3capstech.com',
                 'password': os.environ.get('CORP_ADMIN_PASSWORD', 'Admin@3capstech2026!'),
                 'name': '3CAPSTECH Super Admin',
-                'role': 'SUPER_ADMIN',
+                'role': 'THREECAPS_ADMIN',
                 'is_staff': True,
-                'is_superuser': True,
+                'is_superuser': False,
                 'phone': '+91 94409 99908'
             }
         ]

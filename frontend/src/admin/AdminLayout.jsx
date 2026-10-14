@@ -12,9 +12,7 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
-    localStorage.removeItem("lm_auth_token");
-    localStorage.removeItem("lm_auth_user");
-    sessionStorage.clear();
+    localStorage.removeItem("admin_user");
     navigate("/admin/login", { replace: true });
   };
 
@@ -46,25 +44,6 @@ export default function AdminLayout() {
             <Globe size={13} className="text-emerald-400" />
             <span className="hidden md:inline">Company Site</span>
             <ExternalLink size={11} className="opacity-60" />
-          </Link>
-
-          <Link
-            to="/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="hidden md:inline">Landscape Mastery</span>
-            <ExternalLink size={11} className="opacity-60" />
-          </Link>
-
-          <Link
-            to="/?view=admin"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-semibold text-emerald-300 hover:text-white transition-all"
-          >
-            <Shield size={13} className="text-emerald-400" />
-            <span className="hidden sm:inline">LM Admin</span>
           </Link>
 
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-mono text-slate-300">

@@ -22,6 +22,7 @@ class Usr(AbstractBaseUser, PermissionsMixin):
         ('SUPER_ADMIN', 'Super Admin'),
         ('CONTENT_MANAGER', 'Content Manager'),
         ('SUPPORT_ADMIN', 'Support Admin'),
+        ('THREECAPS_ADMIN', '3CAPSTECH Admin'),
         ('ADMIN', 'Legacy Admin'),
         ('STUDENT', 'Student'),
         ('EMPLOYEE', 'Employee'),
