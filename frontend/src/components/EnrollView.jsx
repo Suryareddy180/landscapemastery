@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2, AlertCircle, ShieldCheck, Mail, Lock, Phone, User,
-  GraduationCap, Building2, Home, ArrowRight, ArrowLeft, X, RefreshCw
+  GraduationCap, Building2, Home, ArrowRight, ArrowLeft, X, RefreshCw,
+  Sparkles, Tag
 } from 'lucide-react';
 import { BASE_URL } from '../lib/api.js';
 
@@ -133,8 +134,11 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
 
   // COUPON VALIDATION HANDLER
   const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
+    if (e && e.preventDefault) e.preventDefault();
+    if (!couponCode.trim()) {
+      setCouponMessage({ type: 'error', text: 'Please enter a coupon code to apply.' });
+      return;
+    }
 
     setCouponLoading(true);
     setCouponMessage(null);
@@ -160,6 +164,12 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
       setCouponLoading(false);
       setCouponMessage({ type: 'error', text: 'Failed to validate coupon. Please try again.' });
     }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponMessage(null);
   };
 
   // PAYMENT FLOW: Strict Server-Side Verification & Automated Account Provisioning
@@ -779,33 +789,82 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
 
               {/* 4. Privilege Coupon Code & Order Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start pt-2">
-                {/* Coupon Code Input */}
+                {/* Coupon Code Input & Styled Apply Button */}
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
-                    Have a Privilege Coupon?
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                      Have a Privilege Coupon?
+                    </label>
+                    {appliedCoupon && (
+                      <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>{appliedCoupon.discount_pct}% Discount Applied</span>
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">local_offer</span>
+                      <Tag className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                       <input
                         type="text"
                         value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white uppercase"
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          if (appliedCoupon && e.target.value.toUpperCase() !== appliedCoupon.code) {
+                            setAppliedCoupon(null);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        className="w-full bg-white border border-stone-300 hover:border-stone-400 focus:bg-white rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 uppercase transition-all shadow-xs"
                       />
                     </div>
+
                     <button
                       type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={couponLoading || !couponCode.trim()}
-                      className="bg-emerald-900 hover:bg-emerald-950 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all border border-emerald-800 cursor-pointer disabled:opacity-50 flex items-center justify-center min-w-[75px]"
+                      onClick={appliedCoupon ? handleRemoveCoupon : handleApplyCoupon}
+                      disabled={couponLoading}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer min-w-[92px] active:scale-[0.98] ${
+                        appliedCoupon
+                          ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 shadow-xs'
+                          : couponCode.trim()
+                          ? 'bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 hover:from-emerald-950 hover:to-teal-950 text-white shadow-md shadow-emerald-950/20 hover:shadow-lg hover:shadow-emerald-950/30 hover:scale-[1.01] border border-emerald-800'
+                          : 'bg-emerald-950/5 hover:bg-emerald-950/10 text-emerald-900 border border-emerald-900/15 hover:border-emerald-900/25 shadow-xs'
+                      }`}
                     >
-                      {couponLoading ? '...' : 'Apply'}
+                      {couponLoading ? (
+                        <div className="w-3.5 h-3.5 border-2 border-emerald-800/30 border-t-emerald-800 rounded-full animate-spin" />
+                      ) : appliedCoupon ? (
+                        <>
+                          <X className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Apply</span>
+                        </>
+                      )}
                     </button>
                   </div>
+
                   {couponMessage && (
-                    <div className={`mt-1.5 text-xs font-semibold ${couponMessage.type === 'success' ? 'text-emerald-700' : 'text-rose-600'}`}>
-                      {couponMessage.text}
+                    <div className={`mt-2 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border shadow-2xs ${
+                      couponMessage.type === 'success'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200/90'
+                        : 'bg-rose-50 text-rose-800 border-rose-200/90'
+                    }`}>
+                      {couponMessage.type === 'success' ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      )}
+                      <span>{couponMessage.text}</span>
                     </div>
                   )}
                 </div>
