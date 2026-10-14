@@ -52,6 +52,7 @@ def generate_password_setup_token(user: Usr) -> str:
         'type': 'password_setup',
         'user_id': user.id,
         'email': user.email,
+        'reset_email': user.email,
         'exp': datetime.utcnow() + timedelta(hours=24)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
@@ -69,7 +70,7 @@ def send_account_access_email(
     Returns (success: bool, error_msg: str).
     """
     frontend_url = getattr(settings, 'FRONTEND_URL', os.environ.get('FRONTEND_URL', 'https://3capstech.com')).rstrip('/')
-    login_url = f"{frontend_url}/login"
+    login_url = f"{frontend_url}/landscapemastery/login"
     
     setup_token = generate_password_setup_token(user) if is_new_user else None
     setup_url = f"{login_url}?token={setup_token}&email={user.email}" if setup_token else login_url

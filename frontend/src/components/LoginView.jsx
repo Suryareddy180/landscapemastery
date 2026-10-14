@@ -18,11 +18,33 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
 
   // Password Recovery State
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [resetStep, setResetStep] = useState('request');
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [resetMessage, setResetMessage] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlEmail = searchParams.get('email');
+      const urlToken = searchParams.get('token') || searchParams.get('reset_token');
+
+      if (urlEmail) {
+        setEmail(urlEmail);
+        setResetEmail(urlEmail);
+      }
+
+      if (urlToken) {
+        setResetToken(urlToken);
+        setForgotModalOpen(true);
+        setResetStep('submit');
+      }
+    } catch {
+      // Safe fallback if URLSearchParams is unavailable
+    }
+  }, []);
 
   const executeAuth = async (loginEmail, loginPwd) => {
     setLoading(true);
@@ -146,12 +168,15 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       setResetLoading(false);
 
       if (res.ok) {
-        setResetMessage({ type: 'success', text: 'Password successfully updated! You may now sign in with your new password.' });
+        setResetMessage({ type: 'success', text: 'Password successfully updated! Signing you in...' });
+        setEmail(resetEmail.trim().toLowerCase());
+        setPassword(newPassword);
         setTimeout(() => {
           setForgotModalOpen(false);
           setResetStep('request');
           setResetMessage(null);
-        }, 2200);
+          executeAuth(resetEmail.trim().toLowerCase(), newPassword);
+        }, 1200);
       } else {
         setResetMessage({ type: 'error', text: data.error || 'Password reset failed. Invalid or expired token.' });
       }

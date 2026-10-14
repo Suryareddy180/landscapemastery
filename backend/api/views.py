@@ -172,7 +172,9 @@ def reset_password(req):
         if token:
             try:
                 payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-                if payload.get('type') != 'password_reset' or payload.get('reset_email') != email:
+                token_type = payload.get('type')
+                token_email = payload.get('reset_email') or payload.get('email')
+                if token_type not in ['password_reset', 'password_setup'] or token_email != email:
                     return Response({'error': 'Invalid or expired password reset token'}, status=status.HTTP_400_BAD_REQUEST)
             except Exception:
                 return Response({'error': 'Invalid or expired password reset token'}, status=status.HTTP_400_BAD_REQUEST)
