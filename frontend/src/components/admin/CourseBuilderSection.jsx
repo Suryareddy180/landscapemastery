@@ -740,15 +740,19 @@ export default function CourseBuilderSection({ token }) {
   return (
     <div className="space-y-6 font-body-md">
       {/* Top Banner & Fast Creation Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-            <span className="material-symbols-outlined text-emerald-700 text-2xl">auto_stories</span>
-            Hierarchical Course &amp; Curriculum Builder
-          </h1>
-          <p className="text-xs text-stone-500 mt-1">
-            Build, activate, de-activate courses, modules, lessons, and attach DRM-ready masterclasses and PDF blueprints.
-          </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 bg-gradient-to-r from-white via-stone-50/80 to-emerald-50/30 p-6 rounded-2xl border border-stone-200/90 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-900 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-950/20 border border-emerald-700/30 flex-shrink-0">
+            <span className="material-symbols-outlined text-2xl">auto_stories</span>
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 flex items-center gap-2">
+              Course &amp; Curriculum Builder
+            </h1>
+            <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
+              Design curricula, modules, video lectures, and attach DRM-ready masterclasses and CAD blueprints.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleCreateCourse} className="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -757,7 +761,7 @@ export default function CourseBuilderSection({ token }) {
             placeholder="New Course Title..."
             value={newCourseTitle}
             onChange={(e) => setNewCourseTitle(e.target.value)}
-            className="bg-stone-50 border border-stone-300 rounded-xl px-4 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none w-52 shadow-inner"
+            className="bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-56 shadow-2xs transition-all"
           />
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-bold">₹</span>
@@ -767,31 +771,33 @@ export default function CourseBuilderSection({ token }) {
               placeholder="Price"
               value={newCoursePrice}
               onChange={(e) => setNewCoursePrice(e.target.value)}
-              className="bg-stone-50 border border-stone-300 rounded-xl pl-6 pr-3 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none w-24 shadow-inner"
+              className="bg-white border border-stone-300 rounded-xl pl-6 pr-3 py-2.5 text-xs font-bold text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-24 shadow-2xs transition-all"
             />
           </div>
           <button 
             type="submit" 
             disabled={loading}
-            className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+            className="bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5 flex-shrink-0 active:scale-98"
           >
             <span className="material-symbols-outlined text-sm">add_circle</span>
-            {loading ? 'Creating...' : 'Create Course'}
+            <span>{loading ? 'Creating...' : 'Create Course'}</span>
           </button>
         </form>
       </div>
 
       {mutationMessage && (
-        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-sm ${
-          mutationMessage.type === 'success' ? 'bg-emerald-50 border border-emerald-300 text-emerald-950' : 'bg-rose-50 border border-rose-300 text-rose-950'
+        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-xs transition-all ${
+          mutationMessage.type === 'success' 
+            ? 'bg-emerald-50/90 border border-emerald-300 text-emerald-950' 
+            : 'bg-rose-50/90 border border-rose-300 text-rose-950'
         }`}>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">
+          <div className="flex items-center gap-2.5">
+            <span className={`material-symbols-outlined text-base ${mutationMessage.type === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
               {mutationMessage.type === 'success' ? 'check_circle' : 'error'}
             </span>
             <span>{mutationMessage.text}</span>
           </div>
-          <button onClick={() => setMutationMessage(null)} className="text-stone-400 hover:text-stone-700">
+          <button onClick={() => setMutationMessage(null)} className="text-stone-400 hover:text-stone-700 cursor-pointer p-0.5">
             <span className="material-symbols-outlined text-sm">close</span>
           </button>
         </div>
@@ -799,17 +805,20 @@ export default function CourseBuilderSection({ token }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Course List Left */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs font-bold text-stone-700 uppercase tracking-wider">All Courses ({courses.length})</h2>
-            <span className="text-[10px] text-stone-400 font-semibold">Active Database</span>
+        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-stone-200/90 shadow-xs space-y-3.5">
+          <div className="flex justify-between items-center pb-1 border-b border-stone-100">
+            <h2 className="text-[11px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-stone-400">library_books</span>
+              All Courses ({courses.length})
+            </h2>
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-semibold">Active Database</span>
           </div>
 
           <div className="space-y-2.5">
             {courses.length === 0 ? (
-              <div className="p-8 text-center bg-stone-50 rounded-xl border border-dashed border-stone-300 space-y-2">
+              <div className="p-8 text-center bg-stone-50/70 rounded-xl border border-dashed border-stone-300 space-y-2">
                 <span className="material-symbols-outlined text-3xl text-stone-400">post_add</span>
-                <p className="text-xs font-semibold text-stone-600">No courses created yet.</p>
+                <p className="text-xs font-semibold text-stone-700">No courses created yet.</p>
                 <p className="text-[11px] text-stone-400">Type a course title above and click <b>Create Course</b>.</p>
               </div>
             ) : (
@@ -823,12 +832,12 @@ export default function CourseBuilderSection({ token }) {
                     onClick={() => loadCourseDetail(c.id)}
                     className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-emerald-50/90 border-emerald-600 text-emerald-950 shadow-sm ring-1 ring-emerald-600'
-                        : 'bg-stone-50/60 border-stone-200 text-stone-600 hover:bg-stone-100 hover:border-stone-300'
+                        ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/20 border-emerald-600 shadow-sm ring-2 ring-emerald-600/15'
+                        : 'bg-white hover:bg-stone-50 border-stone-200/80 hover:border-stone-300 shadow-2xs'
                     }`}
                   >
-                    <div className="flex items-start gap-3 mb-2">
-                      <div className="w-12 h-10 rounded-lg overflow-hidden bg-stone-900 flex-shrink-0 border border-stone-200 shadow-2xs">
+                    <div className="flex items-start gap-3 mb-2.5">
+                      <div className="w-14 h-9.5 rounded-lg overflow-hidden bg-stone-900 flex-shrink-0 border border-stone-200 shadow-2xs">
                         <img
                           src={resolveCoverUrl(c.thumbnail) || '/course_thumb_landscape.jpg'}
                           alt=""
@@ -837,28 +846,31 @@ export default function CourseBuilderSection({ token }) {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-1.5">
-                          <span className="font-bold text-xs leading-tight text-stone-900 line-clamp-2">{c.title}</span>
-                          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/60 px-1.5 py-0.5 rounded flex-shrink-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="font-bold text-xs leading-snug text-stone-900 truncate block">{c.title}</span>
+                          <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-md flex-shrink-0 shadow-2xs">
                             ₹{c.price}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`px-2 py-0.5 rounded-full font-bold uppercase border flex items-center gap-1 ${
+                    <div className="flex items-center justify-between text-[10px] pt-1 border-t border-stone-100">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase border flex items-center gap-1.5 ${
                           isPub
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/90'
                             : c.status === 'DRAFT'
-                            ? 'bg-amber-100 text-amber-900 border-amber-300'
-                            : 'bg-stone-200 text-stone-700 border-stone-300'
+                            ? 'bg-amber-50 text-amber-900 border-amber-200/90'
+                            : 'bg-stone-100 text-stone-700 border-stone-200'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-600 animate-pulse' : 'bg-amber-600'}`} />
-                          {isPub ? 'Active' : `Deactive (${c.status})`}
+                          {isPub ? 'Active' : `Inactive (${c.status})`}
                         </span>
-                        <span className="text-stone-500">{c.modulesCount || 0} Modules</span>
+                        <span className="text-stone-500 font-medium flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[12px] text-stone-400">layers</span>
+                          {c.modulesCount || 0} Modules
+                        </span>
                       </div>
 
                       <button
@@ -868,10 +880,10 @@ export default function CourseBuilderSection({ token }) {
                         }}
                         disabled={statusUpdating}
                         title={isPub ? 'Click to Deactivate Course' : 'Click to Activate & Publish Course'}
-                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                           isPub
-                            ? 'bg-white hover:bg-amber-50 text-amber-800 border-amber-300 hover:border-amber-400'
-                            : 'bg-emerald-800 hover:bg-emerald-700 text-white border-emerald-800'
+                            ? 'bg-white hover:bg-amber-50/80 text-amber-800 border-amber-300 hover:border-amber-400 shadow-2xs'
+                            : 'bg-emerald-800 hover:bg-emerald-700 text-white border-emerald-800 shadow-2xs'
                         }`}
                       >
                         {isPub ? 'Deactivate' : 'Publish'}
@@ -887,41 +899,46 @@ export default function CourseBuilderSection({ token }) {
         {/* Selected Course Structure Right */}
         <div className="lg:col-span-8 space-y-6">
           {selectedCourse ? (
-            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200/90 shadow-xs space-y-6">
               {/* Course Header with Status & Activation Controls */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-stone-200 gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-stone-200/80 gap-4">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-stone-900">{selectedCourse.title}</h2>
+                    <h2 className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 truncate">{selectedCourse.title}</h2>
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
-                      className="p-1 rounded-lg text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer flex-shrink-0"
                       title="Edit Course Title & Price"
                     >
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-mono text-emerald-700">/{selectedCourse.slug}</span>
-                    <span className="text-stone-300">•</span>
+
+                  {/* Clean Non-wrapping URL and Price Badges */}
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100/80 border border-stone-200 text-stone-700 text-xs font-mono">
+                      <span className="material-symbols-outlined text-xs text-stone-400">link</span>
+                      <span className="text-emerald-800 font-semibold truncate max-w-xs">/{selectedCourse.slug}</span>
+                    </span>
+
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all cursor-pointer group shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200/90 transition-all cursor-pointer shadow-2xs group"
                       title="Click to edit course price"
                     >
                       <span className="material-symbols-outlined text-xs text-emerald-600">payments</span>
                       <span>₹{selectedCourse.price}</span>
-                      <span className="material-symbols-outlined text-[13px] opacity-70 group-hover:opacity-100">edit</span>
+                      <span className="material-symbols-outlined text-[13px] text-emerald-400 group-hover:text-emerald-700 transition-colors">edit</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Status & Deactivate/Activate Actions */}
-                <div className="flex flex-wrap items-center gap-2.5">
+                {/* Status & Deactivate/Activate Actions Group */}
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                   {/* Edit Pricing & Title Button */}
                   <button
                     onClick={() => handleOpenEditModal(selectedCourse)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-emerald-50/60 text-stone-700 hover:text-emerald-800 border border-stone-200 hover:border-emerald-300 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-white hover:bg-stone-50 text-stone-700 hover:text-emerald-900 border border-stone-200/90 hover:border-emerald-300 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                     title="Edit course price and title"
                   >
                     <span className="material-symbols-outlined text-base text-emerald-700">currency_rupee</span>
@@ -929,7 +946,7 @@ export default function CourseBuilderSection({ token }) {
                   </button>
 
                   {/* Status Dropdown */}
-                  <div className="flex items-center gap-1.5 bg-stone-50 border border-stone-300 rounded-xl px-3 py-1.5">
+                  <div className="h-9 flex items-center gap-1.5 bg-stone-50 border border-stone-200/90 rounded-xl px-3 shadow-2xs">
                     <span className="text-[11px] font-semibold text-stone-500">Status:</span>
                     <select
                       value={selectedCourse.status}
@@ -947,10 +964,10 @@ export default function CourseBuilderSection({ token }) {
                   <button
                     onClick={() => handleToggleActive(selectedCourse)}
                     disabled={statusUpdating}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                    className={`h-9 px-4 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                       isSelectedPublished
-                        ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
-                        : 'bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-800 shadow-md'
+                        ? 'bg-amber-50/90 hover:bg-amber-100 text-amber-900 border border-amber-300/90'
+                        : 'bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-800 shadow-sm'
                     }`}
                   >
                     <span className="material-symbols-outlined text-base">
@@ -968,7 +985,7 @@ export default function CourseBuilderSection({ token }) {
                   {/* Delete Course Button */}
                   <button
                     onClick={() => setDeleteModalOpen(true)}
-                    className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-stone-200 hover:border-rose-200 transition-colors cursor-pointer"
+                    className="h-9 w-9 rounded-xl text-rose-600 hover:bg-rose-50 border border-stone-200/90 hover:border-rose-200 transition-all flex items-center justify-center cursor-pointer shadow-2xs"
                     title="Delete Course"
                   >
                     <span className="material-symbols-outlined text-base">delete</span>
@@ -978,7 +995,7 @@ export default function CourseBuilderSection({ token }) {
 
               {/* Deactivated Warning Alert Banner */}
               {!isSelectedPublished && (
-                <div className="p-4 bg-amber-50/90 border border-amber-300 rounded-xl text-xs text-amber-950 flex items-start gap-3 shadow-xs">
+                <div className="p-4 bg-amber-50/90 border border-amber-300/80 rounded-xl text-xs text-amber-950 flex items-start gap-3 shadow-xs">
                   <span className="material-symbols-outlined text-amber-700 text-lg flex-shrink-0 mt-0.5">
                     warning
                   </span>
@@ -990,7 +1007,7 @@ export default function CourseBuilderSection({ token }) {
                   </div>
                   <button
                     onClick={() => handleUpdateCourseStatus(selectedCourse.id, 'PUBLISHED')}
-                    className="bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
+                    className="bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
                   >
                     Make Live Now
                   </button>
@@ -998,18 +1015,18 @@ export default function CourseBuilderSection({ token }) {
               )}
 
               {/* Course Cover Photo Section */}
-              <div className="bg-gradient-to-br from-stone-50 via-white to-emerald-50/20 rounded-2xl p-5 border border-stone-200 shadow-2xs space-y-4">
+              <div className="bg-gradient-to-br from-stone-50/80 via-white to-emerald-50/20 rounded-2xl p-6 border border-stone-200/80 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100/80 text-emerald-800 border border-emerald-200/80 flex items-center justify-center shadow-2xs flex-shrink-0">
                       <span className="material-symbols-outlined text-lg">image</span>
                     </div>
                     <div>
                       <h3 className="font-bold text-xs sm:text-sm text-stone-900 flex items-center gap-2">
                         <span>Course Cover Photo</span>
                         {selectedCourse.thumbnail && (
-                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                            Custom Photo Active
+                          <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
+                            Custom Cover Active
                           </span>
                         )}
                       </h3>
@@ -1031,7 +1048,7 @@ export default function CourseBuilderSection({ token }) {
                       type="button"
                       onClick={() => coverFileInputRef.current?.click()}
                       disabled={coverUpdating}
-                      className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50 active:scale-98"
                     >
                       <span className="material-symbols-outlined text-sm">upload</span>
                       <span>{coverUpdating ? 'Uploading...' : 'Upload Image'}</span>
@@ -1042,7 +1059,7 @@ export default function CourseBuilderSection({ token }) {
                         type="button"
                         onClick={handleRemoveCoverPhoto}
                         disabled={coverUpdating}
-                        className="px-2.5 py-1.5 text-stone-600 hover:text-rose-700 hover:bg-rose-50 border border-stone-200 rounded-xl text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
+                        className="px-3 py-2 text-stone-600 hover:text-rose-700 hover:bg-rose-50 border border-stone-200/90 rounded-xl text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
                         title="Remove cover photo and reset to default"
                       >
                         Reset
@@ -1051,9 +1068,9 @@ export default function CourseBuilderSection({ token }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                   {/* 16:9 Cover Thumbnail Preview Card */}
-                  <div className="md:col-span-4 relative aspect-video rounded-xl overflow-hidden border border-stone-300 bg-stone-900 shadow-xs group">
+                  <div className="md:col-span-4 relative aspect-video rounded-xl overflow-hidden border border-stone-200/90 bg-stone-900 shadow-sm group">
                     <img
                       src={resolveCoverUrl(selectedCourse.thumbnail) || '/course_thumb_landscape.jpg'}
                       alt={selectedCourse.title}
@@ -1061,7 +1078,7 @@ export default function CourseBuilderSection({ token }) {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                    <span className="absolute bottom-2 left-2 text-[10px] text-white/90 font-mono font-medium bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded">
+                    <span className="absolute bottom-2 left-2 text-[10px] text-white/95 font-mono font-medium bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
                       16:9 Banner
                     </span>
                     {coverUpdating && (
@@ -1072,7 +1089,7 @@ export default function CourseBuilderSection({ token }) {
                   </div>
 
                   {/* URL Input & Quick Preset Options */}
-                  <div className="md:col-span-8 space-y-3">
+                  <div className="md:col-span-8 space-y-3.5">
                     <div>
                       <label className="block text-[11px] font-bold text-stone-700 mb-1">
                         Image URL / Web Link:
@@ -1083,13 +1100,13 @@ export default function CourseBuilderSection({ token }) {
                           placeholder="https://images.unsplash.com/... or /course_thumb_custom.jpg"
                           value={coverUrlInput}
                           onChange={(e) => setCoverUrlInput(e.target.value)}
-                          className="flex-1 bg-white border border-stone-300 rounded-xl px-3 py-1.5 text-xs text-stone-900 focus:border-emerald-700 focus:outline-none"
+                          className="flex-1 bg-white border border-stone-200/90 rounded-xl px-3.5 py-2 text-xs text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none shadow-2xs"
                         />
                         <button
                           type="button"
                           onClick={handleSaveCoverUrl}
                           disabled={coverUpdating || !coverUrlInput.trim() || coverUrlInput.trim() === selectedCourse.thumbnail}
-                          className="px-3 py-1.5 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
+                          className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 shadow-2xs"
                         >
                           Save URL
                         </button>
@@ -1100,7 +1117,7 @@ export default function CourseBuilderSection({ token }) {
                       <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
                         Quick Preset Covers:
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {PRESET_COVERS.map((preset, pIdx) => {
                           const isActive = selectedCourse.thumbnail === preset.url;
                           return (
@@ -1109,13 +1126,14 @@ export default function CourseBuilderSection({ token }) {
                               type="button"
                               onClick={() => handleApplyPresetCover(preset.url)}
                               disabled={coverUpdating}
-                              className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                              className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                                 isActive
-                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-400 font-bold ring-1 ring-emerald-500'
-                                  : 'bg-white hover:bg-emerald-50 hover:border-emerald-300 text-stone-700 hover:text-emerald-900 border-stone-200'
+                                  ? 'bg-emerald-800 text-white border-emerald-800 shadow-sm font-bold'
+                                  : 'bg-white hover:bg-emerald-50/70 hover:border-emerald-300 text-stone-700 hover:text-emerald-950 border-stone-200'
                               }`}
                             >
-                              {preset.label}
+                              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-emerald-600'}`} />
+                              <span>{preset.label}</span>
                             </button>
                           );
                         })}
@@ -1132,10 +1150,14 @@ export default function CourseBuilderSection({ token }) {
                   placeholder="Enter Module Title (e.g. Module 1: Spatial Topography & Grading)..."
                   value={newModuleTitle}
                   onChange={(e) => setNewModuleTitle(e.target.value)}
-                  className="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-4 py-2 text-xs text-stone-900 focus:border-emerald-600 focus:bg-white focus:outline-none"
+                  className="flex-1 bg-white border border-stone-200/90 rounded-xl px-4 py-2.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none shadow-2xs"
                 />
-                <button type="submit" className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
-                  + Add Module
+                <button 
+                  type="submit" 
+                  className="bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5 flex-shrink-0 active:scale-98"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  <span>Add Module</span>
                 </button>
               </form>
 

@@ -35,53 +35,61 @@ export default function AdminDashboardLayout({
 
   return (
     <div className="h-screen bg-stone-100/70 text-stone-800 flex overflow-hidden font-body-md">
-      {/* SIDEBAR NAVIGATION (Light Themed) */}
-      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-64 md:w-72 bg-white border-r border-stone-200 shadow-sm flex flex-col justify-between transition-transform duration-300 ${
+      {/* SIDEBAR NAVIGATION (Executive Luxury Architecture Theme) */}
+      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 lg:w-76 bg-white border-r border-stone-200 shadow-sm flex flex-col justify-between transition-transform duration-300 ${
         mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
         <div className="flex flex-col h-full overflow-hidden">
           {/* Brand Header */}
-          <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-white">
+          <div className="p-5 border-b border-stone-200/90 flex items-center justify-between bg-gradient-to-b from-stone-50/50 to-white">
             <button 
               onClick={() => onNavigate('v1')}
               className="flex items-center gap-3 text-left focus:outline-none group cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-full bg-stone-50 border border-emerald-800/15 shadow-sm overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
+              <div className="w-10 h-10 rounded-xl bg-stone-50 border border-emerald-900/15 shadow-sm overflow-hidden flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-md p-0.5">
                 <img 
                   src={(siteSettings?.logoUrl && (siteSettings.logoUrl.startsWith('/media/') ? `${BASE_URL}${siteSettings.logoUrl}` : siteSettings.logoUrl)) || '/lm_logo.png'} 
                   alt="Logo" 
                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
-                  className="w-full h-full object-contain rounded-full"
+                  className="w-full h-full object-contain rounded-lg"
                 />
               </div>
-              <div>
-                <span className="font-bold text-base text-stone-900 block leading-tight">Landscape Mastery</span>
-                <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">Admin Operations</span>
+              <div className="min-w-0">
+                <span className="font-bold text-sm tracking-tight text-stone-900 block leading-tight truncate">Landscape Mastery</span>
+                <span className="text-[9.5px] uppercase font-bold text-emerald-800 tracking-wider flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  Admin Operations
+                </span>
               </div>
             </button>
             <button 
               onClick={() => setMobileSidebarOpen(false)}
-              className="md:hidden text-stone-400 hover:text-stone-700 p-1"
+              className="md:hidden text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition-colors"
             >
               <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
 
           {/* User Account Info Bar */}
-          <div className="px-5 py-3.5 bg-stone-50 border-b border-stone-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-800 text-white font-bold flex items-center justify-center text-xs shadow-sm">
-              {user?.email?.charAt(0).toUpperCase() || 'A'}
+          <div className="px-5 py-3.5 bg-gradient-to-r from-stone-50/90 via-stone-50/40 to-emerald-50/20 border-b border-stone-200/80 flex items-center gap-3">
+            <div className="relative flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-900 to-teal-800 text-white font-bold flex items-center justify-center text-xs shadow-sm shadow-emerald-950/20 border border-emerald-700/30">
+                {user?.email?.charAt(0).toUpperCase() || 'A'}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
-            <div className="overflow-hidden flex-1">
-              <span className="text-xs font-semibold text-stone-900 block truncate">{user?.email || 'admin@landscapemastery.com'}</span>
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                {user?.role === 'SUPER_ADMIN' ? 'PORTAL SUPER ADMIN (FULL RIGHTS)' : (user?.role || 'PORTAL ADMIN')}
-              </span>
+            <div className="overflow-hidden flex-1 min-w-0">
+              <span className="text-xs font-bold text-stone-900 block truncate" title={user?.email}>{user?.email || 'admin@landscapemastery.com'}</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] font-mono font-bold text-emerald-900 bg-emerald-100/70 border border-emerald-300/80 px-2 py-0.5 rounded-md inline-block uppercase tracking-wider truncate max-w-full">
+                  {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : (user?.role || 'Admin')}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Navigation Items */}
-          <nav className="p-3 space-y-1 overflow-y-auto flex-1">
+          <nav className="p-3 space-y-1 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-stone-200 [&::-webkit-scrollbar-thumb]:rounded-full">
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
@@ -91,19 +99,23 @@ export default function AdminDashboardLayout({
                     setActiveSection(item.id);
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-emerald-800 text-white shadow-sm shadow-emerald-950/20'
-                      : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+                      ? 'bg-emerald-900 text-white shadow-sm shadow-emerald-950/20 font-semibold'
+                      : 'text-stone-600 hover:bg-stone-100/80 hover:text-stone-950'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={`material-symbols-outlined text-lg ${isActive ? 'text-white' : 'text-emerald-700'}`}>{item.icon}</span>
-                    <span>{item.label}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`material-symbols-outlined text-[19px] flex-shrink-0 ${isActive ? 'text-white' : 'text-emerald-700'}`}>
+                      {item.icon}
+                    </span>
+                    <span className="truncate whitespace-nowrap">{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      isActive ? 'bg-white/25 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    <span className={`text-[9.5px] font-mono font-bold px-2 py-0.5 rounded-md uppercase tracking-wider flex-shrink-0 ml-2 ${
+                      isActive 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
                     }`}>
                       {item.badge}
                     </span>
@@ -114,30 +126,41 @@ export default function AdminDashboardLayout({
           </nav>
 
           {/* Footer Actions */}
-          <div className="p-4 border-t border-stone-200 bg-stone-50/60 space-y-1.5">
-            <button
-              type="button"
-              onClick={() => onNavigate('v3')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base text-stone-500">preview</span>
-              Student Portal View
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('v1')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base text-stone-500">public</span>
-              View Live Website
-            </button>
+          <div className="p-3.5 border-t border-stone-200/80 bg-stone-50/70 space-y-1.5">
+            <div className="grid grid-cols-2 gap-1.5 mb-1">
+              <button
+                type="button"
+                onClick={() => onNavigate('v3')}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-stone-700 bg-white hover:bg-stone-100 border border-stone-200/90 shadow-2xs transition-all cursor-pointer truncate"
+                title="Open Student Portal View"
+              >
+                <span className="material-symbols-outlined text-sm text-stone-500">school</span>
+                <span className="truncate">Portal View</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('v1')}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-stone-700 bg-white hover:bg-stone-100 border border-stone-200/90 shadow-2xs transition-all cursor-pointer truncate"
+                title="View Live Website Landing Page"
+              >
+                <span className="material-symbols-outlined text-sm text-stone-500">public</span>
+                <span className="truncate">Live Site</span>
+              </button>
+            </div>
+
             <a
               href="/admin"
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 transition-all border border-emerald-200/60 cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 bg-white hover:bg-emerald-50 hover:text-emerald-950 hover:border-emerald-200 border border-stone-200/90 shadow-2xs transition-all cursor-pointer group"
             >
-              <span className="material-symbols-outlined text-base text-emerald-700">admin_panel_settings</span>
-              3CAPSTECH Admin Console
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-base text-emerald-700">hub</span>
+                <span className="truncate">3CAPSTECH Console</span>
+              </div>
+              <span className="material-symbols-outlined text-sm text-stone-400 group-hover:text-emerald-700 group-hover:translate-x-0.5 transition-transform flex-shrink-0">
+                arrow_forward
+              </span>
             </a>
+
             <button
               type="button"
               onClick={() => {
@@ -147,11 +170,11 @@ export default function AdminDashboardLayout({
                   onNavigate('v1');
                 }
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50/80 hover:bg-rose-100 border border-rose-200/80 transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:text-rose-700 hover:bg-rose-50/80 border border-transparent hover:border-rose-200/80 transition-all cursor-pointer"
               title="Securely log out and exit admin panel"
             >
-              <span className="material-symbols-outlined text-base text-rose-600">logout</span>
-              Logout &amp; Exit
+              <span className="material-symbols-outlined text-base text-stone-400 hover:text-rose-600">logout</span>
+              <span>Logout &amp; Exit</span>
             </button>
           </div>
         </div>
