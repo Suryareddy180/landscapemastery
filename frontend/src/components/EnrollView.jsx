@@ -7,6 +7,21 @@ import {
 } from 'lucide-react';
 import { BASE_URL } from '../lib/api.js';
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, initialCourse }) {
   // Multi-course state
   const [catalogCourses, setCatalogCourses] = useState([]);
@@ -251,11 +266,19 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
       const data = await response.json();
       const razorpayKey = data.keyId || '';
 
-      if (!window.Razorpay || !razorpayKey) {
+      let isSdkLoaded = !!window.Razorpay;
+      if (!isSdkLoaded) {
+        setStatusMessage({ type: 'info', text: 'Initializing secure payment gateway...' });
+        isSdkLoaded = await loadRazorpayScript();
+      }
+
+      if (!isSdkLoaded || !razorpayKey) {
         setLoading(false);
         setStatusMessage({
           type: 'error',
-          text: 'Payment Gateway is in configuration mode. Please contact support at contact@landscapemastery.com.'
+          text: !razorpayKey
+            ? 'Payment Gateway is in configuration mode (Key ID missing). Please contact support at contact@landscapemastery.com.'
+            : 'Unable to load Razorpay payment script. Please check your internet connection or disable ad-blockers and retry.'
         });
         return;
       }

@@ -321,18 +321,18 @@ Create `/etc/nginx/sites-available/landscapemastery.conf`:
 ```bash
 cat << 'EOF' > /etc/nginx/sites-available/landscapemastery.conf
 # =========================================================================
-# Application 3: Landscape Mastery Reverse Proxy
+# Application 3: 3CAPSTECH / Landscape Mastery Reverse Proxy
 # =========================================================================
 
 server {
     listen 80;
     listen [::]:80;
-    server_name landscapemastery.com www.landscapemastery.com;
+    server_name 3capstech.com www.3capstech.com landscapemastery.com www.landscapemastery.com;
 
     # Allow large media/video uploads
     client_max_body_size 100M;
 
-    # Proxy all traffic to Landscape Mastery frontend container
+    # Proxy all traffic to Landscape Mastery / 3CAPSTECH frontend container
     location / {
         proxy_pass http://127.0.0.1:8082;
         proxy_http_version 1.1;
@@ -374,19 +374,23 @@ sudo systemctl reload nginx
 
 ## 7. Phase 6 — Automated SSL/TLS with Let's Encrypt (Certbot)
 
-Now secure `landscapemastery.com` with free SSL certificates via Certbot:
+Now secure `3capstech.com` (and `landscapemastery.com` if active) with free SSL certificates via Certbot:
 
 ```bash
 # Install certbot if not already present
 sudo apt update && sudo apt install -y certbot python3-certbot-nginx
 
-# Obtain and install SSL for Landscape Mastery
-sudo certbot --nginx -d landscapemastery.com -d www.landscapemastery.com
+# Obtain and install SSL for 3capstech.com (and optionally landscapemastery.com)
+sudo certbot --nginx -d 3capstech.com -d www.3capstech.com
 ```
+
+> [!NOTE]
+> If you are also using `landscapemastery.com`, include both in the same cert or a separate block:
+> `sudo certbot --nginx -d 3capstech.com -d www.3capstech.com -d landscapemastery.com -d www.landscapemastery.com`
 
 Certbot will:
 1. Verify domain ownership over port 80.
-2. Generate certificates in `/etc/letsencrypt/live/landscapemastery.com/`.
+2. Generate certificates in `/etc/letsencrypt/live/3capstech.com/`.
 3. Automatically update **only** `/etc/nginx/sites-available/landscapemastery.conf` with HTTPS redirection and SSL parameters.
 4. Reload Nginx without modifying App 1 or App 2 certificates.
 
@@ -466,6 +470,7 @@ docker compose -f docker-compose.prod.yml logs -f --tail=50 db
 | `bind: address already in use: 0.0.0.0:80` or `5432` | A container in `docker-compose.yml` is attempting to bind directly to a host port already taken by Host Nginx or another Postgres instance. | Ensure `db` has **no published ports**. Ensure `frontend` binds **only** to `127.0.0.1:8082:80`. |
 | `502 Bad Gateway` on `landscapemastery.com` | `landscapemastery_frontend` container is stopped or restarting. | Run `docker compose -f docker-compose.prod.yml ps`. Check logs via `docker compose -f docker-compose.prod.yml logs frontend`. |
 | Visiting `landscapemastery.com` displays App 1 or App 2 | Host Nginx has an old catch-all `default_server` directive. | Check `/etc/nginx/sites-enabled/`. Remove `default_server` from App 1/2 configs so each site requires its exact `server_name`. Run `nginx -t && systemctl reload nginx`. |
+| `NET::ERR_CERT_COMMON_NAME_INVALID` on `3capstech.com` | Nginx on host has no SSL certificate for `3capstech.com`, so it falls back to serving the SSL certificate of another site (`pgflow.online`). | Run `sudo certbot --nginx -d 3capstech.com -d www.3capstech.com` on the VPS to issue and install a dedicated certificate. Ensure `default_server` is not intercepting SNI. |
 | `DisallowedHost at /` | `landscapemastery.com` is missing from Django's `ALLOWED_HOSTS`. | Edit `.env.production`, add your domain to `ALLOWED_HOSTS`, and run `docker compose -f docker-compose.prod.yml restart backend`. |
 | `CSRF verification failed` on admin login | Domain is missing from `CSRF_TRUSTED_ORIGINS`. | Edit `.env.production`, add `https://landscapemastery.com` to `CSRF_TRUSTED_ORIGINS`, and restart `backend`. |
 | Containers randomly exiting with Code 137 | Linux OOM (Out Of Memory) killer killed container due to lack of RAM. | Ensure 4GB Swap is active (`free -h`). Follow Section 1.3 to activate Swap space immediately. |

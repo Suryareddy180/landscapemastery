@@ -226,6 +226,7 @@ LOGGING = {
 # Razorpay Payment Integration Credentials (Configured for Test Mode in Production)
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_T70jvhfe9o6Nci')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'vU15p3A1rxC3909gkrxA6oAV')
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', RAZORPAY_KEY_SECRET)
 
 # Django SMTP Email Service Configuration
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')

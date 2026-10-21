@@ -289,7 +289,7 @@ def checkout_session(req):
                         "account_type": account_type
                     }
                 },
-                timeout=8
+                timeout=10
             )
             if rzp_res.status_code in [200, 201]:
                 rzp_data = rzp_res.json()
@@ -297,9 +297,19 @@ def checkout_session(req):
                     order_id = rzp_data['id']
                     logger.info(f"Created Razorpay order {order_id} for {email}")
             else:
-                logger.warning(f"Razorpay order creation returned {rzp_res.status_code}: {rzp_res.text}")
+                logger.error(f"Razorpay order creation returned {rzp_res.status_code}: {rzp_res.text}")
+                # In live mode (rzp_live_) or production, fail fast if the gateway rejects order creation
+                if razorpay_key_id.startswith('rzp_live_') or not settings.DEBUG:
+                    try:
+                        err_data = rzp_res.json()
+                        err_desc = err_data.get('error', {}).get('description', 'Unable to initialize order with Razorpay.')
+                    except Exception:
+                        err_desc = 'Unable to initialize order with Razorpay.'
+                    return Response({'error': f"Payment Gateway Error: {err_desc}"}, status=status.HTTP_502_BAD_GATEWAY)
         except Exception as e:
-            logger.warning(f"Unable to reach Razorpay order API: {e}")
+            logger.error(f"Unable to reach Razorpay order API: {e}")
+            if razorpay_key_id.startswith('rzp_live_') or not settings.DEBUG:
+                return Response({'error': 'Unable to connect to Razorpay payment gateway. Please try again shortly.'}, status=status.HTTP_502_BAD_GATEWAY)
 
     # Store checkout details against pending PaymentRecord before payment
     PaymentRecord.objects.create(
@@ -415,12 +425,20 @@ def razorpay_webhook(req):
     Idempotent: safe against retries and multiple deliveries.
     """
     sig = req.headers.get('X-Razorpay-Signature')
-    sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
-    if sec and sig:
-        exp_sig = hmac.new(sec.encode('utf-8'), req.body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(exp_sig, sig):
+    webhook_sec = getattr(settings, 'RAZORPAY_WEBHOOK_SECRET', '') or getattr(settings, 'RAZORPAY_KEY_SECRET', '')
+    key_sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
+
+    if sig and (webhook_sec or key_sec):
+        signature_valid = False
+        for secret_candidate in filter(None, [webhook_sec, key_sec]):
+            exp_sig = hmac.new(secret_candidate.encode('utf-8'), req.body, hashlib.sha256).hexdigest()
+            if hmac.compare_digest(exp_sig, sig):
+                signature_valid = True
+                break
+        if not signature_valid:
+            logger.warning("Razorpay webhook signature verification failed.")
             return Response({'error': 'Invalid webhook signature'}, status=status.HTTP_400_BAD_REQUEST)
-    elif not settings.DEBUG and getattr(settings, 'RAZORPAY_KEY_SECRET', ''):
+    elif not settings.DEBUG and (webhook_sec or key_sec):
         return Response({'error': 'Webhook signature required in production'}, status=status.HTTP_400_BAD_REQUEST)
 
     body = req.data
