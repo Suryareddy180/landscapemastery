@@ -358,7 +358,9 @@ def checkout_verify(req):
         return Response({'error': 'Missing payment verification parameters (order_id, payment_id, email required).'}, status=status.HTTP_400_BAD_REQUEST)
 
     sec = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
-    if sec and razorpay_signature:
+    if sec:
+        if not razorpay_signature:
+            return Response({'error': 'Payment signature required for verification.'}, status=status.HTTP_400_BAD_REQUEST)
         generated_signature = hmac.new(
             sec.encode('utf-8'),
             f"{razorpay_order_id}|{razorpay_payment_id}".encode('utf-8'),
@@ -368,8 +370,6 @@ def checkout_verify(req):
         if not hmac.compare_digest(generated_signature, razorpay_signature):
             logger.warning(f"Signature mismatch for order {razorpay_order_id}")
             return Response({'error': 'Cryptographic payment signature verification failed.'}, status=status.HTTP_400_BAD_REQUEST)
-    elif not settings.DEBUG and getattr(settings, 'RAZORPAY_KEY_SECRET', ''):
-        return Response({'error': 'Payment signature required in production environment.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Retrieve pending order record if exists
     pending_record = PaymentRecord.objects.filter(order_id=razorpay_order_id).first()
@@ -471,6 +471,24 @@ def razorpay_webhook(req):
                 checkout_metadata=notes,
                 amount=amount
             )
+    elif event == 'payment.failed':
+        entity = body.get('payload', {}).get('payment', {}).get('entity', {})
+        order_id = entity.get('order_id')
+        payment_id = entity.get('id', '')
+        error_desc = entity.get('error_description') or entity.get('error_reason') or 'Payment declined by bank or card issuer.'
+
+        if order_id:
+            record = PaymentRecord.objects.filter(order_id=order_id).first()
+            if record and record.status != 'SUCCESS':
+                record.status = 'FAILED'
+                if payment_id:
+                    record.payment_id = payment_id
+                if not record.checkout_metadata or not isinstance(record.checkout_metadata, dict):
+                    record.checkout_metadata = {}
+                record.checkout_metadata['failure_reason'] = error_desc
+                record.checkout_metadata['failed_at'] = int(time.time())
+                record.save(update_fields=['status', 'payment_id', 'checkout_metadata', 'updated_at'])
+                logger.warning(f"Payment marked as FAILED for order {order_id}: {error_desc}")
 
     return Response({'status': 'ok'}, status=status.HTTP_200_OK)
 

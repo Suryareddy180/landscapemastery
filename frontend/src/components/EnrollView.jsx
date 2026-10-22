@@ -348,7 +348,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                 orderId: verifyData.order_id,
                 paymentId: verifyData.payment_id,
                 isNewUser: verifyData.is_new_user,
-                authData: verifyData.auth_data || null
+                authData: verifyData.auth_data || (verifyData.token ? { token: verifyData.token, user: verifyData.user } : null)
               });
               setStatusMessage(null);
             } else {
