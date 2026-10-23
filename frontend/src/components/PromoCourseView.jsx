@@ -34,6 +34,16 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedWhatsapp, setCopiedWhatsapp] = useState(false);
   const [qrTapped, setQrTapped] = useState(false);
+  const [qrSize, setQrSize] = useState(170);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setQrSize(window.innerWidth < 640 ? 170 : 200);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fallback slug if accessed via root or empty
   const activeSlug = courseSlug || 'lanscape-lens';
@@ -234,23 +244,23 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
       <div className="absolute bottom-10 -left-40 w-[500px] h-[500px] bg-emerald-600/8 rounded-full blur-3xl pointer-events-none -z-0" />
 
       {/* Top Brand Navigation Bar */}
-      <header className="relative z-20 border-b border-emerald-900/40 bg-[#031B19]/80 backdrop-blur-md sticky top-0 px-4 sm:px-8 py-3 flex items-center justify-between">
-        <Link to="/landscapemastery" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-emerald-700/40 p-1 flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
+      <header className="relative z-20 border-b border-emerald-900/40 bg-[#031B19]/80 backdrop-blur-md sticky top-0 px-3 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+        <Link to="/landscapemastery" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-emerald-700/40 p-1 flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform shrink-0">
             <img src="/lm_logo.png" alt="Landscape Mastery" className="w-full h-full object-contain" />
           </div>
-          <div>
-            <span className="text-sm sm:text-base font-bold tracking-tight text-white block group-hover:text-emerald-300 transition-colors">
+          <div className="min-w-0">
+            <span className="text-xs sm:text-base font-bold tracking-tight text-white block group-hover:text-emerald-300 transition-colors leading-tight truncate">
               Landscape Mastery
             </span>
-            <span className="text-[9px] uppercase tracking-widest font-mono text-emerald-400 block -mt-0.5">
+            <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-mono text-emerald-400 block -mt-0.5 leading-tight truncate">
               Online Learning Platform
             </span>
           </div>
         </Link>
 
         {/* Top Right: 3CAPSTECH Parent Company Logo + Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             onClick={() => handleRedirectToEnroll()}
             className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950/40 cursor-pointer active:scale-98"
@@ -269,18 +279,18 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           <a
             href="/"
             title="3CAPSTECH - Parent Company"
-            className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-emerald-500/25 hover:border-emerald-500/50 transition-all group"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-emerald-500/25 hover:border-emerald-500/50 transition-all group shrink-0"
           >
             <img
               src="/logo.png"
               alt="3CAPSTECH"
-              className="h-7 sm:h-8 w-auto object-contain brightness-110 drop-shadow-[0_0_8px_rgba(17,168,49,0.3)] transition-transform group-hover:scale-105"
+              className="h-5 sm:h-7 w-auto max-w-[80px] sm:max-w-none object-contain brightness-110 drop-shadow-[0_0_8px_rgba(17,168,49,0.3)] transition-transform group-hover:scale-105"
             />
-            <div className="flex flex-col text-left">
-              <span className="text-[8px] uppercase tracking-wider text-emerald-400 font-mono font-bold leading-none">
-                A Product of
+            <div className="flex flex-col text-left leading-none">
+              <span className="text-[7px] sm:text-[8px] uppercase tracking-wider text-emerald-400 font-mono font-bold leading-tight">
+                Product of
               </span>
-              <span className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight group-hover:text-emerald-300 transition-colors">
+              <span className="text-[10px] sm:text-xs font-bold text-white tracking-tight leading-tight group-hover:text-emerald-300 transition-colors">
                 3CAPSTECH
               </span>
             </div>
@@ -289,15 +299,15 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
       </header>
 
       {/* Main Promotional Container */}
-      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-14 space-y-8">
+      <main className="relative z-10 max-w-4xl mx-auto px-3.5 sm:px-6 py-6 sm:py-12 space-y-6 sm:space-y-8">
         
         {/* Friendly Non-Technical Greeting Header */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-3 sm:space-y-4">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold shadow-lg shadow-emerald-950/50 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[11px] sm:text-xs font-mono font-semibold shadow-lg shadow-emerald-950/50 backdrop-blur-md"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <span>{course.greeting?.badge || 'Special Course Invitation'}</span>
@@ -307,17 +317,17 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="space-y-3"
+            className="space-y-2 sm:space-y-3"
           >
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold text-white tracking-tight leading-tight max-w-2xl mx-auto">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold text-white tracking-tight leading-tight max-w-2xl mx-auto px-2">
               {course.greeting?.salutation || "Welcome! You're Invited to Join"}
             </h1>
-            <p className="text-sm sm:text-base text-emerald-100/90 max-w-xl mx-auto font-light leading-relaxed">
+            <p className="text-xs sm:text-base text-emerald-100/90 max-w-xl mx-auto font-light leading-relaxed px-2">
               {course.greeting?.subtext || (
                 <>
-                  Scan the QR code with your phone or tap the card below to enroll in{' '}
+                  Scan the QR code or tap the pass below to claim your spot in{' '}
                   <strong className="text-amber-300 font-semibold">{course.title}</strong>{' '}
-                  and get instant lifetime access.
+                  with instant lifetime access.
                 </>
               )}
             </p>
@@ -332,25 +342,25 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           className="relative max-w-lg mx-auto"
         >
           {/* Subtle Outer Glow & Guilloche Accent */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/30 via-amber-400/20 to-teal-500/30 rounded-[32px] blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt pointer-events-none" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/30 via-amber-400/20 to-teal-500/30 rounded-[28px] sm:rounded-[32px] blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt pointer-events-none" />
 
-          <div className="relative bg-gradient-to-b from-[#082b27] via-[#05221f] to-[#031917] border-2 border-emerald-500/30 rounded-[30px] p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6 backdrop-blur-xl">
+          <div className="relative bg-gradient-to-b from-[#082b27] via-[#05221f] to-[#031917] border-2 border-emerald-500/30 rounded-[24px] sm:rounded-[30px] p-4 sm:p-8 shadow-2xl shadow-black/80 space-y-4 sm:space-y-6 backdrop-blur-xl">
             
             {/* Course Pass Header Row */}
-            <div className="flex items-center justify-between border-b border-emerald-900/60 pb-4">
+            <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3 sm:pb-4">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-400 text-xl">token</span>
+                <span className="material-symbols-outlined text-amber-400 text-lg sm:text-xl">token</span>
                 <div>
-                  <span className="text-[11px] font-mono tracking-widest text-emerald-300/90 uppercase font-bold block">
+                  <span className="text-[10px] sm:text-[11px] font-mono tracking-widest text-emerald-300/90 uppercase font-bold block">
                     Official Course Pass
                   </span>
-                  <span className="text-[10px] text-stone-400 font-mono block">
+                  <span className="text-[9px] sm:text-[10px] text-stone-400 font-mono block">
                     Access Pass: LM-{course.id ? String(course.id).padStart(4, '0') : '001'}
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-md bg-emerald-900/60 border border-emerald-600/40 text-emerald-300 font-bold">
+                <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-emerald-900/60 border border-emerald-600/40 text-emerald-300 font-bold">
                   {course.status === 'PUBLISHED' ? 'Verified Active' : 'Special Invite'}
                 </span>
               </div>
@@ -358,17 +368,17 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
 
             {/* Course Title & Investment Tag */}
             <div className="text-center space-y-1.5">
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-white tracking-tight leading-snug">
+              <h2 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-tight leading-snug">
                 {course.title}
               </h2>
-              <div className="flex items-center justify-center gap-2.5 pt-0.5">
-                <span className="text-base sm:text-lg font-mono text-stone-400 line-through">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 pt-0.5">
+                <span className="text-sm sm:text-lg font-mono text-stone-400 line-through">
                   ₹{displayOriginal >= 499 ? displayOriginal : 499}
                 </span>
                 <span className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono">
                   ₹{displayPrice}
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
+                <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
                   Lifetime Access
                 </span>
                 <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-950 bg-amber-400 px-2 py-0.5 rounded-md font-bold">
@@ -378,17 +388,17 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             </div>
 
             {/* The QR Code (CLICKABLE & SCAN-READY) */}
-            <div className="flex flex-col items-center justify-center pt-1">
+            <div className="flex flex-col items-center justify-center pt-0.5">
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleRedirectToEnroll}
-                title="Tap or Scan to open Course Enrollment"
-                className={`group relative p-5 sm:p-6 bg-white rounded-2xl shadow-xl shadow-black/40 border-4 border-amber-400/40 cursor-pointer transition-all ${
+                title="Tap to open Course Enrollment"
+                className={`group relative p-3.5 sm:p-6 bg-white rounded-2xl shadow-xl shadow-black/40 border-3 sm:border-4 border-amber-400/40 cursor-pointer transition-all ${
                   qrTapped ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-[#05221f]' : ''
                 }`}
               >
-                {/* Visual "TAP TO ENROLL" Hover Overlay for Desktop / Touch */}
+                {/* Visual "TAP TO ENROLL" Hover Overlay for Desktop */}
                 <div className="absolute inset-0 bg-emerald-950/90 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4 text-center z-10">
                   <span className="material-symbols-outlined text-amber-300 text-3xl animate-bounce">
                     touch_app
@@ -404,7 +414,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
                 {/* Branded QR Code */}
                 <QRCodeSVG
                   value={enrollTargetUrl}
-                  size={200}
+                  size={qrSize}
                   level="H"
                   bgColor="#FFFFFF"
                   fgColor="#064E3B"
@@ -413,8 +423,8 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
                     src: '/lm_logo.png',
                     x: undefined,
                     y: undefined,
-                    height: 38,
-                    width: 38,
+                    height: qrSize < 180 ? 32 : 38,
+                    width: qrSize < 180 ? 32 : 38,
                     excavate: true
                   }}
                   className="rounded-lg"
@@ -428,30 +438,34 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               </motion.div>
 
               {/* QR Interactive Hint Pill */}
-              <div className="mt-3.5 flex items-center gap-2 text-[11px] font-mono text-emerald-300/90 bg-emerald-950/80 border border-emerald-800/70 px-3.5 py-1 rounded-full">
+              <button
+                type="button"
+                onClick={handleRedirectToEnroll}
+                className="mt-3 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-emerald-300/95 bg-emerald-950/90 border border-emerald-700/60 px-3 py-1 rounded-full shadow-sm text-center hover:bg-emerald-900 transition-colors cursor-pointer"
+              >
                 <span className="material-symbols-outlined text-sm text-amber-300 animate-pulse">
-                  qr_code_scanner
+                  touch_app
                 </span>
-                <span>Scan with phone camera or tap card directly</span>
-              </div>
+                <span>Tap pass or button below to enroll</span>
+              </button>
             </div>
 
             {/* Primary Mobile-Friendly Action Button */}
-            <div className="space-y-2.5 pt-2">
+            <div className="space-y-2.5 pt-1">
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleRedirectToEnroll}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-950/60 border border-emerald-400/40 flex items-center justify-center gap-2.5 cursor-pointer group active:scale-98"
+                className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-950/60 border border-emerald-400/40 flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
               >
-                <span className="material-symbols-outlined text-amber-300 text-xl group-hover:translate-x-0.5 transition-transform">
+                <span className="material-symbols-outlined text-amber-300 text-lg sm:text-xl group-hover:translate-x-0.5 transition-transform">
                   verified
                 </span>
                 <span>Claim Your Spot Now • ₹{displayPrice}</span>
                 <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
               </motion.button>
 
-              <div className="flex items-center justify-center gap-4 text-[10px] text-stone-400 font-mono">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] text-stone-400 font-mono">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-emerald-400" />
                   Razorpay Secured
@@ -469,29 +483,27 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           </div>
         </motion.div>
 
-
-
         {/* Social Sharing & Promotion Hub (Pass it Forward) */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="bg-gradient-to-r from-emerald-950/60 via-[#072d28]/70 to-emerald-950/60 border border-emerald-800/40 rounded-2xl p-6 sm:p-7 space-y-4"
+          className="bg-gradient-to-r from-emerald-950/60 via-[#072d28]/70 to-emerald-950/60 border border-emerald-800/40 rounded-2xl p-4 sm:p-7 space-y-3.5 sm:space-y-4"
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-amber-300" />
-                Share this Promotional Invitation with Your Team
+              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>Share Invitation Pass with Your Team</span>
               </h3>
-              <p className="text-xs text-stone-400 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5">
                 Invite friends, fellow architecture students, and studio colleagues.
               </p>
             </div>
 
             <button
               onClick={handleDownloadQR}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/50 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/50 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-amber-300" />
               <span>Download QR Pass (PNG)</span>
@@ -499,11 +511,11 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           </div>
 
           {/* Social Action Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
             {/* WhatsApp */}
             <button
               onClick={handleShareWhatsApp}
-              className="p-3 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-base text-[#25D366]">chat</span>
               <span>WhatsApp</span>
@@ -512,7 +524,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             {/* X / Twitter */}
             <button
               onClick={handleShareTwitter}
-              className="p-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="font-bold text-sm">𝕏</span>
               <span>Twitter / X</span>
@@ -521,7 +533,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             {/* LinkedIn */}
             <button
               onClick={handleShareLinkedIn}
-              className="p-3 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 border border-[#0A66C2]/30 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 border border-[#0A66C2]/30 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-base text-[#0A66C2]">hub</span>
               <span>LinkedIn</span>
@@ -530,7 +542,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             {/* Copy Link */}
             <button
               onClick={() => copyToClipboard(promoPageUrl, 'link')}
-              className="p-3 rounded-xl bg-emerald-900/50 hover:bg-emerald-900/80 border border-emerald-700/50 text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-xl bg-emerald-900/50 hover:bg-emerald-900/80 border border-emerald-700/50 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               {copiedLink ? (
                 <>
@@ -540,18 +552,18 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               ) : (
                 <>
                   <Copy className="w-4 h-4 text-stone-300" />
-                  <span>Copy Promo Link</span>
+                  <span>Copy Link</span>
                 </>
               )}
             </button>
           </div>
 
           {/* Promo URL Box */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-emerald-900/60 text-xs font-mono text-emerald-300 overflow-x-auto">
-            <span className="truncate mr-2">{promoPageUrl}</span>
+          <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-black/40 border border-emerald-900/60 text-[11px] sm:text-xs font-mono text-emerald-300 overflow-x-auto gap-2">
+            <span className="truncate">{promoPageUrl}</span>
             <button
               onClick={() => copyToClipboard(promoPageUrl, 'link')}
-              className="text-stone-400 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+              className="text-stone-400 hover:text-white transition-colors cursor-pointer shrink-0 p-1"
               title="Copy to clipboard"
             >
               <Copy className="w-4 h-4" />
@@ -562,9 +574,9 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-emerald-950/60 bg-[#021514] py-8 text-center text-xs text-stone-500 space-y-2">
+      <footer className="relative z-10 border-t border-emerald-950/60 bg-[#021514] py-6 sm:py-8 px-4 text-center text-xs text-stone-500 space-y-2">
         <p>© 2026 Landscape Mastery Architectural Masterclass. Secure &amp; DRM Encrypted.</p>
-        <div className="flex items-center justify-center gap-4 text-[11px] text-stone-400">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] text-stone-400">
           <Link to="/courses" className="hover:text-emerald-300 transition-colors">Courses</Link>
           <span>•</span>
           <Link to={`/courses/${course.slug || activeSlug}`} className="hover:text-emerald-300 transition-colors">Enrollment Portal</Link>
