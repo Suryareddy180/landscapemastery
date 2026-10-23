@@ -243,28 +243,38 @@ def checkout_session(req):
     if course_id:
         try:
             course = Course.objects.get(pk=course_id, status='PUBLISHED')
-            price = float(course.discount_price or course.price)
+            base_course_price = float(course.price) if course.price and float(course.price) >= 499 else 499.0
+            price = base_course_price
             course_title = course.title
         except Course.DoesNotExist:
             return Response({'error': 'Selected course is not available or has been unpublished.'}, status=status.HTTP_404_NOT_FOUND)
     else:
         setting, _ = SiteSetting.objects.get_or_create(id=1)
-        price = float(setting.course_price)
+        base_course_price = float(setting.course_price) if setting.course_price and float(setting.course_price) >= 499 else 499.0
+        price = base_course_price
         course = Course.objects.filter(status='PUBLISHED').first()
         course_title = course.title if course else 'Landscape Mastery Masterclass'
 
-    # Apply Coupon if provided
+    # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount on 499 => 299)
     coupon_code = str(req.data.get('coupon_code', '')).strip().upper()
     if coupon_code:
         try:
             c = Coupon.objects.get(code__iexact=coupon_code, active=True)
             if c.used_count < c.max_uses:
-                discount = (price * c.discount_pct) / 100.0
+                discount = round((price * c.discount_pct) / 100.0)
                 price = max(1.0, round(price - discount, 2))
                 checkout_metadata['coupon_code'] = coupon_code
                 checkout_metadata['discount_pct'] = c.discount_pct
         except Coupon.DoesNotExist:
-            pass
+            if coupon_code in ('PRIVILEGE40', 'SPECIAL40', 'WELCOME40', 'PROMO40', 'MASTER40'):
+                discount = round((price * 40.0) / 100.0)
+                price = max(1.0, round(price - discount, 2))
+                checkout_metadata['coupon_code'] = coupon_code
+                checkout_metadata['discount_pct'] = 40
+    else:
+        # If user explicitly removed coupon, but course has a direct discount_price set below price
+        if course and course.discount_price and float(course.discount_price) < float(course.price):
+            price = float(course.discount_price)
 
     order_id = f"order_{int(time.time())}_{secrets.token_hex(4)}"
     amount_in_paise = int(round(price * 100))
@@ -601,8 +611,8 @@ def public_courses(req):
             'slug': c.slug,
             'short_desc': c.short_desc or '',
             'full_desc': c.full_desc or '',
-            'price': float(c.price),
-            'discount_price': float(c.discount_price),
+            'price': float(c.price) if float(c.price) >= 499 else 499.0,
+            'discount_price': float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0,
             'duration_hrs': c.get_duration(),
             'level': c.level,
             'thumbnail': c.thumbnail or '',
@@ -652,8 +662,8 @@ def public_course_detail(req, slug):
         'slug': c.slug,
         'short_desc': c.short_desc or '',
         'full_desc': c.full_desc or '',
-        'price': float(c.price),
-        'discount_price': float(c.discount_price),
+        'price': float(c.price) if float(c.price) >= 499 else 499.0,
+        'discount_price': float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0,
         'duration_hrs': c.get_duration(),
         'level': c.level,
         'thumbnail': c.thumbnail or '',
@@ -681,8 +691,9 @@ def public_course_promo(req, slug):
 
     module_count = c.modules.count()
     lesson_count = sum(m.lessons.count() for m in c.modules.all())
-    formatted_price = int(c.price) if float(c.price).is_integer() else f"{c.price:.2f}"
-    raw_discount = c.discount_price if c.discount_price else c.price
+    raw_price = float(c.price) if float(c.price) >= 499 else 499.0
+    raw_discount = float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0
+    formatted_price = int(raw_price) if float(raw_price).is_integer() else f"{raw_price:.2f}"
     formatted_discount = int(raw_discount) if float(raw_discount).is_integer() else f"{raw_discount:.2f}"
 
     return Response({
@@ -691,7 +702,7 @@ def public_course_promo(req, slug):
         'slug': c.slug,
         'short_desc': c.short_desc or '',
         'full_desc': c.full_desc or '',
-        'price': float(c.price),
+        'price': float(raw_price),
         'discount_price': float(raw_discount),
         'formatted_price': formatted_price,
         'formatted_discount': formatted_discount,
@@ -2234,6 +2245,15 @@ def apply_coupon(req):
     code = req.data.get('code', '').strip().upper()
     if not code:
         return Response({'error': 'Coupon code required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Built-in promotional privilege coupon codes (40% OFF on 499 => 299)
+    if code in ('PRIVILEGE40', 'SPECIAL40', 'WELCOME40', 'PROMO40', 'MASTER40'):
+        c, _ = Coupon.objects.get_or_create(
+            code=code,
+            defaults={'discount_pct': 40, 'max_uses': 999999, 'active': True}
+        )
+        return Response({'valid': True, 'code': c.code, 'discount_pct': 40})
+
     try:
         c = Coupon.objects.get(code=code, active=True)
         if c.used_count >= c.max_uses:

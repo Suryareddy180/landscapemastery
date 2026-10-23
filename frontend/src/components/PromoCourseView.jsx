@@ -361,17 +361,18 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               <h2 className="text-xl sm:text-2xl font-serif font-bold text-white tracking-tight leading-snug">
                 {course.title}
               </h2>
-              <div className="flex items-center justify-center gap-2 pt-0.5">
+              <div className="flex items-center justify-center gap-2.5 pt-0.5">
+                <span className="text-base sm:text-lg font-mono text-stone-400 line-through">
+                  ₹{displayOriginal >= 499 ? displayOriginal : 499}
+                </span>
                 <span className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono">
                   ₹{displayPrice}
                 </span>
-                {hasSavings && (
-                  <span className="text-sm font-mono text-stone-400 line-through">
-                    ₹{displayOriginal}
-                  </span>
-                )}
                 <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
                   Lifetime Access
+                </span>
+                <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-950 bg-amber-400 px-2 py-0.5 rounded-md font-bold">
+                  40% OFF
                 </span>
               </div>
             </div>

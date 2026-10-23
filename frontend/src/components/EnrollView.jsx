@@ -50,11 +50,18 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
   const [residentialAddress, setResidentialAddress] = useState('');
   const [memberCount, setMemberCount] = useState(2);
 
-  // Checkout and discount state
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  // Checkout and discount state (Pre-populate privilege coupon PRIVILEGE40: 40% discount on 499 => 299)
+  const [couponCode, setCouponCode] = useState('PRIVILEGE40');
+  const [appliedCoupon, setAppliedCoupon] = useState({
+    code: 'PRIVILEGE40',
+    discount_pct: 40,
+    valid: true
+  });
   const [couponLoading, setCouponLoading] = useState(false);
-  const [couponMessage, setCouponMessage] = useState(null);
+  const [couponMessage, setCouponMessage] = useState({
+    type: 'success',
+    text: '✓ Privilege coupon PRIVILEGE40 applied! 40% discount activated.'
+  });
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const [paymentResult, setPaymentResult] = useState(null);
@@ -158,9 +165,17 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
   const handleSelectCourse = (course) => {
     if (!course) return;
     setSelectedCourse(course);
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponMessage(null);
+    // Retain privilege coupon for seamless 40% discount on 499 => 299
+    setAppliedCoupon({
+      code: 'PRIVILEGE40',
+      discount_pct: 40,
+      valid: true
+    });
+    setCouponCode('PRIVILEGE40');
+    setCouponMessage({
+      type: 'success',
+      text: '✓ Privilege coupon PRIVILEGE40 applied! 40% discount activated.'
+    });
     setStatusMessage(null);
 
     // Update URL query parameter cleanly
@@ -177,9 +192,14 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     }
   };
 
-  const basePrice = selectedCourse ? (selectedCourse.discount_price || selectedCourse.price) : (siteSettings?.coursePrice || 499);
-  const discountPct = appliedCoupon?.discount_pct || 0;
-  const price = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice;
+  // Base Course Anchor Price (Default ₹499)
+  const basePrice = selectedCourse?.price && Number(selectedCourse.price) >= 499 
+    ? Math.round(Number(selectedCourse.price)) 
+    : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) >= 499 ? Math.round(Number(siteSettings.coursePrice)) : 499);
+
+  const discountPct = appliedCoupon ? (Number(appliedCoupon.discount_pct) || 0) : 0;
+  const discountAmount = discountPct > 0 ? Math.round(basePrice * (discountPct / 100)) : 0;
+  const price = Math.max(1, basePrice - discountAmount);
 
   // COUPON VALIDATION HANDLER
   const handleApplyCoupon = async (e) => {
@@ -474,20 +494,25 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
               Complete your registration below. Upon verified payment, your learner portal account is created automatically and credentials are sent to your email.
             </p>
 
-            {/* Live Pricing Ribbon */}
+            {/* Live Pricing Ribbon (Photo 1: Strike off ₹499 first, then show ₹299) */}
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-              <div className="inline-flex items-baseline gap-2 bg-emerald-950/80 border border-emerald-500/30 px-5 py-2 rounded-2xl shadow-inner">
-                <span className="text-3xl sm:text-4xl font-bold font-serif text-white tracking-tight">₹{price}</span>
-                {(discountPct > 0 || (selectedCourse && selectedCourse.discount_price < selectedCourse.price)) ? (
-                  <span className="text-sm line-through text-emerald-400/60 font-sans">
-                    ₹{selectedCourse ? selectedCourse.price : basePrice}
-                  </span>
-                ) : null}
-                <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-wider ml-1">
+              <div className="inline-flex items-baseline gap-2.5 bg-emerald-950/90 border border-emerald-500/40 px-5 sm:px-6 py-2 rounded-2xl shadow-inner backdrop-blur-xs">
+                {/* 1. First strike off the 499 figure */}
+                <span className="text-lg sm:text-xl font-bold line-through text-emerald-400/50 font-sans tracking-tight">
+                  ₹{basePrice}
+                </span>
+
+                {/* 2. Then show the 299 figure */}
+                <span className="text-3xl sm:text-4.5xl font-extrabold font-serif text-amber-300 tracking-tight">
+                  ₹{price}
+                </span>
+
+                <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider ml-1">
                   • Lifetime Access
                 </span>
+
                 {discountPct > 0 && (
-                  <span className="text-[10px] font-bold bg-emerald-400 text-emerald-950 px-2 py-0.5 rounded-full uppercase tracking-wider ml-1 shadow-sm">
+                  <span className="text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 px-2.5 py-0.5 rounded-full uppercase tracking-wider ml-1 shadow-sm">
                     {discountPct}% OFF
                   </span>
                 )}
@@ -922,6 +947,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                             handleApplyCoupon();
                           }
                         }}
+                        placeholder="e.g. PRIVILEGE40"
                         className="w-full bg-white border border-stone-300 hover:border-stone-400 focus:bg-white rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 uppercase transition-all shadow-xs"
                       />
                     </div>
@@ -970,25 +996,40 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                   )}
                 </div>
 
-                {/* Investment Summary Box */}
-                <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/90 space-y-2">
+                {/* Investment Summary Box (Photo 2: Base 499, Discount -200, Total 299) */}
+                <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/90 space-y-2.5 shadow-2xs">
                   <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
                     Investment Breakdown
                   </div>
+
                   <div className="flex justify-between text-xs text-stone-600">
                     <span>Base Course Price</span>
-                    <span className="font-semibold">₹{selectedCourse ? selectedCourse.price : basePrice}</span>
+                    <span className={`font-semibold font-mono ${appliedCoupon ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+                      ₹{basePrice}
+                    </span>
                   </div>
-                  {discountPct > 0 && (
+
+                  {appliedCoupon && (
                     <div className="flex justify-between text-xs text-emerald-700 font-semibold">
-                      <span>Privilege Coupon Discount ({discountPct}%)</span>
-                      <span>-₹{Math.round(basePrice * (discountPct / 100))}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Privilege Discount ({appliedCoupon.code} • {discountPct}% OFF)
+                      </span>
+                      <span className="font-bold font-mono text-emerald-600">-₹{discountAmount}</span>
                     </div>
                   )}
+
                   <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
                     <span className="text-xs font-bold text-stone-900 uppercase">Total Payable</span>
-                    <span className="text-xl font-bold font-serif text-emerald-950">₹{price}</span>
+                    <span className="text-2xl font-bold font-serif text-emerald-950 font-mono">₹{price}</span>
                   </div>
+
+                  {appliedCoupon && (
+                    <div className="text-[11px] text-emerald-800 font-medium flex items-center gap-1.5 bg-emerald-100/60 px-2.5 py-1 rounded-lg border border-emerald-200/50">
+                      <span>🎉</span>
+                      <span>You saved ₹{discountAmount} (40% OFF) with privilege code {appliedCoupon.code}!</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
