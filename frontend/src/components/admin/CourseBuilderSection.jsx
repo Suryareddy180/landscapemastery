@@ -465,7 +465,7 @@ export default function CourseBuilderSection({ token }) {
         setNewCourseTitle('');
         setMutationMessage({
           type: 'success',
-          text: `Course "${createdTitle}" created successfully! Auto-generated promotional VIP link: /promo/${promoSlug}`
+          text: `Course "${createdTitle}" created successfully! Auto-generated promotional link: /landscapemastery/promo/${promoSlug}`
         });
         await fetchCourses();
         await loadCourseDetail(data.id);
@@ -1043,23 +1043,23 @@ export default function CourseBuilderSection({ token }) {
                   {/* Auto-Generated Promotional Link Pill */}
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-300/90 text-emerald-950 text-xs font-mono whitespace-nowrap shadow-2xs">
                     <span className="material-symbols-outlined text-xs text-amber-600">qr_code_2</span>
-                    <span className="text-emerald-900 font-bold font-mono">/promo/{selectedCourse.slug}</span>
+                    <span className="text-emerald-900 font-bold font-mono">/landscapemastery/promo/{selectedCourse.slug}</span>
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
-                        setMutationMessage({ type: 'success', text: 'Promotional VIP link copied to clipboard!' });
+                        navigator.clipboard?.writeText(`${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`);
+                        setMutationMessage({ type: 'success', text: 'Promotional link copied to clipboard!' });
                       }}
                       className="ml-1 text-emerald-700 hover:text-emerald-950 transition-colors cursor-pointer"
-                      title="Copy promotional VIP link"
+                      title="Copy promotional link"
                     >
                       <span className="material-symbols-outlined text-xs">content_copy</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => window.open(`/promo/${selectedCourse.slug}`, '_blank')}
+                      onClick={() => window.open(`/landscapemastery/promo/${selectedCourse.slug}`, '_blank')}
                       className="text-emerald-700 hover:text-emerald-950 transition-colors cursor-pointer"
-                      title="Open promotional VIP page in new tab"
+                      title="Open promotional page in new tab"
                     >
                       <span className="material-symbols-outlined text-xs">open_in_new</span>
                     </button>
@@ -2074,11 +2074,11 @@ export default function CourseBuilderSection({ token }) {
                       </span>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-2 font-mono text-[11px] text-emerald-900 truncate shadow-2xs">
-                          {window.location.origin}/promo/{selectedCourse.slug}
+                          {window.location.origin}/landscapemastery/promo/{selectedCourse.slug}
                         </div>
                         <button
                           onClick={() => {
-                            navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
+                            navigator.clipboard?.writeText(`${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`);
                             setCopiedPromoLink(true);
                             setTimeout(() => setCopiedPromoLink(false), 2000);
                           }}
@@ -2090,7 +2090,7 @@ export default function CourseBuilderSection({ token }) {
                           <span>{copiedPromoLink ? 'Copied' : 'Copy'}</span>
                         </button>
                         <button
-                          onClick={() => window.open(`/promo/${selectedCourse.slug}`, '_blank')}
+                          onClick={() => window.open(`/landscapemastery/promo/${selectedCourse.slug}`, '_blank')}
                           className="p-2 rounded-xl bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 transition-all shadow-2xs cursor-pointer flex-shrink-0"
                           title="Open live promotional page"
                         >
@@ -2135,7 +2135,7 @@ export default function CourseBuilderSection({ token }) {
                     </span>
                     <button
                       onClick={() => {
-                        const snippet = `<a href="https://3capstech.com/promo/${selectedCourse.slug}"><img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" alt="Scan to enroll in ${selectedCourse.title}" width="220" /></a>`;
+                        const snippet = `<a href="https://3capstech.com/landscapemastery/promo/${selectedCourse.slug}"><img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" alt="Scan to enroll in ${selectedCourse.title}" width="220" /></a>`;
                         navigator.clipboard?.writeText(snippet);
                         setCopiedQrHtml(true);
                         setTimeout(() => setCopiedQrHtml(false), 2000);
@@ -2149,7 +2149,7 @@ export default function CourseBuilderSection({ token }) {
                     </button>
                   </div>
                   <pre className="text-[10px] font-mono text-stone-600 bg-white p-2.5 rounded-xl border border-stone-200/80 overflow-x-auto">
-                    {`<a href="https://3capstech.com/promo/${selectedCourse.slug}">\n  <img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" width="220" />\n</a>`}
+                    {`<a href="https://3capstech.com/landscapemastery/promo/${selectedCourse.slug}">\n  <img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" width="220" />\n</a>`}
                   </pre>
                 </div>
               </div>
@@ -2168,18 +2168,18 @@ export default function CourseBuilderSection({ token }) {
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
-{`🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!
+{`🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!
 
-Exclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.
+Get complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.
 
-✨ Tap here or scan the QR pass to claim your spot:
-${window.location.origin}/promo/${selectedCourse.slug}`}
+✨ Tap here or scan the QR pass to join:
+${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <button
                       onClick={() => {
-                        const text = `🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n${window.location.origin}/promo/${selectedCourse.slug}`;
+                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
                         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
@@ -2190,7 +2190,7 @@ ${window.location.origin}/promo/${selectedCourse.slug}`}
 
                     <button
                       onClick={() => {
-                        const text = `🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n${window.location.origin}/promo/${selectedCourse.slug}`;
+                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
                         navigator.clipboard?.writeText(text);
                         setCopiedWhatsappText(true);
                         setTimeout(() => setCopiedWhatsappText(false), 2000);
@@ -2219,19 +2219,19 @@ ${window.location.origin}/promo/${selectedCourse.slug}`}
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
-{`✨ Elevate your architectural standards with ${selectedCourse.title}.
+{`✨ Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH).
 
-Comprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.
+Complete video lessons, practical frameworks, and downloadable resources.
 
-👉 Tap the link in bio or visit: 3capstech.com/promo/${selectedCourse.slug}
+👉 Tap the link in bio or visit: 3capstech.com/landscapemastery/promo/${selectedCourse.slug}
 
-#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent #masterclass`}
+#landscapedesign #architecture #landscapemastery #3capstech`}
                   </div>
 
                   <div className="flex items-center gap-2.5 pt-1">
                     <button
                       onClick={() => {
-                        const text = `✨ Elevate your architectural standards with ${selectedCourse.title}.\n\nComprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.\n\n👉 Tap the link in bio or visit: 3capstech.com/promo/${selectedCourse.slug}\n\n#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent #masterclass`;
+                        const text = `✨ Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH).\n\nComplete video lessons, practical frameworks, and downloadable resources.\n\n👉 Tap the link in bio or visit: 3capstech.com/landscapemastery/promo/${selectedCourse.slug}\n\n#landscapedesign #architecture #landscapemastery #3capstech`;
                         navigator.clipboard?.writeText(text);
                         setCopiedInstaCaption(true);
                         setTimeout(() => setCopiedInstaCaption(false), 2000);
@@ -2246,7 +2246,7 @@ Comprehensive video modules, botanical zoning frameworks, and downloadable CAD c
 
                     <button
                       onClick={() => {
-                        navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
+                        navigator.clipboard?.writeText(`${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`);
                         setMutationMessage({ type: 'success', text: 'Bio link copied!' });
                       }}
                       className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
@@ -2268,13 +2268,13 @@ Comprehensive video modules, botanical zoning frameworks, and downloadable CAD c
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 whitespace-pre-wrap leading-relaxed shadow-2xs">
-{`Elevate your architectural vision with ${selectedCourse.title}. Claim lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/promo/${selectedCourse.slug} #LandscapeArchitecture #ArchitectureDesign #Masterclass`}
+{`Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`}
                   </div>
 
                   <div className="flex items-center gap-2.5 pt-1">
                     <button
                       onClick={() => {
-                        const text = `Elevate your architectural vision with ${selectedCourse.title}. Claim lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/promo/${selectedCourse.slug} #LandscapeArchitecture #ArchitectureDesign #Masterclass`;
+                        const text = `Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`;
                         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="px-4 py-2.5 rounded-xl bg-black hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
@@ -2285,7 +2285,7 @@ Comprehensive video modules, botanical zoning frameworks, and downloadable CAD c
 
                     <button
                       onClick={() => {
-                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/promo/${selectedCourse.slug}`)}`, '_blank');
+                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`)}`, '_blank');
                       }}
                       className="px-4 py-2.5 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
                     >
@@ -2300,7 +2300,7 @@ Comprehensive video modules, botanical zoning frameworks, and downloadable CAD c
             {/* Modal Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-stone-100 text-xs">
               <span className="text-stone-400 font-mono text-[11px]">
-                Target: {window.location.origin}/promo/{selectedCourse.slug}
+                Target: {window.location.origin}/landscapemastery/promo/{selectedCourse.slug}
               </span>
               <button
                 type="button"

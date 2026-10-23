@@ -659,8 +659,8 @@ def public_course_detail(req, slug):
         'thumbnail': c.thumbnail or '',
         'banner': c.banner or '',
         'modules': modules_data,
-        'promo_url': f"/promo/{c.slug}",
-        'full_promo_url': f"https://3capstech.com/promo/{c.slug}"
+        'promo_url': f"/landscapemastery/promo/{c.slug}",
+        'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{c.slug}"
     })
 
 @api_view(['GET'])
@@ -675,7 +675,7 @@ def public_course_promo(req, slug):
         return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
     host = 'https://3capstech.com'
-    promo_url = f"{host}/promo/{c.slug}"
+    promo_url = f"{host}/landscapemastery/promo/{c.slug}"
     enroll_url = f"{host}/courses/{c.slug}"
     qr_url = f"{host}/api/public/courses/{c.slug}/qr.png"
 
@@ -706,16 +706,16 @@ def public_course_promo(req, slug):
         'enroll_url': enroll_url,
         'qr_image_url': qr_url,
         'greeting': {
-            'badge': 'Official Executive Invitation • 2026 Edition',
-            'salutation': 'Welcome, Visionary Architect & Designer!',
-            'headline': f'You are invited to master {c.title}',
-            'subtext': 'Elevate your spatial vision with our industry-leading architectural masterclass. Scan the VIP pass below or tap directly to claim your reserved lifetime access.'
+            'badge': 'Special Course Invitation',
+            'salutation': "Welcome! You're Invited",
+            'headline': f"Get Full Access to {c.title}",
+            'subtext': 'We are excited to share this course with you! Scan the QR code with your phone or tap the card below to enroll and start learning today.'
         },
         'share_templates': {
-            'whatsapp': f"🌿 Master the Art of Landscape Architecture with *{c.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹{formatted_price}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n{promo_url}",
-            'twitter': f"Elevate your architectural vision with {c.title}. Claim lifetime masterclass access for ₹{formatted_price}: {promo_url} #LandscapeArchitecture #ArchitectureDesign #Masterclass",
-            'linkedin': f"Excited to share the {c.title} Masterclass by Landscape Mastery Studio. Comprehensive modules covering botanical zoning, spatial planning, and CAD details: {promo_url}",
-            'instagram_caption': f"✨ Elevate your architectural standards with {c.title}.\n\nComprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.\n\n👉 Tap link in bio or visit: 3capstech.com/promo/{c.slug}\n\n#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent"
+            'whatsapp': f"🌿 Master Landscape Architecture with *{c.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nExclusive course pass with lifetime access for only ₹{formatted_price}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n{promo_url}",
+            'twitter': f"Start learning {c.title} today. Lifetime course access for ₹{formatted_price}: {promo_url} #LandscapeMastery #3CAPSTECH #OnlineLearning",
+            'linkedin': f"Excited to share the {c.title} course by Landscape Mastery (a product of 3CAPSTECH). Learn more and enroll here: {promo_url}",
+            'instagram_caption': f"✨ Start your learning journey with {c.title} by Landscape Mastery (a product of 3CAPSTECH).\n\n👉 Tap link in bio or visit: 3capstech.com/landscapemastery/promo/{c.slug}\n\n#landscapemastery #3capstech #course #learning"
         }
     })
 
@@ -724,7 +724,7 @@ def public_course_promo(req, slug):
 def public_course_qr(req, slug):
     """
     Generates and streams a high-resolution, emerald-branded QR code PNG image.
-    Destination defaults to course enrollment (/courses/<slug>) or /promo/<slug> if ?dest=promo.
+    Destination defaults to course enrollment (/courses/<slug>) or /landscapemastery/promo/<slug> if ?dest=promo.
     """
     try:
         c = Course.objects.get(slug=slug)
@@ -738,7 +738,7 @@ def public_course_qr(req, slug):
     host = 'https://3capstech.com'
 
     if dest == 'promo':
-        target_url = f"{host}/promo/{c.slug}"
+        target_url = f"{host}/landscapemastery/promo/{c.slug}"
     else:
         target_url = f"{host}/courses/{c.slug}"
 
@@ -1193,8 +1193,8 @@ def admin_courses(req):
                 'thumbnail': c.thumbnail or '',
                 'banner': c.banner or '',
                 'modulesCount': c.modules.count(),
-                'promo_url': f"/promo/{c.slug}",
-                'full_promo_url': f"https://3capstech.com/promo/{c.slug}",
+                'promo_url': f"/landscapemastery/promo/{c.slug}",
+                'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{c.slug}",
                 'enroll_url': f"/courses/{c.slug}",
                 'qr_image_url': f"/api/public/courses/{c.slug}/qr.png"
             })
@@ -1228,8 +1228,8 @@ def admin_courses(req):
             'price': float(course.price),
             'discount_price': float(course.discount_price or course.price),
             'thumbnail': course.thumbnail or '',
-            'promo_url': f"/promo/{course.slug}",
-            'full_promo_url': f"https://3capstech.com/promo/{course.slug}",
+            'promo_url': f"/landscapemastery/promo/{course.slug}",
+            'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{course.slug}",
             'enroll_url': f"/courses/{course.slug}",
             'qr_image_url': f"/api/public/courses/{course.slug}/qr.png"
         })
@@ -1275,8 +1275,8 @@ def admin_course_detail(req, pk):
             'thumbnail': course.thumbnail or '',
             'banner': course.banner or '',
             'modules': modules,
-            'promo_url': f"/promo/{course.slug}",
-            'full_promo_url': f"https://3capstech.com/promo/{course.slug}",
+            'promo_url': f"/landscapemastery/promo/{course.slug}",
+            'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{course.slug}",
             'enroll_url': f"/courses/{course.slug}",
             'qr_image_url': f"/api/public/courses/{course.slug}/qr.png"
         })

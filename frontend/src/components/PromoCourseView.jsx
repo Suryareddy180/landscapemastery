@@ -61,20 +61,20 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
         const detailData = await detailRes.json();
         const promoData = {
           ...detailData,
-          promo_url: `https://3capstech.com/promo/${detailData.slug}`,
+          promo_url: `https://3capstech.com/landscapemastery/promo/${detailData.slug}`,
           enroll_url: `https://3capstech.com/courses/${detailData.slug}`,
           qr_image_url: `${BASE_URL}/api/public/courses/${detailData.slug}/qr.png`,
           greeting: {
-            badge: 'Official Executive Invitation • 2026 Edition',
-            salutation: 'Welcome, Visionary Architect & Designer!',
-            headline: `You are invited to master ${detailData.title}`,
-            subtext: 'Elevate your spatial vision with our industry-leading architectural masterclass. Scan the VIP pass below or tap directly to claim your reserved lifetime access.'
+            badge: 'Special Course Invitation',
+            salutation: "Welcome! You're Invited",
+            headline: `Get Full Access to ${detailData.title}`,
+            subtext: `We are excited to share this course with you! Scan the QR code or tap the card below to enroll in ${detailData.title} and get lifetime access.`
           },
           share_templates: {
-            whatsapp: `🌿 Master the Art of Landscape Architecture with *${detailData.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹${parseInt(detailData.price)}.\n\n✨ Tap here or scan the QR pass to claim your spot:\nhttps://3capstech.com/promo/${detailData.slug}`,
-            twitter: `Elevate your architectural vision with ${detailData.title}. Claim lifetime access for ₹${parseInt(detailData.price)}: https://3capstech.com/promo/${detailData.slug} #LandscapeArchitecture #ArchitectureDesign #Masterclass`,
-            linkedin: `Excited to share the ${detailData.title} Masterclass by Landscape Mastery Studio. Comprehensive modules covering botanical zoning, spatial planning, and CAD details: https://3capstech.com/promo/${detailData.slug}`,
-            instagram_caption: `✨ Elevate your architectural standards with ${detailData.title}.\n\nComprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.\n\n👉 Tap link in bio or visit: 3capstech.com/promo/${detailData.slug}\n\n#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent`
+            whatsapp: `🌿 Start learning with *${detailData.title}*!\n\nGet complete lifetime access for only ₹${parseInt(detailData.price)}.\n\n✨ Tap here or scan the QR pass to join:\nhttps://3capstech.com/landscapemastery/promo/${detailData.slug}`,
+            twitter: `Join ${detailData.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(detailData.price)}: https://3capstech.com/landscapemastery/promo/${detailData.slug} #LandscapeMastery #3CAPSTECH`,
+            linkedin: `Excited to share the ${detailData.title} course by Landscape Mastery (a product of 3CAPSTECH): https://3capstech.com/landscapemastery/promo/${detailData.slug}`,
+            instagram_caption: `✨ Join ${detailData.title} by Landscape Mastery (a product of 3CAPSTECH).\n\n👉 Tap link in bio or visit: 3capstech.com/landscapemastery/promo/${detailData.slug}`
           }
         };
         setCourse(promoData);
@@ -92,14 +92,14 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
         if (match) {
           setCourse({
             ...match,
-            promo_url: `https://3capstech.com/promo/${match.slug}`,
+            promo_url: `https://3capstech.com/landscapemastery/promo/${match.slug}`,
             enroll_url: `https://3capstech.com/courses/${match.slug}`,
             qr_image_url: `${BASE_URL}/api/public/courses/${match.slug}/qr.png`,
             greeting: {
-              badge: 'Official Executive Invitation • 2026 Edition',
-              salutation: 'Welcome, Visionary Architect & Designer!',
-              headline: `You are invited to master ${match.title}`,
-              subtext: 'Scan the VIP pass below or tap directly to claim your reserved lifetime access.'
+              badge: 'Special Course Invitation',
+              salutation: "Welcome! You're Invited",
+              headline: `Get Full Access to ${match.title}`,
+              subtext: 'Scan the QR code or tap the card below to claim your spot and get lifetime access.'
             }
           });
           setLoading(false);
@@ -129,7 +129,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
   };
 
   const enrollTargetUrl = `https://3capstech.com/courses/${course?.slug || activeSlug}`;
-  const promoPageUrl = `https://3capstech.com/promo/${course?.slug || activeSlug}`;
+  const promoPageUrl = course?.promo_url || `https://3capstech.com/landscapemastery/promo/${course?.slug || activeSlug}`;
 
   const copyToClipboard = (text, type = 'link') => {
     if (navigator.clipboard) {
@@ -146,13 +146,13 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
 
   const handleShareWhatsApp = () => {
     const text = course?.share_templates?.whatsapp ||
-      `🌿 Master the Art of Landscape Architecture with *${course?.title || 'Landscape Mastery'}*!\n\nExclusive masterclass pass with lifetime access for only ₹${course?.price || 299}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n${promoPageUrl}`;
+      `🌿 Start learning with *${course?.title || 'Landscape Mastery'}*!\n\nExclusive course access with lifetime validity for only ₹${course?.price || 299}.\n\n✨ Tap here or scan the QR pass to join:\n${promoPageUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleShareTwitter = () => {
     const text = course?.share_templates?.twitter ||
-      `Elevate your architectural vision with ${course?.title || 'Landscape Mastery'}. Claim lifetime access: ${promoPageUrl} #LandscapeArchitecture #ArchitectureDesign #Masterclass`;
+      `Join ${course?.title || 'Landscape Mastery'} (a product of 3CAPSTECH). Lifetime access: ${promoPageUrl} #LandscapeMastery #3CAPSTECH`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -234,42 +234,64 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
       <div className="absolute bottom-10 -left-40 w-[500px] h-[500px] bg-emerald-600/8 rounded-full blur-3xl pointer-events-none -z-0" />
 
       {/* Top Brand Navigation Bar */}
-      <header className="relative z-20 border-b border-emerald-900/40 bg-[#031B19]/80 backdrop-blur-md sticky top-0 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-900 to-teal-800 border border-emerald-700/40 flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-amber-300 text-lg">spa</span>
+      <header className="relative z-20 border-b border-emerald-900/40 bg-[#031B19]/80 backdrop-blur-md sticky top-0 px-4 sm:px-8 py-3 flex items-center justify-between">
+        <Link to="/landscapemastery" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-emerald-700/40 p-1 flex items-center justify-center shadow-md shadow-emerald-950/40 group-hover:scale-105 transition-transform">
+            <img src="/lm_logo.png" alt="Landscape Mastery" className="w-full h-full object-contain" />
           </div>
           <div>
-            <span className="text-sm font-bold tracking-tight text-white block group-hover:text-emerald-300 transition-colors">
+            <span className="text-sm sm:text-base font-bold tracking-tight text-white block group-hover:text-emerald-300 transition-colors">
               Landscape Mastery
             </span>
             <span className="text-[9px] uppercase tracking-widest font-mono text-emerald-400 block -mt-0.5">
-              Architectural Masterclass
+              Online Learning Platform
             </span>
           </div>
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Top Right: 3CAPSTECH Parent Company Logo + Actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => handleRedirectToEnroll()}
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950/40 cursor-pointer active:scale-98"
+            className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950/40 cursor-pointer active:scale-98"
           >
             <span>Direct Enroll</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
           <Link
             to="/login"
-            className="px-3.5 py-1.5 rounded-xl border border-emerald-800/60 hover:border-emerald-600 text-stone-300 hover:text-white text-xs font-medium transition-all"
+            className="hidden sm:inline-flex px-3 py-1.5 rounded-xl border border-emerald-800/60 hover:border-emerald-600 text-stone-300 hover:text-white text-xs font-medium transition-all"
           >
             Student Portal
           </Link>
+
+          {/* 3CAPSTECH Corporate Logo at Top Right Corner */}
+          <a
+            href="/"
+            title="3CAPSTECH - Parent Company"
+            className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-emerald-500/25 hover:border-emerald-500/50 transition-all group"
+          >
+            <img
+              src="/logo.png"
+              alt="3CAPSTECH"
+              className="h-7 sm:h-8 w-auto object-contain brightness-110 drop-shadow-[0_0_8px_rgba(17,168,49,0.3)] transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col text-left">
+              <span className="text-[8px] uppercase tracking-wider text-emerald-400 font-mono font-bold leading-none">
+                A Product of
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-white tracking-tight leading-tight group-hover:text-emerald-300 transition-colors">
+                3CAPSTECH
+              </span>
+            </div>
+          </a>
         </div>
       </header>
 
       {/* Main Promotional Container */}
       <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-14 space-y-8">
         
-        {/* Dynamic Attention-Grabbing Greeting Header */}
+        {/* Friendly Non-Technical Greeting Header */}
         <div className="text-center space-y-4">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
@@ -278,7 +300,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold shadow-lg shadow-emerald-950/50 backdrop-blur-md"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>{course.greeting?.badge || 'OFFICIAL VIP INVITATION PASS • 2026 EDITION'}</span>
+            <span>{course.greeting?.badge || 'Special Course Invitation'}</span>
           </motion.div>
 
           <motion.div
@@ -288,12 +310,16 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             className="space-y-3"
           >
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold text-white tracking-tight leading-tight max-w-2xl mx-auto">
-              Welcome, Visionary Architect &amp; Designer
+              {course.greeting?.salutation || "Welcome! You're Invited to Join"}
             </h1>
-            <p className="text-sm sm:text-base text-emerald-100/80 max-w-xl mx-auto font-light leading-relaxed">
-              You have been granted an exclusive invitation to master{' '}
-              <strong className="text-amber-300 font-semibold">{course.title}</strong>.
-              Scan the VIP pass or tap directly to claim your reserved spot.
+            <p className="text-sm sm:text-base text-emerald-100/90 max-w-xl mx-auto font-light leading-relaxed">
+              {course.greeting?.subtext || (
+                <>
+                  Scan the QR code with your phone or tap the card below to enroll in{' '}
+                  <strong className="text-amber-300 font-semibold">{course.title}</strong>{' '}
+                  and get instant lifetime access.
+                </>
+              )}
             </p>
           </motion.div>
         </div>
@@ -310,16 +336,16 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
 
           <div className="relative bg-gradient-to-b from-[#082b27] via-[#05221f] to-[#031917] border-2 border-emerald-500/30 rounded-[30px] p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6 backdrop-blur-xl">
             
-            {/* VIP Pass Header Row */}
+            {/* Course Pass Header Row */}
             <div className="flex items-center justify-between border-b border-emerald-900/60 pb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-amber-400 text-xl">token</span>
                 <div>
                   <span className="text-[11px] font-mono tracking-widest text-emerald-300/90 uppercase font-bold block">
-                    Exclusive Pass
+                    Official Course Pass
                   </span>
                   <span className="text-[10px] text-stone-400 font-mono block">
-                    Pass ID: LM-{course.id ? String(course.id).padStart(4, '0') : 'VIP'}-{course.slug?.toUpperCase() || 'PASS'}
+                    Access Pass: LM-{course.id ? String(course.id).padStart(4, '0') : '001'}
                   </span>
                 </div>
               </div>
@@ -453,10 +479,10 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-emerald-400" />
-                Masterclass Deliverables &amp; Specifications
+                What You'll Learn &amp; Receive
               </h3>
               <p className="text-xs text-stone-400 mt-0.5">
-                Engineered for practicing architects, landscape designers, and civil site planners.
+                Comprehensive step-by-step video modules, practical frameworks, and downloadable materials.
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
