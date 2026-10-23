@@ -469,73 +469,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           </div>
         </motion.div>
 
-        {/* Course Highlights & Curriculum Snapshot */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="bg-gradient-to-b from-[#062622]/70 to-[#031a17]/90 border border-emerald-900/50 rounded-2xl p-6 sm:p-7 space-y-5 backdrop-blur-md"
-        >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-emerald-900/50 pb-4">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-emerald-400" />
-                What You'll Learn &amp; Receive
-              </h3>
-              <p className="text-xs text-stone-400 mt-0.5">
-                Comprehensive step-by-step video modules, practical frameworks, and downloadable materials.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/40 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                {course.duration_hrs || '45 mins'}
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/40 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" />
-                {course.module_count || 1} Modules
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-700/40 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5">
-                <GraduationCap className="w-3.5 h-3.5" />
-                {course.level || 'All Levels'}
-              </span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-stone-300">
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-900/40">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-semibold">Botanical Growth Zoning &amp; Sun Exposure</strong>
-                <p className="text-stone-400 text-[11px] mt-0.5">Species placement, drought-tolerant micro-climates, and root depth frameworks.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-900/40">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-semibold">AutoCAD Drafting &amp; DWG Blueprints</strong>
-                <p className="text-stone-400 text-[11px] mt-0.5">Downloadable construction-ready CAD layers, sections, and elevation details.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-900/40">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-semibold">Site Contour Grading &amp; Stone Masonry</strong>
-                <p className="text-stone-400 text-[11px] mt-0.5">Terraced slope retention, natural stone detailing, and water drainage calculations.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-900/40">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white block font-semibold">Automated Lifetime Portal Access</strong>
-                <p className="text-stone-400 text-[11px] mt-0.5">DRM-encrypted HD video stream on mobile, tablet, and workstation.</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Social Sharing & Promotion Hub (Pass it Forward) */}
         <motion.div
