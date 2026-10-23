@@ -46,6 +46,11 @@ urlpatterns = [
     path('public/settings/', views.public_settings),
     path('public/courses/', views.public_courses),
     path('public/courses/<slug:slug>/', views.public_course_detail),
+    path('public/courses/<slug:slug>/promo/', views.public_course_promo),
+    path('public/courses/<slug:slug>/promo', views.public_course_promo),
+    path('public/courses/<slug:slug>/qr.png', views.public_course_qr),
+    path('public/courses/<slug:slug>/qr/', views.public_course_qr),
+    path('public/courses/<slug:slug>/qr', views.public_course_qr),
 
     # Student Enrollments
     path('my/enrollments/', views.my_enrollments),

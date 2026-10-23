@@ -17,6 +17,7 @@ const CompanyHome = lazy(() => import('./pages/CompanyHome.jsx'));
 const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin.jsx'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard.jsx'));
+const PromoCourseView = lazy(() => import('./components/PromoCourseView.jsx'));
 
 export const ADMIN_ROLES = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'];
 
@@ -299,6 +300,7 @@ export default function App() {
       location.pathname.startsWith('/landscapemastery') ||
       location.pathname.startsWith('/enroll') ||
       location.pathname.startsWith('/courses') ||
+      location.pathname.startsWith('/promo') ||
       location.pathname === '/login' ||
       location.pathname === '/portal' ||
       location.pathname === '/dashboard' ||
@@ -321,6 +323,13 @@ export default function App() {
         {/* Master Destination: 3CAPSTECH Corporate Platform (Photo 1) */}
         <Route path="/" element={<CompanyHome />} />
         <Route path="/company" element={<CompanyHome />} />
+
+        {/* Individual Course Promotional & VIP QR Pass Pages */}
+        <Route path="/promo/:courseSlug" element={<PromoCourseView />} />
+        <Route path="/promo" element={<PromoCourseView />} />
+        <Route path="/courses/:courseSlug/promo" element={<PromoCourseView />} />
+        <Route path="/landscapemastery/promo/:courseSlug" element={<PromoCourseView />} />
+        <Route path="/landscapemastery/courses/:courseSlug/promo" element={<PromoCourseView />} />
 
         {/* Product: Landscape Mastery Architectural Masterclass & LMS (Photo 2) */}
         <Route path="/landscapemastery" element={<LandscapeApp key="lm-v1" initialView="v1" />} />

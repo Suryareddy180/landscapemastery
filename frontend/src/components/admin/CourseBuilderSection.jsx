@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { BASE_URL } from '../../lib/api.js';
 import CourseVideoPlayer from '../CourseVideoPlayer.jsx';
 
@@ -34,6 +35,14 @@ export default function CourseBuilderSection({ token }) {
   const [editCoursePrice, setEditCoursePrice] = useState('499.00');
   const [editCourseDiscountPrice, setEditCourseDiscountPrice] = useState('499.00');
   const [editCourseSubmitting, setEditCourseSubmitting] = useState(false);
+
+  // Promotional & Social Launch Suite Modal
+  const [promoteModalOpen, setPromoteModalOpen] = useState(false);
+  const [promoteTab, setPromoteTab] = useState('overview'); // 'overview' | 'whatsapp' | 'instagram' | 'twitter'
+  const [copiedPromoLink, setCopiedPromoLink] = useState(false);
+  const [copiedWhatsappText, setCopiedWhatsappText] = useState(false);
+  const [copiedInstaCaption, setCopiedInstaCaption] = useState(false);
+  const [copiedQrHtml, setCopiedQrHtml] = useState(false);
   const [newLessonTitle, setNewLessonTitle] = useState('');
   const [activeModuleId, setActiveModuleId] = useState(null);
   const [newAsset, setNewAsset] = useState({ title: '', asset_type: 'long_video', duration: '2 hrs', url: '' });
@@ -452,10 +461,15 @@ export default function CourseBuilderSection({ token }) {
 
       if (res.ok && data.id) {
         const createdTitle = newCourseTitle.trim();
+        const promoSlug = data.slug || 'course';
         setNewCourseTitle('');
-        setMutationMessage({ type: 'success', text: `Course "${createdTitle}" created successfully!` });
+        setMutationMessage({
+          type: 'success',
+          text: `Course "${createdTitle}" created successfully! Auto-generated promotional VIP link: /promo/${promoSlug}`
+        });
         await fetchCourses();
-        loadCourseDetail(data.id);
+        await loadCourseDetail(data.id);
+        setPromoteModalOpen(true);
       } else {
         setMutationMessage({ type: 'error', text: data.error || 'Failed to create course.' });
       }
@@ -922,6 +936,16 @@ export default function CourseBuilderSection({ token }) {
 
                   {/* Actions Toolbar */}
                   <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                    {/* Launch & Promote Button */}
+                    <button
+                      onClick={() => setPromoteModalOpen(true)}
+                      className="h-9 px-3.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-800 to-teal-800 hover:from-emerald-700 hover:to-teal-700 text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-98"
+                      title="Promote course via WhatsApp, Instagram, Twitter with QR Pass"
+                    >
+                      <span className="material-symbols-outlined text-base text-amber-300">rocket_launch</span>
+                      <span>Launch &amp; Promote</span>
+                    </button>
+
                     {/* Edit Pricing & Title Button */}
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
@@ -989,7 +1013,7 @@ export default function CourseBuilderSection({ token }) {
                   </div>
                 </div>
 
-                {/* Row 2: Metadata Badges (Slug, Price, Status, Modules) */}
+                {/* Row 2: Metadata Badges (Slug, Promo Link, Price, Status, Modules) */}
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Public Slug with Copy Link Button */}
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100/90 border border-stone-200 text-stone-700 text-xs font-mono whitespace-nowrap shadow-2xs">
@@ -1002,9 +1026,42 @@ export default function CourseBuilderSection({ token }) {
                         setMutationMessage({ type: 'success', text: 'Course public link copied to clipboard!' });
                       }}
                       className="ml-1 text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer"
-                      title="Copy public link"
+                      title="Copy public course link"
                     >
                       <span className="material-symbols-outlined text-xs">content_copy</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/courses/${selectedCourse.slug}`, '_blank')}
+                      className="text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer"
+                      title="Open course checkout in new tab"
+                    >
+                      <span className="material-symbols-outlined text-xs">open_in_new</span>
+                    </button>
+                  </div>
+
+                  {/* Auto-Generated Promotional Link Pill */}
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-300/90 text-emerald-950 text-xs font-mono whitespace-nowrap shadow-2xs">
+                    <span className="material-symbols-outlined text-xs text-amber-600">qr_code_2</span>
+                    <span className="text-emerald-900 font-bold font-mono">/promo/{selectedCourse.slug}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
+                        setMutationMessage({ type: 'success', text: 'Promotional VIP link copied to clipboard!' });
+                      }}
+                      className="ml-1 text-emerald-700 hover:text-emerald-950 transition-colors cursor-pointer"
+                      title="Copy promotional VIP link"
+                    >
+                      <span className="material-symbols-outlined text-xs">content_copy</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/promo/${selectedCourse.slug}`, '_blank')}
+                      className="text-emerald-700 hover:text-emerald-950 transition-colors cursor-pointer"
+                      title="Open promotional VIP page in new tab"
+                    >
+                      <span className="material-symbols-outlined text-xs">open_in_new</span>
                     </button>
                   </div>
 
@@ -1880,6 +1937,380 @@ export default function CourseBuilderSection({ token }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* PROMOTIONAL & SOCIAL MEDIA LAUNCH SUITE MODAL */}
+      {promoteModalOpen && selectedCourse && (
+        <div className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 border border-stone-200/90 shadow-2xl space-y-6 animate-in zoom-in-95 duration-150 my-8">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-stone-100 gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-800 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-950/20 flex-shrink-0">
+                  <span className="material-symbols-outlined text-xl text-amber-300">rocket_launch</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg text-stone-900 flex items-center gap-2">
+                    <span>Promotional &amp; Social Launch Suite</span>
+                    <span className="text-[10px] font-mono uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">
+                      Auto-Generated
+                    </span>
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Promote <strong className="text-stone-800">{selectedCourse.title}</strong> across social handles with branded QR pass and tailored copy.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPromoteModalOpen(false)}
+                className="text-stone-400 hover:text-stone-700 p-1.5 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer flex-shrink-0"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-1.5 bg-stone-100/80 p-1.5 rounded-2xl border border-stone-200/80 overflow-x-auto text-xs font-semibold">
+              <button
+                onClick={() => setPromoteTab('overview')}
+                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  promoteTab === 'overview'
+                    ? 'bg-white text-emerald-950 shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm text-emerald-700">qr_code_2</span>
+                <span>VIP Link &amp; QR Pass</span>
+              </button>
+              <button
+                onClick={() => setPromoteTab('whatsapp')}
+                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  promoteTab === 'whatsapp'
+                    ? 'bg-white text-emerald-950 shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm text-[#25D366]">chat</span>
+                <span>WhatsApp Broadcast</span>
+              </button>
+              <button
+                onClick={() => setPromoteTab('instagram')}
+                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  promoteTab === 'instagram'
+                    ? 'bg-white text-emerald-950 shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm text-pink-600">photo_camera</span>
+                <span>Instagram &amp; Bio</span>
+              </button>
+              <button
+                onClick={() => setPromoteTab('twitter')}
+                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  promoteTab === 'twitter'
+                    ? 'bg-white text-emerald-950 shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <span className="font-bold text-xs text-stone-800">𝕏</span>
+                <span>X / Twitter</span>
+              </button>
+            </div>
+
+            {/* TAB 1: OVERVIEW & QR PASS */}
+            {promoteTab === 'overview' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center bg-gradient-to-br from-emerald-50/70 via-stone-50 to-teal-50/40 p-5 rounded-2xl border border-emerald-200/80">
+                  
+                  {/* Left: Interactive QR Code Pass */}
+                  <div className="md:col-span-5 flex flex-col items-center text-center space-y-3">
+                    <div
+                      onClick={() => window.open(`/courses/${selectedCourse.slug}`, '_blank')}
+                      className="p-4 bg-white rounded-2xl border-2 border-emerald-600/30 shadow-lg cursor-pointer hover:scale-102 transition-transform group relative"
+                      title="Click to test enrollment redirect"
+                    >
+                      <QRCodeSVG
+                        value={`https://3capstech.com/courses/${selectedCourse.slug}`}
+                        size={160}
+                        level="H"
+                        bgColor="#FFFFFF"
+                        fgColor="#064E3B"
+                        imageSettings={{
+                          src: '/lm_logo.png',
+                          x: undefined,
+                          y: undefined,
+                          height: 32,
+                          width: 32,
+                          excavate: true
+                        }}
+                        className="rounded-lg"
+                      />
+                      <div className="absolute inset-0 bg-emerald-950/80 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-white text-[11px] font-bold">
+                        <span className="material-symbols-outlined text-xl text-amber-300">open_in_new</span>
+                        <span>Click to Test Redirect</span>
+                      </div>
+                    </div>
+
+                    <a
+                      href={`${BASE_URL}/api/public/courses/${selectedCourse.slug}/qr.png`}
+                      download={`LandscapeMastery_QR_${selectedCourse.slug}.png`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm text-amber-300">download</span>
+                      <span>Download QR (PNG)</span>
+                    </a>
+                  </div>
+
+                  {/* Right: Promotional Links & Copy */}
+                  <div className="md:col-span-7 space-y-3.5 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">
+                        Individual Promotional Page URL:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-2 font-mono text-[11px] text-emerald-900 truncate shadow-2xs">
+                          {window.location.origin}/promo/{selectedCourse.slug}
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
+                            setCopiedPromoLink(true);
+                            setTimeout(() => setCopiedPromoLink(false), 2000);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 border border-stone-200 hover:border-emerald-300 font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer flex-shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            {copiedPromoLink ? 'check' : 'content_copy'}
+                          </span>
+                          <span>{copiedPromoLink ? 'Copied' : 'Copy'}</span>
+                        </button>
+                        <button
+                          onClick={() => window.open(`/promo/${selectedCourse.slug}`, '_blank')}
+                          className="p-2 rounded-xl bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 transition-all shadow-2xs cursor-pointer flex-shrink-0"
+                          title="Open live promotional page"
+                        >
+                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">
+                        Direct Enrollment / Checkout URL:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-stone-200 rounded-xl px-3 py-2 font-mono text-[11px] text-stone-700 truncate shadow-2xs">
+                          {window.location.origin}/courses/{selectedCourse.slug}
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard?.writeText(`${window.location.origin}/courses/${selectedCourse.slug}`);
+                            setMutationMessage({ type: 'success', text: 'Checkout link copied!' });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer flex-shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-sm">content_copy</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex items-center gap-2 text-[11px] text-stone-500">
+                      <span className="material-symbols-outlined text-sm text-emerald-600">verified</span>
+                      <span>Auto-generated immediately upon course creation. Mobile responsive.</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Direct Image Hotlink for Email Newsletters & Posters */}
+                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                      Embed QR Code in Emails &amp; Flyers:
+                    </span>
+                    <button
+                      onClick={() => {
+                        const snippet = `<a href="https://3capstech.com/promo/${selectedCourse.slug}"><img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" alt="Scan to enroll in ${selectedCourse.title}" width="220" /></a>`;
+                        navigator.clipboard?.writeText(snippet);
+                        setCopiedQrHtml(true);
+                        setTimeout(() => setCopiedQrHtml(false), 2000);
+                      }}
+                      className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">
+                        {copiedQrHtml ? 'check' : 'code'}
+                      </span>
+                      <span>{copiedQrHtml ? 'Snippet Copied!' : 'Copy HTML Embed Snippet'}</span>
+                    </button>
+                  </div>
+                  <pre className="text-[10px] font-mono text-stone-600 bg-white p-2.5 rounded-xl border border-stone-200/80 overflow-x-auto">
+                    {`<a href="https://3capstech.com/promo/${selectedCourse.slug}">\n  <img src="https://3capstech.com/api/public/courses/${selectedCourse.slug}/qr.png" width="220" />\n</a>`}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: WHATSAPP PROMOTION */}
+            {promoteTab === 'whatsapp' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[#25D366]">
+                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <strong className="text-xs text-stone-900 font-bold">WhatsApp Ready-to-Send Template</strong>
+                    </div>
+                    <span className="text-[10px] text-stone-500 font-mono">1-Click Dispatch</span>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
+{`🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!
+
+Exclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.
+
+✨ Tap here or scan the QR pass to claim your spot:
+${window.location.origin}/promo/${selectedCourse.slug}`}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <button
+                      onClick={() => {
+                        const text = `🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n${window.location.origin}/promo/${selectedCourse.slug}`;
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <span className="material-symbols-outlined text-base">chat</span>
+                      <span>Launch in WhatsApp</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const text = `🌿 Master the Art of Landscape Architecture with *${selectedCourse.title}*!\n\nExclusive masterclass pass with lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n${window.location.origin}/promo/${selectedCourse.slug}`;
+                        navigator.clipboard?.writeText(text);
+                        setCopiedWhatsappText(true);
+                        setTimeout(() => setCopiedWhatsappText(false), 2000);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {copiedWhatsappText ? 'check' : 'content_copy'}
+                      </span>
+                      <span>{copiedWhatsappText ? 'Copied Message!' : 'Copy WhatsApp Text'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: INSTAGRAM & BIO */}
+            {promoteTab === 'instagram' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-pink-50/40 rounded-2xl border border-pink-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-pink-600">
+                      <span className="material-symbols-outlined text-lg">photo_camera</span>
+                      <strong className="text-xs text-stone-900 font-bold">Instagram Caption &amp; Bio Helper</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
+{`✨ Elevate your architectural standards with ${selectedCourse.title}.
+
+Comprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.
+
+👉 Tap the link in bio or visit: 3capstech.com/promo/${selectedCourse.slug}
+
+#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent #masterclass`}
+                  </div>
+
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <button
+                      onClick={() => {
+                        const text = `✨ Elevate your architectural standards with ${selectedCourse.title}.\n\nComprehensive video modules, botanical zoning frameworks, and downloadable CAD construction details.\n\n👉 Tap the link in bio or visit: 3capstech.com/promo/${selectedCourse.slug}\n\n#landscapearchitecture #architecturedesign #cad #landscapeplan #architecturestudent #masterclass`;
+                        navigator.clipboard?.writeText(text);
+                        setCopiedInstaCaption(true);
+                        setTimeout(() => setCopiedInstaCaption(false), 2000);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:opacity-90 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {copiedInstaCaption ? 'check' : 'content_copy'}
+                      </span>
+                      <span>{copiedInstaCaption ? 'Caption Copied!' : 'Copy Instagram Caption'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`${window.location.origin}/promo/${selectedCourse.slug}`);
+                        setMutationMessage({ type: 'success', text: 'Bio link copied!' });
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">link</span>
+                      <span>Copy Bio Link</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: TWITTER / X & LINKEDIN */}
+            {promoteTab === 'twitter' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <strong className="text-xs text-stone-900 font-bold">X (Twitter) &amp; LinkedIn Dispatch</strong>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 whitespace-pre-wrap leading-relaxed shadow-2xs">
+{`Elevate your architectural vision with ${selectedCourse.title}. Claim lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/promo/${selectedCourse.slug} #LandscapeArchitecture #ArchitectureDesign #Masterclass`}
+                  </div>
+
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <button
+                      onClick={() => {
+                        const text = `Elevate your architectural vision with ${selectedCourse.title}. Claim lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/promo/${selectedCourse.slug} #LandscapeArchitecture #ArchitectureDesign #Masterclass`;
+                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-black hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <span className="font-bold text-xs">𝕏</span>
+                      <span>Tweet on X</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/promo/${selectedCourse.slug}`)}`, '_blank');
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <span className="material-symbols-outlined text-sm">hub</span>
+                      <span>Share on LinkedIn</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-stone-100 text-xs">
+              <span className="text-stone-400 font-mono text-[11px]">
+                Target: {window.location.origin}/promo/{selectedCourse.slug}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPromoteModalOpen(false)}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}
