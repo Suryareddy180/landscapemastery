@@ -9,8 +9,8 @@ const PRESET_COVERS = [
   { label: 'Landscape Masterclass', url: '/course_thumb_landscape.jpg' },
   { label: 'Botanical Scenography', url: '/course_thumb_botanical.jpg' },
   { label: 'Hardscape Engineering', url: '/course_thumb_hardscape.jpg' },
-  { label: 'Python & Software Tech', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Modern Minimalist', url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Blueprint & Studio', url: '/landscape_blueprint_studio.jpg' },
+  { label: 'Showcase Architecture', url: '/landscape_hero_showcase.jpg' },
 ];
 
 const resolveCoverUrl = (url) => {
@@ -901,95 +901,139 @@ export default function CourseBuilderSection({ token }) {
           {selectedCourse ? (
             <div className="bg-white p-6 rounded-2xl border border-stone-200/90 shadow-xs space-y-6">
               {/* Course Header with Status & Activation Controls */}
-              <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center pb-5 border-b border-stone-200/80 gap-4">
-                <div className="min-w-0 max-w-full">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 break-words">{selectedCourse.title}</h2>
+              <div className="pb-5 border-b border-stone-200/80 space-y-3.5">
+                {/* Row 1: Course Title & Action Toolbar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <h2
+                      className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 truncate"
+                      title={selectedCourse.title}
+                    >
+                      {selectedCourse.title}
+                    </h2>
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
-                      className="p-1 rounded-lg text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer flex-shrink-0"
+                      className="p-1.5 rounded-xl text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent hover:border-emerald-200/80 transition-all cursor-pointer flex-shrink-0"
                       title="Edit Course Title & Price"
                     >
-                      <span className="material-symbols-outlined text-sm">edit</span>
+                      <span className="material-symbols-outlined text-base">edit</span>
                     </button>
                   </div>
 
-                  {/* Clean Non-wrapping URL and Price Badges */}
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100/80 border border-stone-200 text-stone-700 text-xs font-mono">
-                      <span className="material-symbols-outlined text-xs text-stone-400">link</span>
-                      <span className="text-emerald-800 font-semibold font-mono">/{selectedCourse.slug}</span>
-                    </span>
-
+                  {/* Actions Toolbar */}
+                  <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                    {/* Edit Pricing & Title Button */}
                     <button
                       onClick={() => handleOpenEditModal(selectedCourse)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200/90 transition-all cursor-pointer shadow-2xs group"
-                      title="Click to edit course price"
+                      className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-white hover:bg-stone-50 text-stone-700 hover:text-emerald-900 border border-stone-200/90 hover:border-emerald-300 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                      title="Edit course price and title"
                     >
-                      <span className="material-symbols-outlined text-xs text-emerald-600">payments</span>
-                      <span>₹{selectedCourse.price}</span>
-                      <span className="material-symbols-outlined text-[13px] text-emerald-400 group-hover:text-emerald-700 transition-colors">edit</span>
+                      <span className="material-symbols-outlined text-base text-emerald-700">currency_rupee</span>
+                      <span>Edit Price</span>
+                    </button>
+
+                    {/* Status Dropdown */}
+                    <div className="relative">
+                      <select
+                        value={selectedCourse.status}
+                        disabled={statusUpdating}
+                        onChange={(e) => handleUpdateCourseStatus(selectedCourse.id, e.target.value)}
+                        className={`h-9 pl-3 pr-7 rounded-xl text-xs font-bold border transition-all cursor-pointer focus:outline-none shadow-2xs appearance-none ${
+                          isSelectedPublished
+                            ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100/80'
+                            : selectedCourse.status === 'DRAFT'
+                            ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100/80'
+                            : 'bg-stone-100 text-stone-700 border-stone-300 hover:bg-stone-200'
+                        }`}
+                      >
+                        <option value="PUBLISHED">● Published</option>
+                        <option value="DRAFT">○ Draft</option>
+                        <option value="ARCHIVED">⊘ Archived</option>
+                      </select>
+                      <span className="material-symbols-outlined text-xs absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-stone-500">
+                        expand_more
+                      </span>
+                    </div>
+
+                    {/* 1-Click Toggle Active Button */}
+                    <button
+                      onClick={() => handleToggleActive(selectedCourse)}
+                      disabled={statusUpdating}
+                      className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                        isSelectedPublished
+                          ? 'bg-stone-50 hover:bg-amber-50 text-stone-700 hover:text-amber-900 border border-stone-200/90 hover:border-amber-300'
+                          : 'bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-800 shadow-sm'
+                      }`}
+                      title={isSelectedPublished ? 'Deactivate course from public view' : 'Publish and activate course'}
+                    >
+                      <span className="material-symbols-outlined text-base">
+                        {isSelectedPublished ? 'pause_circle' : 'rocket_launch'}
+                      </span>
+                      <span>
+                        {statusUpdating
+                          ? 'Updating...'
+                          : isSelectedPublished
+                          ? 'Deactivate Course'
+                          : 'Activate & Publish'}
+                      </span>
+                    </button>
+
+                    {/* Delete Course Button */}
+                    <button
+                      onClick={() => setDeleteModalOpen(true)}
+                      className="h-9 w-9 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-stone-200/90 hover:border-rose-200 transition-all flex items-center justify-center cursor-pointer shadow-2xs"
+                      title="Delete Course"
+                    >
+                      <span className="material-symbols-outlined text-base">delete</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Status & Deactivate/Activate Actions Group */}
-                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-                  {/* Edit Pricing & Title Button */}
-                  <button
-                    onClick={() => handleOpenEditModal(selectedCourse)}
-                    className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-white hover:bg-stone-50 text-stone-700 hover:text-emerald-900 border border-stone-200/90 hover:border-emerald-300 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                    title="Edit course price and title"
-                  >
-                    <span className="material-symbols-outlined text-base text-emerald-700">currency_rupee</span>
-                    <span>Edit Price</span>
-                  </button>
-
-                  {/* Status Dropdown */}
-                  <div className="h-9 flex items-center gap-1.5 bg-stone-50 border border-stone-200/90 rounded-xl px-3 shadow-2xs">
-                    <span className="text-[11px] font-semibold text-stone-500">Status:</span>
-                    <select
-                      value={selectedCourse.status}
-                      disabled={statusUpdating}
-                      onChange={(e) => handleUpdateCourseStatus(selectedCourse.id, e.target.value)}
-                      className="bg-transparent text-xs font-bold text-stone-800 focus:outline-none cursor-pointer"
+                {/* Row 2: Metadata Badges (Slug, Price, Status, Modules) */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Public Slug with Copy Link Button */}
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100/90 border border-stone-200 text-stone-700 text-xs font-mono whitespace-nowrap shadow-2xs">
+                    <span className="material-symbols-outlined text-xs text-stone-400">link</span>
+                    <span className="text-emerald-800 font-semibold font-mono">/{selectedCourse.slug}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`${window.location.origin}/courses/${selectedCourse.slug}`);
+                        setMutationMessage({ type: 'success', text: 'Course public link copied to clipboard!' });
+                      }}
+                      className="ml-1 text-stone-400 hover:text-emerald-800 transition-colors cursor-pointer"
+                      title="Copy public link"
                     >
-                      <option value="PUBLISHED">PUBLISHED (Active &amp; Live)</option>
-                      <option value="DRAFT">DRAFT (Deactivated)</option>
-                      <option value="ARCHIVED">ARCHIVED (Deactivated)</option>
-                    </select>
+                      <span className="material-symbols-outlined text-xs">content_copy</span>
+                    </button>
                   </div>
 
-                  {/* 1-Click Toggle Active Button */}
+                  {/* Price Badge */}
                   <button
-                    onClick={() => handleToggleActive(selectedCourse)}
-                    disabled={statusUpdating}
-                    className={`h-9 px-4 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
-                      isSelectedPublished
-                        ? 'bg-amber-50/90 hover:bg-amber-100 text-amber-900 border border-amber-300/90'
-                        : 'bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-800 shadow-sm'
-                    }`}
+                    onClick={() => handleOpenEditModal(selectedCourse)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200/90 transition-all cursor-pointer shadow-2xs whitespace-nowrap group"
+                    title="Click to edit course price"
                   >
-                    <span className="material-symbols-outlined text-base">
-                      {isSelectedPublished ? 'pause_circle' : 'rocket_launch'}
-                    </span>
-                    <span>
-                      {statusUpdating
-                        ? 'Updating...'
-                        : isSelectedPublished
-                        ? 'Deactivate Course'
-                        : 'Activate & Publish Course'}
-                    </span>
+                    <span className="material-symbols-outlined text-xs text-emerald-600">payments</span>
+                    <span>₹{selectedCourse.price}</span>
+                    <span className="material-symbols-outlined text-[13px] text-emerald-400 group-hover:text-emerald-700 transition-colors">edit</span>
                   </button>
 
-                  {/* Delete Course Button */}
-                  <button
-                    onClick={() => setDeleteModalOpen(true)}
-                    className="h-9 w-9 rounded-xl text-rose-600 hover:bg-rose-50 border border-stone-200/90 hover:border-rose-200 transition-all flex items-center justify-center cursor-pointer shadow-2xs"
-                    title="Delete Course"
-                  >
-                    <span className="material-symbols-outlined text-base">delete</span>
-                  </button>
+                  {/* Live Status indicator pill */}
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border whitespace-nowrap shadow-2xs ${
+                    isSelectedPublished
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelectedPublished ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`} />
+                    <span>{isSelectedPublished ? 'Active & Live' : `Deactivated (${selectedCourse.status})`}</span>
+                  </span>
+
+                  {/* Modules count pill */}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-50 border border-stone-200 text-stone-600 text-xs whitespace-nowrap shadow-2xs">
+                    <span className="material-symbols-outlined text-xs text-stone-400">layers</span>
+                    <span>{selectedCourse.modules?.length || 0} Modules</span>
+                  </span>
                 </div>
               </div>
 
@@ -1024,9 +1068,13 @@ export default function CourseBuilderSection({ token }) {
                     <div>
                       <h3 className="font-bold text-xs sm:text-sm text-stone-900 flex items-center gap-2">
                         <span>Course Cover Photo</span>
-                        {selectedCourse.thumbnail && (
+                        {selectedCourse.thumbnail ? (
                           <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
                             Custom Cover Active
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono font-bold text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-full border border-stone-200">
+                            Default Cover
                           </span>
                         )}
                       </h3>
@@ -1070,19 +1118,34 @@ export default function CourseBuilderSection({ token }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                   {/* 16:9 Cover Thumbnail Preview Card */}
-                  <div className="md:col-span-4 relative aspect-video rounded-xl overflow-hidden border border-stone-200/90 bg-stone-900 shadow-sm group">
+                  <div
+                    onClick={() => coverFileInputRef.current?.click()}
+                    className="md:col-span-4 relative aspect-video rounded-xl overflow-hidden border border-stone-200/90 bg-stone-900 shadow-sm group cursor-pointer"
+                    title="Click to replace cover photo"
+                  >
                     <img
                       src={resolveCoverUrl(selectedCourse.thumbnail) || '/course_thumb_landscape.jpg'}
                       alt={selectedCourse.title}
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                    
                     <span className="absolute bottom-2 left-2 text-[10px] text-white/95 font-mono font-medium bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
                       16:9 Banner
                     </span>
+
+                    {/* Hover Prompt */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
+                      <span className="px-3 py-1.5 bg-white/95 text-stone-900 text-xs font-bold rounded-lg shadow-md flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">photo_camera</span>
+                        Change Photo
+                      </span>
+                    </div>
+
                     {coverUpdating && (
-                      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-white text-xs font-semibold">
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-xs font-semibold gap-2">
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         Updating...
                       </div>
                     )}
@@ -1091,24 +1154,30 @@ export default function CourseBuilderSection({ token }) {
                   {/* URL Input & Quick Preset Options */}
                   <div className="md:col-span-8 space-y-3.5">
                     <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1.5">
                         Image URL / Web Link:
                       </label>
                       <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="https://images.unsplash.com/... or /course_thumb_custom.jpg"
-                          value={coverUrlInput}
-                          onChange={(e) => setCoverUrlInput(e.target.value)}
-                          className="flex-1 bg-white border border-stone-200/90 rounded-xl px-3.5 py-2 text-xs text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none shadow-2xs"
-                        />
+                        <div className="relative flex-1">
+                          <span className="material-symbols-outlined text-stone-400 text-sm absolute left-3 top-1/2 -translate-y-1/2">
+                            link
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="https://images.unsplash.com/... or /course_thumb_custom.jpg"
+                            value={coverUrlInput}
+                            onChange={(e) => setCoverUrlInput(e.target.value)}
+                            className="w-full bg-white border border-stone-200/90 rounded-xl pl-9 pr-3.5 py-2 text-xs text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none shadow-2xs"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={handleSaveCoverUrl}
                           disabled={coverUpdating || !coverUrlInput.trim() || coverUrlInput.trim() === selectedCourse.thumbnail}
-                          className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 shadow-2xs"
+                          className="px-4 py-2 bg-emerald-900 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs flex items-center gap-1.5 flex-shrink-0"
                         >
-                          Save URL
+                          <span className="material-symbols-outlined text-sm">check</span>
+                          <span>Save URL</span>
                         </button>
                       </div>
                     </div>
