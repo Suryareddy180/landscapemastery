@@ -11,6 +11,12 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
   // Fetch course catalog on mount
   useEffect(() => {
     fetchCatalog();
+    if (window.location.pathname.endsWith('/courses')) {
+      setTimeout(() => {
+        const el = document.getElementById('course-catalog');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 350);
+    }
   }, []);
 
   const fetchCatalog = async () => {

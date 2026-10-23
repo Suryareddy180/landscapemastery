@@ -39,7 +39,10 @@ function LandscapeApp({ initialView = 'v1' }) {
     if (location.pathname.endsWith('/login') || location.pathname === '/login' || initialView === 'v2') {
       return 'v2';
     }
-    if (location.pathname.includes('/enroll') || initialView === 'enroll') {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const hasSpecificCourse = (pathParts[0] === 'courses' && pathParts.length > 1) ||
+                              (pathParts[0] === 'landscapemastery' && pathParts[1] === 'courses' && pathParts.length > 2);
+    if (location.pathname.includes('/enroll') || hasSpecificCourse || initialView === 'enroll') {
       return 'enroll';
     }
     const viewParam = searchParams.get('view');
@@ -93,8 +96,11 @@ function LandscapeApp({ initialView = 'v1' }) {
       return;
     }
 
-    // Priority 2.5: Enrollment Standalone Page
-    if (location.pathname.includes('/enroll') || initialView === 'enroll') {
+    // Priority 2.5: Enrollment Standalone Page & Specific Course URLs
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const hasSpecificCourse = (pathParts[0] === 'courses' && pathParts.length > 1) ||
+                              (pathParts[0] === 'landscapemastery' && pathParts[1] === 'courses' && pathParts.length > 2);
+    if (location.pathname.includes('/enroll') || hasSpecificCourse || initialView === 'enroll') {
       setActiveView('enroll');
       return;
     }
@@ -321,7 +327,7 @@ export default function App() {
         <Route path="/landscapemastery/enroll" element={<LandscapeApp key="lm-enroll" initialView="enroll" />} />
         <Route path="/landscapemastery/enroll/:courseId" element={<LandscapeApp key="lm-enroll-id" initialView="enroll" />} />
         <Route path="/landscapemastery/courses" element={<LandscapeApp key="lm-courses" initialView="v1" />} />
-        <Route path="/landscapemastery/courses/:courseId" element={<LandscapeApp key="lm-course-id" initialView="v1" />} />
+        <Route path="/landscapemastery/courses/:courseId" element={<LandscapeApp key="lm-course-id" initialView="enroll" />} />
         <Route path="/landscapemastery/courses/:courseId/enroll" element={<LandscapeApp key="lm-course-enroll" initialView="enroll" />} />
         <Route path="/landscapemastery/login" element={<LandscapeApp key="lm-v2" initialView="v2" />} />
         <Route path="/landscapemastery/portal" element={<LandscapeApp key="lm-v3" initialView="v3" />} />
@@ -333,7 +339,7 @@ export default function App() {
         <Route path="/enroll" element={<LandscapeApp key="short-enroll" initialView="enroll" />} />
         <Route path="/enroll/:courseId" element={<LandscapeApp key="short-enroll-id" initialView="enroll" />} />
         <Route path="/courses" element={<LandscapeApp key="short-courses" initialView="v1" />} />
-        <Route path="/courses/:courseId" element={<LandscapeApp key="short-course-id" initialView="v1" />} />
+        <Route path="/courses/:courseId" element={<LandscapeApp key="short-course-id" initialView="enroll" />} />
         <Route path="/courses/:courseId/enroll" element={<LandscapeApp key="short-course-enroll" initialView="enroll" />} />
         <Route path="/login" element={<LandscapeApp key="short-v2" initialView="v2" />} />
         <Route path="/portal" element={<LandscapeApp key="short-v3" initialView="v3" />} />

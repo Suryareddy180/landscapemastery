@@ -72,46 +72,80 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
         const data = await res.json();
         const courses = data.courses || [];
         setCatalogCourses(courses);
-        resolveCourseFromUrlOrList(courses);
+        await resolveCourseFromUrlOrList(courses);
       }
     } catch (e) {
       // Silently fall back
     }
   };
 
-  const resolveCourseFromUrlOrList = (courses) => {
+  const resolveCourseFromUrlOrList = async (courses) => {
     if (!courses || courses.length === 0) return;
 
     if (initialCourse) {
-      const matched = courses.find(c => c.id === initialCourse.id) || initialCourse;
+      const matched = courses.find(c => 
+        c.id === initialCourse.id || 
+        (c.slug && initialCourse.slug && c.slug === initialCourse.slug)
+      ) || initialCourse;
       setSelectedCourse(matched);
       return;
     }
 
-    // Check search params
+    // 1. Check query parameters: ?course=..., ?course_id=..., ?slug=..., ?id=...
     const searchParams = new URLSearchParams(window.location.search);
-    const courseParam = searchParams.get('course') || searchParams.get('course_id') || searchParams.get('id');
+    const courseParam = searchParams.get('course') || searchParams.get('course_id') || searchParams.get('slug') || searchParams.get('id');
 
-    // Also check path segments like /enroll/1 or /courses/1/enroll
+    // 2. Check path segments:
+    // e.g. /courses/lanscape-lens, /courses/lanscape-lens/enroll, /courses/1, /enroll/lanscape-lens
     const pathParts = window.location.pathname.split('/').filter(Boolean);
-    let pathCourseId = null;
-    const enrollIdx = pathParts.indexOf('enroll');
+    let pathIdentifier = null;
     const coursesIdx = pathParts.indexOf('courses');
-    if (enrollIdx !== -1 && pathParts[enrollIdx + 1] && !isNaN(pathParts[enrollIdx + 1])) {
-      pathCourseId = pathParts[enrollIdx + 1];
-    } else if (coursesIdx !== -1 && pathParts[coursesIdx + 1] && !isNaN(pathParts[coursesIdx + 1])) {
-      pathCourseId = pathParts[coursesIdx + 1];
+    const enrollIdx = pathParts.indexOf('enroll');
+
+    if (coursesIdx !== -1 && pathParts[coursesIdx + 1] && pathParts[coursesIdx + 1] !== 'enroll') {
+      pathIdentifier = pathParts[coursesIdx + 1];
+    } else if (enrollIdx !== -1 && pathParts[enrollIdx + 1]) {
+      pathIdentifier = pathParts[enrollIdx + 1];
     }
 
-    const targetId = courseParam || pathCourseId;
-    if (targetId) {
-      const found = courses.find(c => 
-        String(c.id) === String(targetId) ||
-        c.title.toLowerCase().includes(String(targetId).toLowerCase())
-      );
+    const rawTarget = (courseParam || pathIdentifier || '').trim();
+    if (rawTarget) {
+      const targetLower = rawTarget.toLowerCase();
+      const normTarget = targetLower.replace(/[-_]/g, ' ');
+
+      const found = courses.find(c => {
+        const cSlug = (c.slug || '').toLowerCase();
+        const cTitle = (c.title || '').toLowerCase();
+        const cId = String(c.id);
+        const normTitle = cTitle.replace(/[-_]/g, ' ');
+
+        return (
+          cSlug === targetLower ||
+          cId === rawTarget ||
+          cTitle === targetLower ||
+          normTitle === normTarget ||
+          cSlug.includes(targetLower) ||
+          targetLower.includes(cSlug)
+        );
+      });
+
       if (found) {
         setSelectedCourse(found);
         return;
+      }
+
+      // 3. Fallback: attempt direct public endpoint fetch by slug
+      try {
+        const singleRes = await fetch(`${BASE_URL}/api/public/courses/${encodeURIComponent(rawTarget)}/`);
+        if (singleRes.ok) {
+          const singleCourse = await singleRes.json();
+          if (singleCourse && singleCourse.id) {
+            setSelectedCourse(singleCourse);
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to default
       }
     }
 
@@ -459,6 +493,50 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                 )}
               </div>
             </div>
+
+            {/* Selected Course Program Preview Card */}
+            {selectedCourse && (
+              <div className="pt-2 max-w-lg mx-auto">
+                <div className="bg-emerald-950/70 border border-emerald-500/30 rounded-2xl p-3.5 flex items-center gap-3.5 text-left shadow-lg backdrop-blur-xs">
+                  <div className="w-20 h-14 rounded-xl overflow-hidden bg-black/60 flex-shrink-0 border border-emerald-500/20 shadow-xs">
+                    <img
+                      src={selectedCourse.thumbnail ? (selectedCourse.thumbnail.startsWith('/media/') ? `${BASE_URL}${selectedCourse.thumbnail}` : selectedCourse.thumbnail) : '/course_thumb_landscape.jpg'}
+                      alt={selectedCourse.title}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                      Selected Program
+                    </div>
+                    <div className="font-serif font-bold text-sm sm:text-base text-white truncate">
+                      {selectedCourse.title}
+                    </div>
+                    <div className="flex items-center gap-2.5 text-[11px] text-emerald-200/70 mt-0.5">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-emerald-400">schedule</span>
+                        {selectedCourse.duration_hrs || '45 mins'}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-emerald-400">school</span>
+                        {selectedCourse.level || 'All Levels'}
+                      </span>
+                      {selectedCourse.module_count > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs text-emerald-400">layers</span>
+                            {selectedCourse.module_count} Modules
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Enhanced Executive White Form Card (Photo 2 Card) */}
