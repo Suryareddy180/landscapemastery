@@ -26,14 +26,17 @@ export default function CourseBuilderSection({ token }) {
   const [loading, setLoading] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState('');
-  const [newCoursePrice, setNewCoursePrice] = useState('499.00');
+  const [newCoursePrice, setNewCoursePrice] = useState('299.00');
+  const [newCourseHasStrikePrice, setNewCourseHasStrikePrice] = useState(true);
+  const [newCourseOriginalPrice, setNewCourseOriginalPrice] = useState('499.00');
   const [newModuleTitle, setNewModuleTitle] = useState('');
 
   // Course Edit Modal (Pricing & Title)
   const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
   const [editCourseTitle, setEditCourseTitle] = useState('');
-  const [editCoursePrice, setEditCoursePrice] = useState('499.00');
-  const [editCourseDiscountPrice, setEditCourseDiscountPrice] = useState('499.00');
+  const [editCoursePrice, setEditCoursePrice] = useState('299.00');
+  const [editCourseHasStrikePrice, setEditCourseHasStrikePrice] = useState(false);
+  const [editCourseOriginalPrice, setEditCourseOriginalPrice] = useState('');
   const [editCourseSubmitting, setEditCourseSubmitting] = useState(false);
 
   // Promotional & Social Launch Suite Modal
@@ -220,8 +223,17 @@ export default function CourseBuilderSection({ token }) {
   const handleOpenEditModal = (course) => {
     if (!course) return;
     setEditCourseTitle(course.title || '');
-    setEditCoursePrice(String(course.price || '499.00'));
-    setEditCourseDiscountPrice(String(course.discount_price || course.price || '499.00'));
+    const sellingPrice = course.price != null ? String(course.price) : '299.00';
+    setEditCoursePrice(sellingPrice);
+    
+    const orig = course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null);
+    if (orig && Number(orig) > Number(sellingPrice)) {
+      setEditCourseHasStrikePrice(true);
+      setEditCourseOriginalPrice(String(orig));
+    } else {
+      setEditCourseHasStrikePrice(false);
+      setEditCourseOriginalPrice('');
+    }
     setEditCourseModalOpen(true);
   };
 
@@ -231,8 +243,22 @@ export default function CourseBuilderSection({ token }) {
 
     const parsedPrice = parseFloat(editCoursePrice);
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setMutationMessage({ type: 'error', text: 'Please enter a valid positive price (e.g. 499).' });
+      setMutationMessage({ type: 'error', text: 'Please enter a valid positive selling price (e.g. 299).' });
       return;
+    }
+
+    let parsedOriginalPrice = null;
+    if (editCourseHasStrikePrice) {
+      const orig = parseFloat(editCourseOriginalPrice);
+      if (isNaN(orig) || orig <= 0) {
+        setMutationMessage({ type: 'error', text: 'Please enter a valid strike-off price (e.g. 499) or uncheck the strike-off option.' });
+        return;
+      }
+      if (orig <= parsedPrice) {
+        setMutationMessage({ type: 'error', text: `Strike-off price (₹${orig}) must be greater than the selling price (₹${parsedPrice}).` });
+        return;
+      }
+      parsedOriginalPrice = orig;
     }
 
     setEditCourseSubmitting(true);
@@ -246,7 +272,8 @@ export default function CourseBuilderSection({ token }) {
 
       const payload = {
         price: parsedPrice,
-        discount_price: parseFloat(editCourseDiscountPrice) || parsedPrice
+        original_price: parsedOriginalPrice,
+        discount_price: parsedPrice
       };
       if (editCourseTitle.trim()) {
         payload.title = editCourseTitle.trim();
@@ -262,7 +289,7 @@ export default function CourseBuilderSection({ token }) {
         const data = await res.json();
         setMutationMessage({
           type: 'success',
-          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated to ₹${parsedPrice} successfully!`
+          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated: Selling Price ₹${parsedPrice}${parsedOriginalPrice ? ` with strike-off ₹${parsedOriginalPrice}` : ' (no strike-off)'} successfully!`
         });
         setEditCourseModalOpen(false);
         await fetchCourses();
@@ -448,12 +475,21 @@ export default function CourseBuilderSection({ token }) {
         'Content-Type': 'application/json',
         ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       };
+      let parsedOriginalPrice = null;
+      if (newCourseHasStrikePrice) {
+        const orig = parseFloat(newCourseOriginalPrice);
+        if (!isNaN(orig) && orig > (parseFloat(newCoursePrice) || 299)) {
+          parsedOriginalPrice = orig;
+        }
+      }
+
       const res = await fetch(`${BASE_URL}/api/admin/courses/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           title: newCourseTitle.trim(),
-          price: parseFloat(newCoursePrice) || 499.00
+          price: parseFloat(newCoursePrice) || 299.00,
+          original_price: parsedOriginalPrice
         })
       });
 
@@ -775,17 +811,31 @@ export default function CourseBuilderSection({ token }) {
             placeholder="New Course Title..."
             value={newCourseTitle}
             onChange={(e) => setNewCourseTitle(e.target.value)}
-            className="bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-56 shadow-2xs transition-all"
+            className="bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-xs text-stone-900 placeholder:text-stone-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-48 sm:w-56 shadow-2xs transition-all"
           />
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-bold">₹</span>
+          <div className="relative" title="Selling Price (charged at checkout)">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 text-xs font-bold">₹</span>
             <input
               type="number"
               min="1"
-              placeholder="Price"
+              placeholder="Selling"
               value={newCoursePrice}
               onChange={(e) => setNewCoursePrice(e.target.value)}
-              className="bg-white border border-stone-300 rounded-xl pl-6 pr-3 py-2.5 text-xs font-bold text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-24 shadow-2xs transition-all"
+              className="bg-white border border-stone-300 rounded-xl pl-5 pr-2 py-2.5 text-xs font-bold text-stone-900 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-20 shadow-2xs transition-all"
+            />
+          </div>
+          <div className="relative" title="Optional Strike-off MRP (e.g. ₹499)">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs font-normal line-through">₹</span>
+            <input
+              type="number"
+              min="1"
+              placeholder="MRP Strike-off"
+              value={newCourseOriginalPrice}
+              onChange={(e) => {
+                setNewCourseOriginalPrice(e.target.value);
+                setNewCourseHasStrikePrice(Boolean(e.target.value));
+              }}
+              className="bg-white border border-stone-300 rounded-xl pl-5 pr-2 py-2.5 text-xs text-stone-600 placeholder:text-stone-400 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/10 focus:outline-none w-28 shadow-2xs transition-all"
             />
           </div>
           <button 
@@ -862,9 +912,16 @@ export default function CourseBuilderSection({ token }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <span className="font-bold text-xs leading-snug text-stone-900 truncate block">{c.title}</span>
-                          <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/80 px-2 py-0.5 rounded-md flex-shrink-0 shadow-2xs">
-                            ₹{c.price}
-                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200/80 px-1.5 py-0.5 rounded-md shadow-2xs">
+                              ₹{c.price}
+                            </span>
+                            {c.original_price && Number(c.original_price) > Number(c.price) && (
+                              <span className="text-[10px] font-mono text-stone-400 line-through">
+                                ₹{c.original_price}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1069,10 +1126,18 @@ export default function CourseBuilderSection({ token }) {
                   <button
                     onClick={() => handleOpenEditModal(selectedCourse)}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200/90 transition-all cursor-pointer shadow-2xs whitespace-nowrap group"
-                    title="Click to edit course price"
+                    title="Click to edit course price & strike-off"
                   >
                     <span className="material-symbols-outlined text-xs text-emerald-600">payments</span>
                     <span>₹{selectedCourse.price}</span>
+                    {selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) && (
+                      <span className="text-[11px] text-stone-400 line-through font-normal">₹{selectedCourse.original_price}</span>
+                    )}
+                    {selectedCourse.discount_pct > 0 && (
+                      <span className="text-[9.5px] font-sans font-bold bg-emerald-600 text-white px-1.5 py-0.2 rounded">
+                        {selectedCourse.discount_pct}% OFF
+                      </span>
+                    )}
                     <span className="material-symbols-outlined text-[13px] text-emerald-400 group-hover:text-emerald-700 transition-colors">edit</span>
                   </button>
 
@@ -1825,21 +1890,22 @@ export default function CourseBuilderSection({ token }) {
 
       {/* EDIT COURSE PRICE & TITLE MODAL */}
       {editCourseModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-stone-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 border border-stone-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 my-6">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-lg">currency_rupee</span>
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-2xs">
+                  <span className="material-symbols-outlined text-xl">payments</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-stone-900">Edit Course Pricing &amp; Details</h3>
-                  <p className="text-[11px] text-stone-500">Update course selling price and title</p>
+                  <h3 className="font-bold text-base text-stone-900">Customize Course Pricing</h3>
+                  <p className="text-xs text-stone-500">Configure dynamic selling price and strike-off (MRP)</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setEditCourseModalOpen(false)}
-                className="text-stone-400 hover:text-stone-700 p-1 rounded-lg cursor-pointer"
+                className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-base">close</span>
               </button>
@@ -1860,53 +1926,159 @@ export default function CourseBuilderSection({ token }) {
                 />
               </div>
 
-              {/* Course Price */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
-                  Selling Price (INR ₹) <span className="text-rose-500">*</span>
-                </label>
+              {/* Course Selling Price */}
+              <div className="p-3.5 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold text-emerald-950 uppercase tracking-wider">
+                    Selling Price (INR ₹) <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-medium">Amount charged at Razorpay checkout</span>
+                </div>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-800 font-bold text-base">₹</span>
                   <input
                     type="number"
                     step="1"
                     min="1"
                     required
                     value={editCoursePrice}
-                    onChange={(e) => {
-                      setEditCoursePrice(e.target.value);
-                      setEditCourseDiscountPrice(e.target.value);
-                    }}
-                    placeholder="499"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3.5 py-2.5 text-sm font-bold text-stone-900 focus:bg-white focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                    onChange={(e) => setEditCoursePrice(e.target.value)}
+                    placeholder="299"
+                    className="w-full bg-white border border-emerald-200/90 rounded-xl pl-8 pr-3.5 py-2.5 text-base font-bold text-stone-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15"
                   />
                 </div>
-                <p className="text-[10px] text-stone-400">
-                  This amount will be charged at Razorpay checkout and shown on public course cards.
-                </p>
+
+                {/* Quick Selling Price Presets */}
+                <div className="space-y-1 pt-0.5">
+                  <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Popular Selling Presets:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[199, 299, 499, 799, 999, 1499, 1999].map(preset => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setEditCoursePrice(String(preset))}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          String(editCoursePrice) === String(preset)
+                            ? 'bg-emerald-800 text-white shadow-xs'
+                            : 'bg-white hover:bg-emerald-100/70 border border-stone-200/80 text-stone-700'
+                        }`}
+                      >
+                        ₹{preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Quick Preset Buttons */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Quick Price Presets:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[299, 499, 799, 999, 1499, 1999, 2499, 4999].map(preset => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => {
-                        setEditCoursePrice(String(preset));
-                        setEditCourseDiscountPrice(String(preset));
+              {/* Dynamic Price Strike-Off (MRP / Compare-at Price) */}
+              <div className="p-3.5 bg-stone-50 border border-stone-200/90 rounded-2xl space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editCourseHasStrikePrice}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEditCourseHasStrikePrice(checked);
+                        if (checked && !editCourseOriginalPrice) {
+                          const curr = parseFloat(editCoursePrice) || 299;
+                          setEditCourseOriginalPrice(curr <= 299 ? '499' : curr <= 499 ? '999' : String(Math.round(curr * 1.5)));
+                        }
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        String(editCoursePrice) === String(preset)
-                          ? 'bg-emerald-800 text-white shadow-xs'
-                          : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-                      }`}
-                    >
-                      ₹{preset}
-                    </button>
-                  ))}
+                      className="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 border-stone-300 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-xs font-bold text-stone-900">Enable Price Strike-Off (MRP / Compare-at)</span>
+                      <span className="block text-[11px] text-stone-500">Cross out standard MRP next to selling price on cards</span>
+                    </div>
+                  </label>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                    editCourseHasStrikePrice ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-stone-200 text-stone-600'
+                  }`}>
+                    {editCourseHasStrikePrice ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+
+                {editCourseHasStrikePrice ? (
+                  <div className="space-y-2.5 pt-1 border-t border-stone-200/60 animate-in fade-in-50 duration-150">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
+                        Original Price / Strike-Off MRP (INR ₹) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          required={editCourseHasStrikePrice}
+                          value={editCourseOriginalPrice}
+                          onChange={(e) => setEditCourseOriginalPrice(e.target.value)}
+                          placeholder="499"
+                          className="w-full bg-white border border-stone-200 rounded-xl pl-8 pr-3.5 py-2 text-sm font-bold text-stone-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Strike Price Presets */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Strike Presets:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[499, 699, 999, 1499, 1999, 2999, 4999].map(preset => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setEditCourseOriginalPrice(String(preset))}
+                            className={`px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                              String(editCourseOriginalPrice) === String(preset)
+                                ? 'bg-stone-900 text-white'
+                                : 'bg-stone-200 hover:bg-stone-300 text-stone-700'
+                            }`}
+                          >
+                            ₹{preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Calculated Savings helper */}
+                    {parseFloat(editCourseOriginalPrice) > parseFloat(editCoursePrice) ? (
+                      <div className="p-2.5 bg-emerald-100/70 border border-emerald-300/80 rounded-xl text-xs text-emerald-950 flex items-center justify-between font-medium">
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm text-emerald-700">savings</span>
+                          <span>Student Savings: ₹{Math.round(parseFloat(editCourseOriginalPrice) - parseFloat(editCoursePrice))}</span>
+                        </span>
+                        <span className="font-bold bg-emerald-700 text-white px-2 py-0.5 rounded-md text-[10px]">
+                          {Math.round(((parseFloat(editCourseOriginalPrice) - parseFloat(editCoursePrice)) / parseFloat(editCourseOriginalPrice)) * 100)}% OFF
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm text-amber-700">warning</span>
+                        <span>Strike price should be greater than Selling Price (₹{editCoursePrice}) to show discount badge.</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-stone-500 italic">
+                    When disabled, the course displays only the flat selling price (₹{editCoursePrice}) with no strikethrough.
+                  </p>
+                )}
+              </div>
+
+              {/* LIVE CARD BADGE PREVIEW */}
+              <div className="p-3 bg-stone-100/80 border border-stone-200 rounded-2xl space-y-1.5">
+                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Live Visual Preview on Course Card:</span>
+                <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold font-serif text-emerald-950">₹{parseFloat(editCoursePrice) || 299}</span>
+                    {editCourseHasStrikePrice && parseFloat(editCourseOriginalPrice) > (parseFloat(editCoursePrice) || 0) && (
+                      <span className="text-xs line-through text-stone-400 font-mono">₹{parseFloat(editCourseOriginalPrice)}</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                    Enroll Now • ₹{parseFloat(editCoursePrice) || 299}
+                  </span>
                 </div>
               </div>
 
@@ -1921,7 +2093,7 @@ export default function CourseBuilderSection({ token }) {
                 <button
                   type="submit"
                   disabled={editCourseSubmitting}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {editCourseSubmitting ? (
                     <>
@@ -1931,7 +2103,7 @@ export default function CourseBuilderSection({ token }) {
                   ) : (
                     <>
                       <span className="material-symbols-outlined text-sm">check</span>
-                      <span>Update Price</span>
+                      <span>Save Pricing</span>
                     </>
                   )}
                 </button>
@@ -2170,7 +2342,7 @@ export default function CourseBuilderSection({ token }) {
                   <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
 {`🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!
 
-Get complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.
+Get complete lifetime access for only ₹${parseInt(selectedCourse.price || 299)}${selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) ? ` (Special offer down from ₹${parseInt(selectedCourse.original_price)} • ${selectedCourse.discount_pct || Math.round(((selectedCourse.original_price - selectedCourse.price) / selectedCourse.original_price) * 100)}% OFF)` : ''}.
 
 ✨ Tap here or scan the QR pass to join:
 ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`}
@@ -2179,7 +2351,8 @@ ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`}
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <button
                       onClick={() => {
-                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
+                        const priceNote = selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) ? ` (Special offer down from ₹${parseInt(selectedCourse.original_price)} • ${selectedCourse.discount_pct || Math.round(((selectedCourse.original_price - selectedCourse.price) / selectedCourse.original_price) * 100)}% OFF)` : '';
+                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.price || 299)}${priceNote}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
                         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
@@ -2190,7 +2363,8 @@ ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`}
 
                     <button
                       onClick={() => {
-                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
+                        const priceNote = selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) ? ` (Special offer down from ₹${parseInt(selectedCourse.original_price)} • ${selectedCourse.discount_pct || Math.round(((selectedCourse.original_price - selectedCourse.price) / selectedCourse.original_price) * 100)}% OFF)` : '';
+                        const text = `🌿 Start learning with *${selectedCourse.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nGet complete lifetime access for only ₹${parseInt(selectedCourse.price || 299)}${priceNote}.\n\n✨ Tap here or scan the QR pass to join:\n${window.location.origin}/landscapemastery/promo/${selectedCourse.slug}`;
                         navigator.clipboard?.writeText(text);
                         setCopiedWhatsappText(true);
                         setTimeout(() => setCopiedWhatsappText(false), 2000);
@@ -2268,13 +2442,14 @@ Complete video lessons, practical frameworks, and downloadable resources.
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-stone-200/80 text-xs text-stone-800 whitespace-pre-wrap leading-relaxed shadow-2xs">
-{`Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`}
+{`Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.price || 299)}${selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) ? ` (Regular ₹${parseInt(selectedCourse.original_price)} • ${selectedCourse.discount_pct || Math.round(((selectedCourse.original_price - selectedCourse.price) / selectedCourse.original_price) * 100)}% OFF)` : ''}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`}
                   </div>
 
                   <div className="flex items-center gap-2.5 pt-1">
                     <button
                       onClick={() => {
-                        const text = `Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.discount_price || selectedCourse.price || 499)}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`;
+                        const priceNote = selectedCourse.original_price && Number(selectedCourse.original_price) > Number(selectedCourse.price) ? ` (Regular ₹${parseInt(selectedCourse.original_price)} • ${selectedCourse.discount_pct || Math.round(((selectedCourse.original_price - selectedCourse.price) / selectedCourse.original_price) * 100)}% OFF)` : '';
+                        const text = `Join ${selectedCourse.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(selectedCourse.price || 299)}${priceNote}: ${window.location.origin}/landscapemastery/promo/${selectedCourse.slug} #LandscapeMastery #3CAPSTECH`;
                         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="px-4 py-2.5 rounded-xl bg-black hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"

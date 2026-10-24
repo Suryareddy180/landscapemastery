@@ -239,23 +239,21 @@ def checkout_session(req):
         'member_count': req.data.get('member_count', 1),
     }
 
-    # Per-course pricing: look up specific course price, fallback to site setting
+    # Per-course dynamic pricing: look up specific course selling price, fallback to site setting
     if course_id:
         try:
             course = Course.objects.get(pk=course_id, status='PUBLISHED')
-            base_course_price = float(course.price) if course.price and float(course.price) >= 499 else 499.0
-            price = base_course_price
+            price = course.get_selling_price()
             course_title = course.title
         except Course.DoesNotExist:
             return Response({'error': 'Selected course is not available or has been unpublished.'}, status=status.HTTP_404_NOT_FOUND)
     else:
         setting, _ = SiteSetting.objects.get_or_create(id=1)
-        base_course_price = float(setting.course_price) if setting.course_price and float(setting.course_price) >= 499 else 499.0
-        price = base_course_price
         course = Course.objects.filter(status='PUBLISHED').first()
+        price = course.get_selling_price() if course else float(setting.course_price or 299.0)
         course_title = course.title if course else 'Landscape Mastery Masterclass'
 
-    # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount on 499 => 299)
+    # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount)
     coupon_code = str(req.data.get('coupon_code', '')).strip().upper()
     if coupon_code:
         try:
@@ -271,10 +269,6 @@ def checkout_session(req):
                 price = max(1.0, round(price - discount, 2))
                 checkout_metadata['coupon_code'] = coupon_code
                 checkout_metadata['discount_pct'] = 40
-    else:
-        # If user explicitly removed coupon, but course has a direct discount_price set below price
-        if course and course.discount_price and float(course.discount_price) < float(course.price):
-            price = float(course.discount_price)
 
     order_id = f"order_{int(time.time())}_{secrets.token_hex(4)}"
     amount_in_paise = int(round(price * 100))
@@ -605,14 +599,22 @@ def public_courses(req):
     for c in Course.objects.filter(status='PUBLISHED').order_by('id'):
         module_count = c.modules.count()
         lesson_count = sum(m.lessons.count() for m in c.modules.all())
+        selling_price = c.get_selling_price()
+        original_price = c.get_original_price()
+        has_disc = c.has_discount()
+        discount_pct = c.get_discount_percentage()
         courses.append({
             'id': c.id,
             'title': c.title,
             'slug': c.slug,
             'short_desc': c.short_desc or '',
             'full_desc': c.full_desc or '',
-            'price': float(c.price) if float(c.price) >= 499 else 499.0,
-            'discount_price': float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0,
+            'price': selling_price,
+            'original_price': original_price,
+            'strike_price': original_price,
+            'discount_price': selling_price,
+            'has_discount': has_disc,
+            'discount_pct': discount_pct,
             'duration_hrs': c.get_duration(),
             'level': c.level,
             'thumbnail': c.thumbnail or '',
@@ -661,14 +663,22 @@ def public_course_detail(req, slug):
             'lessons': lessons_data
         })
     
+    selling_price = c.get_selling_price()
+    original_price = c.get_original_price()
+    has_disc = c.has_discount()
+    discount_pct = c.get_discount_percentage()
     return Response({
         'id': c.id,
         'title': c.title,
         'slug': c.slug,
         'short_desc': c.short_desc or '',
         'full_desc': c.full_desc or '',
-        'price': float(c.price) if float(c.price) >= 499 else 499.0,
-        'discount_price': float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0,
+        'price': selling_price,
+        'original_price': original_price,
+        'strike_price': original_price,
+        'discount_price': selling_price,
+        'has_discount': has_disc,
+        'discount_pct': discount_pct,
         'duration_hrs': c.get_duration(),
         'level': c.level,
         'thumbnail': c.thumbnail or '',
@@ -701,10 +711,13 @@ def public_course_promo(req, slug):
 
     module_count = c.modules.count()
     lesson_count = sum(m.lessons.count() for m in c.modules.all())
-    raw_price = float(c.price) if float(c.price) >= 499 else 499.0
-    raw_discount = float(c.discount_price) if c.discount_price and float(c.discount_price) < 499 else 299.0
-    formatted_price = int(raw_price) if float(raw_price).is_integer() else f"{raw_price:.2f}"
-    formatted_discount = int(raw_discount) if float(raw_discount).is_integer() else f"{raw_discount:.2f}"
+    selling_price = c.get_selling_price()
+    original_price = c.get_original_price()
+    has_disc = c.has_discount()
+    discount_pct = c.get_discount_percentage()
+
+    formatted_selling = int(selling_price) if float(selling_price).is_integer() else f"{selling_price:.2f}"
+    formatted_original = int(original_price) if original_price and float(original_price).is_integer() else (f"{original_price:.2f}" if original_price else None)
 
     return Response({
         'id': c.id,
@@ -712,10 +725,15 @@ def public_course_promo(req, slug):
         'slug': c.slug,
         'short_desc': c.short_desc or '',
         'full_desc': c.full_desc or '',
-        'price': float(raw_price),
-        'discount_price': float(raw_discount),
-        'formatted_price': formatted_price,
-        'formatted_discount': formatted_discount,
+        'price': selling_price,
+        'original_price': original_price,
+        'strike_price': original_price,
+        'discount_price': selling_price,
+        'has_discount': has_disc,
+        'discount_pct': discount_pct,
+        'formatted_price': formatted_selling,
+        'formatted_original': formatted_original,
+        'formatted_discount': formatted_selling,
         'duration_hrs': c.get_duration(),
         'level': c.level,
         'thumbnail': c.thumbnail or '',
@@ -1213,8 +1231,12 @@ def admin_courses(req):
                 'id': c.id,
                 'title': c.title,
                 'slug': c.slug,
-                'price': float(c.price),
-                'discount_price': float(c.discount_price or c.price),
+                'price': c.get_selling_price(),
+                'original_price': c.get_original_price(),
+                'strike_price': c.get_original_price(),
+                'discount_price': c.get_selling_price(),
+                'has_discount': c.has_discount(),
+                'discount_pct': c.get_discount_percentage(),
                 'status': c.status,
                 'thumbnail': c.thumbnail or '',
                 'banner': c.banner or '',
@@ -1239,11 +1261,20 @@ def admin_courses(req):
 
         short_desc = req.data.get('short_desc', '')
         full_desc = req.data.get('full_desc', '')
-        price = req.data.get('price', 499.00)
-        discount_price = req.data.get('discount_price', price)
+        price = req.data.get('price', 299.00)
+        original_price = req.data.get('original_price') or req.data.get('strike_price')
+        if original_price:
+            try:
+                val = float(original_price)
+                original_price = val if val > float(price) else None
+            except (ValueError, TypeError):
+                original_price = None
+        else:
+            original_price = None
+
         thumbnail = req.data.get('thumbnail', '')
         course = Course.objects.create(
-            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, discount_price=discount_price, status='PUBLISHED', thumbnail=thumbnail
+            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, original_price=original_price, discount_price=price, status='PUBLISHED', thumbnail=thumbnail
         )
         log_admin_action(req.user, "COURSE_CREATED", target=course.title, details=f"ID: {course.id}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
@@ -1251,8 +1282,12 @@ def admin_courses(req):
             'id': course.id,
             'title': course.title,
             'slug': course.slug,
-            'price': float(course.price),
-            'discount_price': float(course.discount_price or course.price),
+            'price': course.get_selling_price(),
+            'original_price': course.get_original_price(),
+            'strike_price': course.get_original_price(),
+            'discount_price': course.get_selling_price(),
+            'has_discount': course.has_discount(),
+            'discount_pct': course.get_discount_percentage(),
             'thumbnail': course.thumbnail or '',
             'promo_url': f"/landscapemastery/promo/{course.slug}",
             'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{course.slug}",
@@ -1295,8 +1330,12 @@ def admin_course_detail(req, pk):
             'id': course.id,
             'title': course.title,
             'slug': course.slug,
-            'price': float(course.price),
-            'discount_price': float(course.discount_price or course.price),
+            'price': course.get_selling_price(),
+            'original_price': course.get_original_price(),
+            'strike_price': course.get_original_price(),
+            'discount_price': course.get_selling_price(),
+            'has_discount': course.has_discount(),
+            'discount_pct': course.get_discount_percentage(),
             'status': course.status,
             'thumbnail': course.thumbnail or '',
             'banner': course.banner or '',
@@ -1314,23 +1353,39 @@ def admin_course_detail(req, pk):
     elif req.method == 'PATCH':
         if 'title' in req.data: course.title = req.data['title']
         if 'price' in req.data:
-            course.price = req.data['price']
-            if 'discount_price' not in req.data:
-                course.discount_price = req.data['price']
-        if 'discount_price' in req.data: course.discount_price = req.data['discount_price']
+            try:
+                new_price = float(req.data['price'])
+                course.price = new_price
+                course.discount_price = new_price
+            except (ValueError, TypeError):
+                pass
+        if 'original_price' in req.data or 'strike_price' in req.data:
+            orig = req.data.get('original_price', req.data.get('strike_price'))
+            if orig is None or orig == '' or orig == 0 or orig == '0':
+                course.original_price = None
+            else:
+                try:
+                    val = float(orig)
+                    course.original_price = val if val > float(course.price) else None
+                except (ValueError, TypeError):
+                    course.original_price = None
         if 'status' in req.data: course.status = req.data['status']
         if 'thumbnail' in req.data: course.thumbnail = req.data['thumbnail']
         if 'banner' in req.data: course.banner = req.data['banner']
         course.save()
-        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
+        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, OriginalPrice: {course.original_price}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
             'status': 'updated',
             'course': {
                 'id': course.id,
                 'title': course.title,
                 'slug': course.slug,
-                'price': float(course.price),
-                'discount_price': float(course.discount_price or course.price),
+                'price': course.get_selling_price(),
+                'original_price': course.get_original_price(),
+                'strike_price': course.get_original_price(),
+                'discount_price': course.get_selling_price(),
+                'has_discount': course.has_discount(),
+                'discount_pct': course.get_discount_percentage(),
                 'status': course.status,
                 'thumbnail': course.thumbnail or '',
                 'banner': course.banner or ''

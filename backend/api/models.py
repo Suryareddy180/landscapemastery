@@ -62,14 +62,52 @@ class Course(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True)
     thumbnail = models.CharField(max_length=500, blank=True, null=True)
     banner = models.CharField(max_length=500, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Effective selling price charged at checkout.")
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Synchronized selling price for backward compatibility.")
+    original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None, help_text="Strike-off price (MRP) displayed with strikethrough. If null or <= price, no strike-off is shown.")
     duration_hrs = models.CharField(max_length=50, default='45 mins')
     level = models.CharField(max_length=50, default='All Levels')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED')
     seo_title = models.CharField(max_length=255, blank=True, null=True)
     seo_desc = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    def get_selling_price(self):
+        """Returns the actual effective selling price (what the customer pays)."""
+        try:
+            # If original_price is explicitly set, self.price is the authoritative selling price
+            if self.original_price is not None and float(self.original_price) > 0:
+                return float(self.price or 299.0)
+            # Legacy compatibility: if discount_price is lower than price, discount_price was the selling price
+            if self.discount_price and self.price and float(self.price) > float(self.discount_price):
+                return float(self.discount_price)
+            return float(self.price or self.discount_price or 299.0)
+        except (ValueError, TypeError):
+            return 299.0
+
+    def get_original_price(self):
+        """Returns the strike-off price (MRP) if higher than selling price, else None."""
+        try:
+            if self.original_price is not None and float(self.original_price) > 0:
+                orig = float(self.original_price)
+                if orig > self.get_selling_price():
+                    return orig
+            # Backward compatibility fallback if discount_price was stored as selling and price as original:
+            if self.discount_price and self.price and float(self.price) > float(self.discount_price):
+                return float(self.price)
+        except (ValueError, TypeError):
+            pass
+        return None
+
+    def has_discount(self):
+        return self.get_original_price() is not None
+
+    def get_discount_percentage(self):
+        orig = self.get_original_price()
+        selling = self.get_selling_price()
+        if orig and orig > selling > 0:
+            return int(round((orig - selling) / orig * 100))
+        return 0
 
     def get_duration(self):
         """

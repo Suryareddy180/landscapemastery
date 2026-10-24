@@ -193,10 +193,13 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     }
   };
 
-  // Base Course Anchor Price (Default ₹499)
-  const basePrice = selectedCourse?.price && Number(selectedCourse.price) >= 499 
+  // Base Course Anchor Price (Default ₹299)
+  const basePrice = selectedCourse?.price && Number(selectedCourse.price) > 0 
     ? Math.round(Number(selectedCourse.price)) 
-    : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) >= 499 ? Math.round(Number(siteSettings.coursePrice)) : 499);
+    : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) > 0 ? Math.round(Number(siteSettings.coursePrice)) : 299);
+
+  const rawOriginalPrice = selectedCourse?.original_price || selectedCourse?.strike_price || (selectedCourse?.discount_price && Number(selectedCourse.discount_price) < Number(selectedCourse.price) ? selectedCourse.price : null);
+  const originalPrice = rawOriginalPrice && Number(rawOriginalPrice) > basePrice ? Math.round(Number(rawOriginalPrice)) : null;
 
   const discountPct = appliedCoupon ? (Number(appliedCoupon.discount_pct) || 0) : 0;
   const discountAmount = discountPct > 0 ? Math.round(basePrice * (discountPct / 100)) : 0;
@@ -495,15 +498,17 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
               Complete your registration below. Upon verified payment, your learner portal account is created automatically and credentials are sent to your email.
             </p>
 
-            {/* Live Pricing Ribbon (Photo 1: Strike off ₹499 first, then show ₹299) */}
+            {/* Live Pricing Ribbon */}
             <div className="pt-1.5 flex items-center justify-center">
               <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-emerald-950/90 border border-emerald-500/40 px-3.5 sm:px-6 py-2 rounded-2xl shadow-inner backdrop-blur-xs max-w-full">
-                {/* 1. First strike off the 499 figure */}
-                <span className="text-base sm:text-xl font-bold line-through text-emerald-400/50 font-sans tracking-tight">
-                  ₹{basePrice}
-                </span>
+                {/* 1. Strike off the original/MRP figure if configured */}
+                {originalPrice && (
+                  <span className="text-base sm:text-xl font-bold line-through text-emerald-400/50 font-sans tracking-tight">
+                    ₹{originalPrice}
+                  </span>
+                )}
 
-                {/* 2. Then show the 299 figure */}
+                {/* 2. Current payable price */}
                 <span className="text-2.5xl sm:text-4.5xl font-extrabold font-serif text-amber-300 tracking-tight">
                   ₹{price}
                 </span>
@@ -514,11 +519,15 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                   Lifetime Access
                 </span>
 
-                {discountPct > 0 && (
+                {discountPct > 0 ? (
                   <span className="text-[9.5px] sm:text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
                     {discountPct}% OFF
                   </span>
-                )}
+                ) : originalPrice ? (
+                  <span className="text-[9.5px] sm:text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                    {selectedCourse?.discount_pct || Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -619,7 +628,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       <option value="" disabled>-- Select a Course from Catalog --</option>
                       {catalogCourses.map(c => (
                         <option key={c.id} value={c.id}>
-                          {c.title} — ₹{c.discount_price || c.price}
+                          {c.title} — ₹{c.price || c.discount_price || 299}{c.original_price && Number(c.original_price) > Number(c.price) ? ` (MRP ₹${c.original_price})` : ''}
                         </option>
                       ))}
                     </select>
@@ -1006,10 +1015,15 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                   </div>
 
                   <div className="flex justify-between text-xs text-stone-600">
-                    <span>Base Course Price</span>
-                    <span className={`font-semibold font-mono ${appliedCoupon ? 'line-through text-stone-400' : 'text-stone-900'}`}>
-                      ₹{basePrice}
-                    </span>
+                    <span>Course Tuition</span>
+                    <div className="flex items-center gap-1.5 font-mono">
+                      {originalPrice && (
+                        <span className="line-through text-stone-400 text-[11px]">₹{originalPrice}</span>
+                      )}
+                      <span className={`font-semibold ${appliedCoupon ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+                        ₹{basePrice}
+                      </span>
+                    </div>
                   </div>
 
                   {appliedCoupon && (

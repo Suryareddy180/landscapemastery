@@ -37,8 +37,9 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
           const isEnrolled = enrolledCourseIds.includes(course.id);
           const rawThumb = course.thumbnail || defaultThumbnails[idx % defaultThumbnails.length];
           const thumbnail = rawThumb.startsWith('/media/') ? `${BASE_URL}${rawThumb}` : rawThumb;
-          const displayPrice = course.discount_price || course.price;
-          const hasDiscount = course.discount_price && course.discount_price < course.price;
+          const displayPrice = course.price != null ? course.price : (course.discount_price || 299);
+          const originalPrice = course.original_price || course.strike_price || (course.discount_price && course.discount_price < course.price ? course.price : null);
+          const hasDiscount = Boolean(course.has_discount ?? (originalPrice && Number(originalPrice) > Number(displayPrice)));
 
           return (
             <motion.div
@@ -80,8 +81,8 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
                   <div className="bg-white/95 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-lg border border-stone-200/80">
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-lg font-bold font-serif text-emerald-950">₹{displayPrice}</span>
-                      {hasDiscount && (
-                        <span className="text-xs line-through text-stone-400">₹{course.price}</span>
+                      {hasDiscount && originalPrice && (
+                        <span className="text-xs line-through text-stone-400">₹{originalPrice}</span>
                       )}
                     </div>
                   </div>

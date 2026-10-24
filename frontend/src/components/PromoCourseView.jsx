@@ -234,11 +234,11 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
     );
   }
 
-  const rawPrice = course.price || 499;
-  const rawDiscount = course.discount_price || rawPrice;
-  const displayPrice = parseInt(rawDiscount);
-  const displayOriginal = parseInt(rawPrice);
-  const hasSavings = displayPrice < displayOriginal;
+  const displayPrice = parseInt(course.price || course.discount_price || 299);
+  const rawOriginal = course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null);
+  const displayOriginal = rawOriginal ? parseInt(rawOriginal) : null;
+  const hasSavings = Boolean(displayOriginal && displayOriginal > displayPrice);
+  const discountPct = course.discount_pct || (hasSavings ? Math.round(((displayOriginal - displayPrice) / displayOriginal) * 100) : 0);
 
   return (
     <div className="min-h-screen bg-[#031B19] text-stone-100 selection:bg-emerald-500 selection:text-white font-sans relative overflow-x-hidden">
@@ -363,18 +363,22 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
                 {course.title}
               </h2>
               <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 pt-0.5">
-                <span className="text-sm sm:text-lg font-mono text-stone-400 line-through">
-                  ₹{displayOriginal >= 499 ? displayOriginal : 499}
-                </span>
+                {hasSavings && (
+                  <span className="text-sm sm:text-lg font-mono text-stone-400 line-through">
+                    ₹{displayOriginal}
+                  </span>
+                )}
                 <span className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono">
                   ₹{displayPrice}
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
                   Lifetime Access
                 </span>
-                <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-950 bg-amber-400 px-2 py-0.5 rounded-md font-bold">
-                  40% OFF
-                </span>
+                {discountPct > 0 && (
+                  <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-950 bg-amber-400 px-2 py-0.5 rounded-md font-bold">
+                    {discountPct}% OFF
+                  </span>
+                )}
               </div>
             </div>
 
