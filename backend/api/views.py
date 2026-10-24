@@ -201,13 +201,17 @@ def check_user_has_purchased(email=None, user=None, course=None) -> bool:
     Authoritatively checks if a student/email already owns or is actively enrolled in the course.
     Evaluates:
     - Authenticated user active enrollment or successful payment
+    - Instructor/Admin account roles (already have elevated course management access)
     - Normalized email active enrollment or successful payment record
-    - Legacy / global paid student flag if single published course exists
+    - Legacy / global paid student flag on primary or single published course
     """
     clean_email = str(email or '').strip().lower()
 
     # 1. Check authenticated user
     if user and getattr(user, 'is_authenticated', False):
+        if getattr(user, 'role', '') in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'THREECAPS_ADMIN'] or getattr(user, 'is_staff', False):
+            return True
+
         if course:
             if Enrollment.objects.filter(user=user, course=course, status='ACTIVE').exists():
                 return True
@@ -219,7 +223,8 @@ def check_user_has_purchased(email=None, user=None, course=None) -> bool:
             if PaymentRecord.objects.filter(user=user, status='SUCCESS').exists():
                 return True
 
-        if getattr(user, 'paid', False) and Course.objects.filter(status='PUBLISHED').count() <= 1:
+        first_published = Course.objects.filter(status='PUBLISHED').order_by('id').first()
+        if getattr(user, 'paid', False) and (course == first_published or Course.objects.filter(status='PUBLISHED').count() <= 1):
             return True
 
         if not clean_email and getattr(user, 'email', None):
@@ -227,6 +232,25 @@ def check_user_has_purchased(email=None, user=None, course=None) -> bool:
 
     # 2. Check by email
     if clean_email:
+        usr_match = Usr.objects.filter(email__iexact=clean_email).first()
+        if usr_match:
+            # Instructors and administrators already manage and have full access to all courses
+            if usr_match.role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'THREECAPS_ADMIN'] or usr_match.is_staff or usr_match.is_superuser:
+                return True
+
+            # If user has an active enrollment in this course
+            if course and Enrollment.objects.filter(user=usr_match, course=course, status='ACTIVE').exists():
+                return True
+
+            # If user has a successful payment record for this course
+            if course and PaymentRecord.objects.filter(user=usr_match, course=course, status='SUCCESS').exists():
+                return True
+
+            # If primary course and user is paid
+            first_published = Course.objects.filter(status='PUBLISHED').order_by('id').first()
+            if usr_match.paid and (course == first_published or Course.objects.filter(status='PUBLISHED').count() <= 1):
+                return True
+
         if course:
             if Enrollment.objects.filter(user__email__iexact=clean_email, course=course, status='ACTIVE').exists():
                 return True
@@ -250,7 +274,6 @@ def check_user_has_purchased(email=None, user=None, course=None) -> bool:
                 return True
             if Enrollment.objects.filter(user__email__iexact=clean_email, status='ACTIVE').exists():
                 return True
-            usr_match = Usr.objects.filter(email__iexact=clean_email).first()
             if usr_match and (usr_match.paid or Enrollment.objects.filter(user=usr_match, status='ACTIVE').exists()):
                 return True
 
