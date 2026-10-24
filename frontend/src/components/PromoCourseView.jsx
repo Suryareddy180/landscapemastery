@@ -78,11 +78,11 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
             badge: 'Special Course Invitation',
             salutation: "Welcome! You're Invited",
             headline: `Get Full Access to ${detailData.title}`,
-            subtext: `We are excited to share this course with you! Scan the QR code or tap the card below to enroll in ${detailData.title} and get lifetime access.`
+            subtext: `We are excited to share this course with you! Scan the QR code or tap the card below to enroll in ${detailData.title} and start learning.`
           },
           share_templates: {
-            whatsapp: `🌿 Start learning with *${detailData.title}*!\n\nGet complete lifetime access for only ₹${parseInt(detailData.price)}.\n\n✨ Tap here or scan the QR pass to join:\nhttps://3capstech.com/landscapemastery/promo/${detailData.slug}`,
-            twitter: `Join ${detailData.title} by Landscape Mastery (a product of 3CAPSTECH). Lifetime access for ₹${parseInt(detailData.price)}: https://3capstech.com/landscapemastery/promo/${detailData.slug} #LandscapeMastery #3CAPSTECH`,
+            whatsapp: `🌿 Start learning with *${detailData.title}*!\n\nGet exclusive course access for only ₹${parseInt(detailData.price)}.\n\n✨ Tap here or scan the QR pass to join:\nhttps://3capstech.com/landscapemastery/promo/${detailData.slug}`,
+            twitter: `Join ${detailData.title} by Landscape Mastery (a product of 3CAPSTECH). Exclusive access for ₹${parseInt(detailData.price)}: https://3capstech.com/landscapemastery/promo/${detailData.slug} #LandscapeMastery #3CAPSTECH`,
             linkedin: `Excited to share the ${detailData.title} course by Landscape Mastery (a product of 3CAPSTECH): https://3capstech.com/landscapemastery/promo/${detailData.slug}`,
             instagram_caption: `✨ Join ${detailData.title} by Landscape Mastery (a product of 3CAPSTECH).\n\n👉 Tap link in bio or visit: 3capstech.com/landscapemastery/promo/${detailData.slug}`
           }
@@ -113,7 +113,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               badge: 'Special Course Invitation',
               salutation: "Welcome! You're Invited",
               headline: `Get Full Access to ${match.title}`,
-              subtext: 'Scan the QR code or tap the card below to claim your spot and get lifetime access.'
+              subtext: 'Scan the QR code or tap the card below to claim your spot and start learning.'
             }
           });
           setLoading(false);
@@ -375,9 +375,6 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
                 )}
                 <span className="text-2xl sm:text-4xl font-extrabold text-amber-300 font-mono tracking-tight drop-shadow-sm">
                   ₹{displayPrice}
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
-                  Lifetime Access
                 </span>
                 {discountPct > 0 && (
                   <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-emerald-950 bg-gradient-to-r from-amber-400 to-amber-300 px-2.5 py-0.5 rounded-md font-extrabold shadow-sm">
