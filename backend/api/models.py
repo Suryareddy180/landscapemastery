@@ -63,8 +63,8 @@ class Course(models.Model):
     instructor = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, blank=True)
     thumbnail = models.CharField(max_length=500, blank=True, null=True)
     banner = models.CharField(max_length=500, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Effective selling price charged at checkout.")
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Synchronized selling price for backward compatibility.")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00, help_text="Effective tuition price charged at checkout.")
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00, help_text="Synchronized tuition price for backward compatibility.")
     original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None, help_text="Strike-off price (MRP) displayed with strikethrough. If null or <= price, no strike-off is shown.")
     is_strike_off_enabled = models.BooleanField(default=True, help_text="Dynamic toggle: If True, discount strike-off (MRP) is shown. If False, strike-off is hidden.")
     duration_hrs = models.CharField(max_length=50, default='45 mins')
@@ -79,13 +79,13 @@ class Course(models.Model):
         try:
             # If original_price is explicitly set, self.price is the authoritative selling price
             if self.original_price is not None and float(self.original_price) > 0:
-                return float(self.price or 299.0)
+                return float(self.price or 499.0)
             # Legacy compatibility: if discount_price is lower than price, discount_price was the selling price
             if self.discount_price and self.price and float(self.price) > float(self.discount_price):
                 return float(self.discount_price)
-            return float(self.price or self.discount_price or 299.0)
+            return float(self.price or self.discount_price or 499.0)
         except (ValueError, TypeError):
-            return 299.0
+            return 499.0
 
     def get_original_price(self):
         """Returns the strike-off price (MRP) if toggle is ON and higher than selling price, else None."""

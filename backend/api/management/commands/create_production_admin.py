@@ -137,7 +137,7 @@ class Command(BaseCommand):
         # -----------------------------------------------------------------
         # Rectify course spelling: Ensure 'LANDSCAPE LENS' (not LANSCAPE)
         # -----------------------------------------------------------------
-        from api.models import Course
+        from api.models import Course, SiteSetting
         for c in Course.objects.all():
             updated = False
             if c.title and ('LANSCAPE' in c.title or 'lanscape' in c.title):
@@ -146,9 +146,25 @@ class Command(BaseCommand):
             if c.slug and 'lanscape' in c.slug:
                 c.slug = c.slug.replace('lanscape', 'landscape')
                 updated = True
+            # Standardize base tuition to ₹499 (40% discount applies on 499 => 299)
+            if float(c.price or 0) < 499.0:
+                c.price = 499.00
+                updated = True
+            if float(c.discount_price or 0) < 499.0:
+                c.discount_price = 499.00
+                updated = True
+            if c.original_price and float(c.original_price) <= 499.0:
+                c.original_price = None  # ₹499 is base tuition, not strike-off
+                updated = True
             if updated:
                 c.save()
-                self.stdout.write(self.style.SUCCESS(f"[Rectified] Course #{c.id} updated to '{c.title}' ({c.slug})"))
+                self.stdout.write(self.style.SUCCESS(f"[Rectified] Course #{c.id} updated to '{c.title}' (Price: Rs. {c.price})"))
+
+        setting, _ = SiteSetting.objects.get_or_create(id=1)
+        if float(setting.course_price or 0) < 499.0:
+            setting.course_price = 499.00
+            setting.save()
+            self.stdout.write(self.style.SUCCESS("[Rectified] SiteSetting course_price set to Rs. 499.00"))
 
         self.stdout.write(self.style.SUCCESS("[OK] Production administrator accounts verified."))
 

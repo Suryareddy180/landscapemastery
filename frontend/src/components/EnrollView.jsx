@@ -193,13 +193,18 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     }
   };
 
-  // Base Course Anchor Price (Default ₹299)
-  const basePrice = selectedCourse?.price && Number(selectedCourse.price) > 0 
-    ? Math.round(Number(selectedCourse.price)) 
-    : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) > 0 ? Math.round(Number(siteSettings.coursePrice)) : 299);
+  // Base Course Tuition Price (Standard: ₹499)
+  // Discount applies on ₹499 tuition (e.g. 40% OFF = -₹200 => ₹299 total payable)
+  const basePrice = Math.round(
+    Number(selectedCourse?.original_price) >= 499
+      ? Number(selectedCourse.original_price)
+      : Number(selectedCourse?.price) >= 499
+        ? Number(selectedCourse.price)
+        : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) >= 499 ? Math.round(Number(siteSettings.coursePrice)) : 499)
+  );
 
   const isStrikeOffOn = selectedCourse?.is_strike_off_enabled !== false;
-  const rawOriginalPrice = isStrikeOffOn ? (selectedCourse?.original_price || selectedCourse?.strike_price || (selectedCourse?.discount_price && Number(selectedCourse.discount_price) < Number(selectedCourse.price) ? selectedCourse.price : null)) : null;
+  const rawOriginalPrice = isStrikeOffOn ? (selectedCourse?.original_price || selectedCourse?.strike_price) : null;
   const originalPrice = isStrikeOffOn && rawOriginalPrice && Number(rawOriginalPrice) > basePrice ? Math.round(Number(rawOriginalPrice)) : null;
 
   const discountPct = appliedCoupon ? (Number(appliedCoupon.discount_pct) || 0) : 0;
@@ -627,11 +632,20 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                       className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-semibold text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all cursor-pointer"
                     >
                       <option value="" disabled>-- Select a Course from Catalog --</option>
-                      {catalogCourses.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.title} — ₹{c.price || c.discount_price || 299}{c.original_price && Number(c.original_price) > Number(c.price) ? ` (MRP ₹${c.original_price})` : ''}
-                        </option>
-                      ))}
+                      {catalogCourses.map(c => {
+                        const cBase = Math.round(
+                          Number(c.original_price) >= 499
+                            ? Number(c.original_price)
+                            : Number(c.price) >= 499
+                              ? Number(c.price)
+                              : 499
+                        );
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.title} — ₹{cBase}{c.original_price && Number(c.original_price) > cBase ? ` (MRP ₹${c.original_price})` : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
@@ -1045,7 +1059,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                   {appliedCoupon && (
                     <div className="text-[11px] text-emerald-800 font-medium flex items-center gap-1.5 bg-emerald-100/60 px-2.5 py-1 rounded-lg border border-emerald-200/50">
                       <span>🎉</span>
-                      <span>You saved ₹{discountAmount} (40% OFF) with privilege code {appliedCoupon.code}!</span>
+                      <span>You saved ₹{discountAmount} ({discountPct}% OFF) with privilege code {appliedCoupon.code}!</span>
                     </div>
                   )}
                 </div>

@@ -26,15 +26,15 @@ export default function CourseBuilderSection({ token }) {
   const [loading, setLoading] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState('');
-  const [newCoursePrice, setNewCoursePrice] = useState('299.00');
-  const [newCourseHasStrikePrice, setNewCourseHasStrikePrice] = useState(true);
-  const [newCourseOriginalPrice, setNewCourseOriginalPrice] = useState('499.00');
+  const [newCoursePrice, setNewCoursePrice] = useState('499.00');
+  const [newCourseHasStrikePrice, setNewCourseHasStrikePrice] = useState(false);
+  const [newCourseOriginalPrice, setNewCourseOriginalPrice] = useState('');
   const [newModuleTitle, setNewModuleTitle] = useState('');
 
   // Course Edit Modal (Pricing & Title)
   const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
   const [editCourseTitle, setEditCourseTitle] = useState('');
-  const [editCoursePrice, setEditCoursePrice] = useState('299.00');
+  const [editCoursePrice, setEditCoursePrice] = useState('499.00');
   const [editCourseHasStrikePrice, setEditCourseHasStrikePrice] = useState(false);
   const [editCourseOriginalPrice, setEditCourseOriginalPrice] = useState('');
   const [editCourseSubmitting, setEditCourseSubmitting] = useState(false);

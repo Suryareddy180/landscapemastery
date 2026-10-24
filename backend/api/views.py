@@ -240,21 +240,25 @@ def checkout_session(req):
         'member_count': req.data.get('member_count', 1),
     }
 
-    # Per-course dynamic pricing: look up specific course selling price, fallback to site setting
+    # Per-course dynamic pricing: tuition price (₹499 standard), fallback to site setting
     if course_id:
         try:
             course = Course.objects.get(pk=course_id, status='PUBLISHED')
-            price = course.get_selling_price()
+            base_course_price = float(course.original_price) if (course.original_price and float(course.original_price) >= 499.0) else float(course.price if course.price and float(course.price) >= 499.0 else 499.0)
+            price = base_course_price
             course_title = course.title
         except Course.DoesNotExist:
             return Response({'error': 'Selected course is not available or has been unpublished.'}, status=status.HTTP_404_NOT_FOUND)
     else:
         setting, _ = SiteSetting.objects.get_or_create(id=1)
         course = Course.objects.filter(status='PUBLISHED').first()
-        price = course.get_selling_price() if course else float(setting.course_price or 299.0)
+        base_course_price = float(setting.course_price) if setting.course_price and float(setting.course_price) >= 499.0 else 499.0
+        if course:
+            base_course_price = float(course.original_price) if (course.original_price and float(course.original_price) >= 499.0) else float(course.price if course.price and float(course.price) >= 499.0 else base_course_price)
+        price = base_course_price
         course_title = course.title if course else 'Landscape Mastery Masterclass'
 
-    # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount)
+    # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount on 499 => 299)
     coupon_code = str(req.data.get('coupon_code', '')).strip().upper()
     if coupon_code:
         try:
@@ -1274,7 +1278,7 @@ def admin_courses(req):
 
         short_desc = req.data.get('short_desc', '')
         full_desc = req.data.get('full_desc', '')
-        price = req.data.get('price', 299.00)
+        price = req.data.get('price', 499.00)
         is_strike_off_enabled = bool(req.data.get('is_strike_off_enabled', True))
         original_price = req.data.get('original_price') or req.data.get('strike_price')
         if original_price:
