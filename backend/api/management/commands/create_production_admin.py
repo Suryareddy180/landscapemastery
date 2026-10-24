@@ -107,5 +107,21 @@ class Command(BaseCommand):
             f"[{s_action}] Test Paid Student: {student.email} (Role: {student.role}, Paid: {student.paid})"
         ))
 
+        # -----------------------------------------------------------------
+        # Rectify course spelling: Ensure 'LANDSCAPE LENS' (not LANSCAPE)
+        # -----------------------------------------------------------------
+        from api.models import Course
+        for c in Course.objects.all():
+            updated = False
+            if c.title and ('LANSCAPE' in c.title or 'lanscape' in c.title):
+                c.title = c.title.replace('LANSCAPE', 'LANDSCAPE').replace('lanscape', 'landscape')
+                updated = True
+            if c.slug and 'lanscape' in c.slug:
+                c.slug = c.slug.replace('lanscape', 'landscape')
+                updated = True
+            if updated:
+                c.save()
+                self.stdout.write(self.style.SUCCESS(f"[Rectified] Course #{c.id} updated to '{c.title}' ({c.slug})"))
+
         self.stdout.write(self.style.SUCCESS("[OK] Production administrator accounts verified."))
 
