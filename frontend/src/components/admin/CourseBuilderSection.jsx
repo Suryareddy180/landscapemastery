@@ -226,13 +226,17 @@ export default function CourseBuilderSection({ token }) {
     const sellingPrice = course.price != null ? String(course.price) : '299.00';
     setEditCoursePrice(sellingPrice);
     
-    const orig = course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null);
-    if (orig && Number(orig) > Number(sellingPrice)) {
-      setEditCourseHasStrikePrice(true);
-      setEditCourseOriginalPrice(String(orig));
+    // Toggle state: true if is_strike_off_enabled is active
+    const isEnabled = course.is_strike_off_enabled !== false;
+    setEditCourseHasStrikePrice(Boolean(isEnabled));
+
+    // Stored original price (raw_original_price or original_price)
+    const storedOrig = course.raw_original_price || course.original_price || course.strike_price || null;
+    if (storedOrig) {
+      setEditCourseOriginalPrice(String(storedOrig));
     } else {
-      setEditCourseHasStrikePrice(false);
-      setEditCourseOriginalPrice('');
+      const curr = parseFloat(sellingPrice) || 299;
+      setEditCourseOriginalPrice(curr <= 299 ? '499' : curr <= 499 ? '999' : String(Math.round(curr * 1.5)));
     }
     setEditCourseModalOpen(true);
   };
@@ -251,14 +255,18 @@ export default function CourseBuilderSection({ token }) {
     if (editCourseHasStrikePrice) {
       const orig = parseFloat(editCourseOriginalPrice);
       if (isNaN(orig) || orig <= 0) {
-        setMutationMessage({ type: 'error', text: 'Please enter a valid strike-off price (e.g. 499) or uncheck the strike-off option.' });
+        setMutationMessage({ type: 'error', text: 'Please enter a valid strike-off price (e.g. 999) or turn the toggle OFF.' });
         return;
       }
       if (orig <= parsedPrice) {
-        setMutationMessage({ type: 'error', text: `Strike-off price (₹${orig}) must be greater than the selling price (₹${parsedPrice}).` });
+        setMutationMessage({ type: 'error', text: `Strike-off price (₹${orig}) must be higher than selling price (₹${parsedPrice}) to display discount.` });
         return;
       }
       parsedOriginalPrice = orig;
+    } else {
+      // If toggled OFF, preserve the typed number in original_price so it isn't lost when toggled back ON
+      const orig = parseFloat(editCourseOriginalPrice);
+      parsedOriginalPrice = !isNaN(orig) && orig > 0 ? orig : null;
     }
 
     setEditCourseSubmitting(true);
@@ -272,6 +280,7 @@ export default function CourseBuilderSection({ token }) {
 
       const payload = {
         price: parsedPrice,
+        is_strike_off_enabled: editCourseHasStrikePrice,
         original_price: parsedOriginalPrice,
         discount_price: parsedPrice
       };
@@ -289,7 +298,7 @@ export default function CourseBuilderSection({ token }) {
         const data = await res.json();
         setMutationMessage({
           type: 'success',
-          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated: Selling Price ₹${parsedPrice}${parsedOriginalPrice ? ` with strike-off ₹${parsedOriginalPrice}` : ' (no strike-off)'} successfully!`
+          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated: Selling Price ₹${parsedPrice}${editCourseHasStrikePrice && parsedOriginalPrice ? ` with strike-off ₹${parsedOriginalPrice} (ON)` : ' (Strike-off OFF)'} successfully!`
         });
         setEditCourseModalOpen(false);
         await fetchCourses();
@@ -303,6 +312,52 @@ export default function CourseBuilderSection({ token }) {
       setMutationMessage({ type: 'error', text: 'Network error while updating course pricing.' });
     } finally {
       setEditCourseSubmitting(false);
+    }
+  };
+
+  const handleToggleStrikeOff = async (course) => {
+    if (!course) return;
+    setStatusUpdating(true);
+    setMutationMessage(null);
+    const newToggleState = !course.is_strike_off_enabled;
+
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+
+      const payload = {
+        is_strike_off_enabled: newToggleState
+      };
+      if (newToggleState && !course.original_price && !course.raw_original_price) {
+        const p = parseFloat(course.price) || 299;
+        payload.original_price = p <= 299 ? 499 : p <= 499 ? 999 : Math.round(p * 1.5);
+      }
+
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${course.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setMutationMessage({
+          type: 'success',
+          text: `Discount strike-off for "${course.title}" turned ${newToggleState ? 'ON' : 'OFF'}!`
+        });
+        await fetchCourses();
+        loadCourseDetail(course.id);
+      } else {
+        const err = await res.json();
+        setMutationMessage({ type: 'error', text: err.error || 'Failed to toggle discount strike-off.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while toggling discount strike-off.' });
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
@@ -1141,6 +1196,31 @@ export default function CourseBuilderSection({ token }) {
                     <span className="material-symbols-outlined text-[13px] text-emerald-400 group-hover:text-emerald-700 transition-colors">edit</span>
                   </button>
 
+                  {/* Quick 1-Click Strike-off Toggle Button */}
+                  <button
+                    type="button"
+                    disabled={statusUpdating}
+                    onClick={() => handleToggleStrikeOff(selectedCourse)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer shadow-2xs whitespace-nowrap ${
+                      selectedCourse.is_strike_off_enabled !== false
+                        ? 'bg-amber-50 hover:bg-amber-100/80 text-amber-900 border-amber-300'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600 border-stone-300'
+                    }`}
+                    title={selectedCourse.is_strike_off_enabled !== false ? 'Click to turn strike-off discount OFF' : 'Click to turn strike-off discount ON'}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {selectedCourse.is_strike_off_enabled !== false ? 'toggle_on' : 'toggle_off'}
+                    </span>
+                    <span>Strike-Off:</span>
+                    <span className={`font-bold text-[10px] px-1.5 py-0.2 rounded ${
+                      selectedCourse.is_strike_off_enabled !== false
+                        ? 'bg-amber-200 text-amber-950'
+                        : 'bg-stone-200 text-stone-700'
+                    }`}>
+                      {selectedCourse.is_strike_off_enabled !== false ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
                   {/* Live Status indicator pill */}
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border whitespace-nowrap shadow-2xs ${
                     isSelectedPublished
@@ -1970,43 +2050,65 @@ export default function CourseBuilderSection({ token }) {
                 </div>
               </div>
 
-              {/* Dynamic Price Strike-Off (MRP / Compare-at Price) */}
-              <div className="p-3.5 bg-stone-50 border border-stone-200/90 rounded-2xl space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={editCourseHasStrikePrice}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setEditCourseHasStrikePrice(checked);
-                        if (checked && !editCourseOriginalPrice) {
-                          const curr = parseFloat(editCoursePrice) || 299;
-                          setEditCourseOriginalPrice(curr <= 299 ? '499' : curr <= 499 ? '999' : String(Math.round(curr * 1.5)));
-                        }
-                      }}
-                      className="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 border-stone-300 cursor-pointer"
-                    />
-                    <div>
-                      <span className="block text-xs font-bold text-stone-900">Enable Price Strike-Off (MRP / Compare-at)</span>
-                      <span className="block text-[11px] text-stone-500">Cross out standard MRP next to selling price on cards</span>
+              {/* Dynamic Price Strike-Off Toggle (MRP / Compare-at Price) */}
+              <div className="p-4 bg-gradient-to-br from-stone-50 to-stone-100/70 border border-stone-200/90 rounded-2xl space-y-3.5 shadow-2xs">
+                {/* Switch Header with Toggle Button */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-stone-900">Discount Strike-Off Toggle</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors ${
+                        editCourseHasStrikePrice
+                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          : 'bg-stone-200 text-stone-600 border border-stone-300'
+                      }`}>
+                        {editCourseHasStrikePrice ? '● ON (Discount Active)' : '○ OFF (Flat Price)'}
+                      </span>
                     </div>
-                  </label>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                    editCourseHasStrikePrice ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-stone-200 text-stone-600'
-                  }`}>
-                    {editCourseHasStrikePrice ? 'Active' : 'Disabled'}
-                  </span>
+                    <p className="text-[11px] text-stone-500">
+                      {editCourseHasStrikePrice
+                        ? 'Students will see original MRP crossed out with % OFF badge.'
+                        : 'Strike-off is turned OFF. Students see only the flat selling price without crossed-out figures.'}
+                    </p>
+                  </div>
+
+                  {/* Accessible iOS-Style Toggle Switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={editCourseHasStrikePrice}
+                    onClick={() => {
+                      const next = !editCourseHasStrikePrice;
+                      setEditCourseHasStrikePrice(next);
+                      if (next && !editCourseOriginalPrice) {
+                        const curr = parseFloat(editCoursePrice) || 299;
+                        setEditCourseOriginalPrice(curr <= 299 ? '499' : curr <= 499 ? '999' : String(Math.round(curr * 1.5)));
+                      }
+                    }}
+                    className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 ${
+                      editCourseHasStrikePrice ? 'bg-emerald-600' : 'bg-stone-300'
+                    }`}
+                    title={editCourseHasStrikePrice ? 'Turn Strike-Off OFF' : 'Turn Strike-Off ON'}
+                  >
+                    <span className="sr-only">Toggle Strike-Off Discount</span>
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        editCourseHasStrikePrice ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
 
+                {/* Sub-Card When Toggle is ON */}
                 {editCourseHasStrikePrice ? (
-                  <div className="space-y-2.5 pt-1 border-t border-stone-200/60 animate-in fade-in-50 duration-150">
-                    <div className="space-y-1">
+                  <div className="space-y-3 pt-3 border-t border-stone-200/80 animate-in fade-in-50 duration-150">
+                    <div className="space-y-1.5">
                       <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider">
                         Original Price / Strike-Off MRP (INR ₹) <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-sm">₹</span>
                         <input
                           type="number"
                           step="1"
@@ -2014,14 +2116,14 @@ export default function CourseBuilderSection({ token }) {
                           required={editCourseHasStrikePrice}
                           value={editCourseOriginalPrice}
                           onChange={(e) => setEditCourseOriginalPrice(e.target.value)}
-                          placeholder="499"
-                          className="w-full bg-white border border-stone-200 rounded-xl pl-8 pr-3.5 py-2 text-sm font-bold text-stone-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                          placeholder="999"
+                          className="w-full bg-white border border-stone-300 rounded-xl pl-8 pr-3.5 py-2.5 text-base font-bold text-stone-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15"
                         />
                       </div>
                     </div>
 
-                    {/* Quick Strike Price Presets */}
-                    <div className="space-y-1">
+                    {/* Quick Strike Price Presets Matching User Screenshot */}
+                    <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Strike Presets:</span>
                       <div className="flex flex-wrap gap-1.5">
                         {[499, 699, 999, 1499, 1999, 2999, 4999].map(preset => (
@@ -2029,10 +2131,10 @@ export default function CourseBuilderSection({ token }) {
                             key={preset}
                             type="button"
                             onClick={() => setEditCourseOriginalPrice(String(preset))}
-                            className={`px-2 py-0.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               String(editCourseOriginalPrice) === String(preset)
-                                ? 'bg-stone-900 text-white'
-                                : 'bg-stone-200 hover:bg-stone-300 text-stone-700'
+                                ? 'bg-stone-900 text-white shadow-xs'
+                                : 'bg-stone-200 hover:bg-stone-300 text-stone-800'
                             }`}
                           >
                             ₹{preset}
@@ -2053,16 +2155,19 @@ export default function CourseBuilderSection({ token }) {
                         </span>
                       </div>
                     ) : (
-                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center gap-1.5">
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm text-amber-700">warning</span>
                         <span>Strike price should be greater than Selling Price (₹{editCoursePrice}) to show discount badge.</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-[11px] text-stone-500 italic">
-                    When disabled, the course displays only the flat selling price (₹{editCoursePrice}) with no strikethrough.
-                  </p>
+                  <div className="p-3 bg-stone-100/90 border border-stone-200 rounded-xl flex items-center gap-2.5 text-[11px] text-stone-600">
+                    <span className="material-symbols-outlined text-stone-400 text-base">info</span>
+                    <span>
+                      Strike-off is turned <strong>OFF</strong>. The course will be presented cleanly at <strong>₹{editCoursePrice}</strong> with no crossed-out figures. Your configured MRP ({editCourseOriginalPrice ? `₹${editCourseOriginalPrice}` : '₹999'}) is preserved in the background.
+                    </span>
+                  </div>
                 )}
               </div>
 

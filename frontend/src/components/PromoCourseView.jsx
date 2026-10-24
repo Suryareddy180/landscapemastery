@@ -234,11 +234,12 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
     );
   }
 
+  const isStrikeOffOn = course.is_strike_off_enabled !== false;
   const displayPrice = parseInt(course.price || course.discount_price || 299);
-  const rawOriginal = course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null);
+  const rawOriginal = isStrikeOffOn ? (course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null)) : null;
   const displayOriginal = rawOriginal ? parseInt(rawOriginal) : null;
-  const hasSavings = Boolean(displayOriginal && displayOriginal > displayPrice);
-  const discountPct = course.discount_pct || (hasSavings ? Math.round(((displayOriginal - displayPrice) / displayOriginal) * 100) : 0);
+  const hasSavings = Boolean(isStrikeOffOn && displayOriginal && displayOriginal > displayPrice);
+  const discountPct = isStrikeOffOn ? (course.discount_pct || (hasSavings ? Math.round(((displayOriginal - displayPrice) / displayOriginal) * 100) : 0)) : 0;
 
   return (
     <div className="min-h-screen bg-[#031B19] text-stone-100 selection:bg-emerald-500 selection:text-white font-sans relative overflow-x-hidden">

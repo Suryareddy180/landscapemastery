@@ -198,8 +198,9 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     ? Math.round(Number(selectedCourse.price)) 
     : (siteSettings?.coursePrice && Number(siteSettings.coursePrice) > 0 ? Math.round(Number(siteSettings.coursePrice)) : 299);
 
-  const rawOriginalPrice = selectedCourse?.original_price || selectedCourse?.strike_price || (selectedCourse?.discount_price && Number(selectedCourse.discount_price) < Number(selectedCourse.price) ? selectedCourse.price : null);
-  const originalPrice = rawOriginalPrice && Number(rawOriginalPrice) > basePrice ? Math.round(Number(rawOriginalPrice)) : null;
+  const isStrikeOffOn = selectedCourse?.is_strike_off_enabled !== false;
+  const rawOriginalPrice = isStrikeOffOn ? (selectedCourse?.original_price || selectedCourse?.strike_price || (selectedCourse?.discount_price && Number(selectedCourse.discount_price) < Number(selectedCourse.price) ? selectedCourse.price : null)) : null;
+  const originalPrice = isStrikeOffOn && rawOriginalPrice && Number(rawOriginalPrice) > basePrice ? Math.round(Number(rawOriginalPrice)) : null;
 
   const discountPct = appliedCoupon ? (Number(appliedCoupon.discount_pct) || 0) : 0;
   const discountAmount = discountPct > 0 ? Math.round(basePrice * (discountPct / 100)) : 0;

@@ -1171,4 +1171,98 @@ class CommunityManagementTests(TestCase):
         self.assertIn('Cannot post', blocked_res.json()['error'])
 
 
+class CourseStrikeOffToggleTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = Usr.objects.create_user(
+            email='admin_toggle@landscapemastery.com',
+            password='AdminPassword123!',
+            full_name='Admin Toggle',
+            role='SUPER_ADMIN',
+            is_staff=True,
+            is_superuser=True,
+            is_active=True
+        )
+        from api.views import get_tokens_for_user
+        self.admin_token = get_tokens_for_user(self.admin)
+        self.course = Course.objects.create(
+            title='Landscape Lens Masterclass',
+            slug='landscape-lens-masterclass',
+            price=299.00,
+            original_price=999.00,
+            is_strike_off_enabled=True,
+            status='PUBLISHED'
+        )
+
+    def test_model_methods_when_toggle_is_on(self):
+        self.assertTrue(self.course.is_strike_off_enabled)
+        self.assertEqual(self.course.get_original_price(), 999.00)
+        self.assertTrue(self.course.has_discount())
+        self.assertEqual(self.course.get_discount_percentage(), 70)
+
+    def test_model_methods_when_toggle_is_off(self):
+        self.course.is_strike_off_enabled = False
+        self.course.save()
+        self.assertFalse(self.course.is_strike_off_enabled)
+        # original_price number is preserved in database
+        self.assertEqual(self.course.original_price, 999.00)
+        # but helper methods return None / False / 0
+        self.assertIsNone(self.course.get_original_price())
+        self.assertFalse(self.course.has_discount())
+        self.assertEqual(self.course.get_discount_percentage(), 0)
+
+    def test_public_endpoint_reflects_toggle_state(self):
+        # 1. Toggle is ON
+        res_on = self.client.get('/api/public/courses/')
+        self.assertEqual(res_on.status_code, 200)
+        courses_on = res_on.json()['courses']
+        matched_on = next(c for c in courses_on if c['id'] == self.course.id)
+        self.assertTrue(matched_on['is_strike_off_enabled'])
+        self.assertEqual(float(matched_on['original_price']), 999.00)
+        self.assertTrue(matched_on['has_discount'])
+        self.assertEqual(matched_on['discount_pct'], 70)
+
+        # 2. Toggle is OFF
+        self.course.is_strike_off_enabled = False
+        self.course.save()
+
+        res_off = self.client.get('/api/public/courses/')
+        self.assertEqual(res_off.status_code, 200)
+        courses_off = res_off.json()['courses']
+        matched_off = next(c for c in courses_off if c['id'] == self.course.id)
+        self.assertFalse(matched_off['is_strike_off_enabled'])
+        self.assertIsNone(matched_off['original_price'])
+        self.assertFalse(matched_off['has_discount'])
+        self.assertEqual(matched_off['discount_pct'], 0)
+
+    def test_admin_patch_toggles_strike_off_and_preserves_mrp(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.admin_token}')
+
+        # Turn OFF via PATCH
+        res_patch_off = self.client.patch(
+            f'/api/admin/courses/{self.course.id}/',
+            {'is_strike_off_enabled': False},
+            format='json'
+        )
+        self.assertEqual(res_patch_off.status_code, 200)
+        data_off = res_patch_off.json()['course']
+        self.assertFalse(data_off['is_strike_off_enabled'])
+        self.assertIsNone(data_off['original_price'])
+        # Raw MRP is preserved for admin re-enabling
+        self.assertEqual(float(data_off['raw_original_price']), 999.00)
+
+        # Turn back ON via PATCH
+        res_patch_on = self.client.patch(
+            f'/api/admin/courses/{self.course.id}/',
+            {'is_strike_off_enabled': True},
+            format='json'
+        )
+        self.assertEqual(res_patch_on.status_code, 200)
+        data_on = res_patch_on.json()['course']
+        self.assertTrue(data_on['is_strike_off_enabled'])
+        self.assertEqual(float(data_on['original_price']), 999.00)
+        self.assertTrue(data_on['has_discount'])
+        self.assertEqual(data_on['discount_pct'], 70)
+
+
 

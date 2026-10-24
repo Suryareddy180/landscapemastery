@@ -38,8 +38,9 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
           const rawThumb = course.thumbnail || defaultThumbnails[idx % defaultThumbnails.length];
           const thumbnail = rawThumb.startsWith('/media/') ? `${BASE_URL}${rawThumb}` : rawThumb;
           const displayPrice = course.price != null ? course.price : (course.discount_price || 299);
-          const originalPrice = course.original_price || course.strike_price || (course.discount_price && course.discount_price < course.price ? course.price : null);
-          const hasDiscount = Boolean(course.has_discount ?? (originalPrice && Number(originalPrice) > Number(displayPrice)));
+          const isStrikeOffOn = course.is_strike_off_enabled !== false;
+          const originalPrice = isStrikeOffOn ? (course.original_price || course.strike_price || (course.discount_price && course.discount_price < course.price ? course.price : null)) : null;
+          const hasDiscount = Boolean(isStrikeOffOn && (course.has_discount ?? (originalPrice && Number(originalPrice) > Number(displayPrice))));
 
           return (
             <motion.div

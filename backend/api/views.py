@@ -614,6 +614,7 @@ def public_courses(req):
             'strike_price': original_price,
             'discount_price': selling_price,
             'has_discount': has_disc,
+            'is_strike_off_enabled': c.is_strike_off_enabled,
             'discount_pct': discount_pct,
             'duration_hrs': c.get_duration(),
             'level': c.level,
@@ -1233,6 +1234,8 @@ def admin_courses(req):
                 'slug': c.slug,
                 'price': c.get_selling_price(),
                 'original_price': c.get_original_price(),
+                'raw_original_price': float(c.original_price) if c.original_price else None,
+                'is_strike_off_enabled': c.is_strike_off_enabled,
                 'strike_price': c.get_original_price(),
                 'discount_price': c.get_selling_price(),
                 'has_discount': c.has_discount(),
@@ -1262,6 +1265,7 @@ def admin_courses(req):
         short_desc = req.data.get('short_desc', '')
         full_desc = req.data.get('full_desc', '')
         price = req.data.get('price', 299.00)
+        is_strike_off_enabled = bool(req.data.get('is_strike_off_enabled', True))
         original_price = req.data.get('original_price') or req.data.get('strike_price')
         if original_price:
             try:
@@ -1274,7 +1278,7 @@ def admin_courses(req):
 
         thumbnail = req.data.get('thumbnail', '')
         course = Course.objects.create(
-            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, original_price=original_price, discount_price=price, status='PUBLISHED', thumbnail=thumbnail
+            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, original_price=original_price, is_strike_off_enabled=is_strike_off_enabled, discount_price=price, status='PUBLISHED', thumbnail=thumbnail
         )
         log_admin_action(req.user, "COURSE_CREATED", target=course.title, details=f"ID: {course.id}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
@@ -1284,6 +1288,8 @@ def admin_courses(req):
             'slug': course.slug,
             'price': course.get_selling_price(),
             'original_price': course.get_original_price(),
+            'raw_original_price': float(course.original_price) if course.original_price else None,
+            'is_strike_off_enabled': course.is_strike_off_enabled,
             'strike_price': course.get_original_price(),
             'discount_price': course.get_selling_price(),
             'has_discount': course.has_discount(),
@@ -1332,6 +1338,8 @@ def admin_course_detail(req, pk):
             'slug': course.slug,
             'price': course.get_selling_price(),
             'original_price': course.get_original_price(),
+            'raw_original_price': float(course.original_price) if course.original_price else None,
+            'is_strike_off_enabled': course.is_strike_off_enabled,
             'strike_price': course.get_original_price(),
             'discount_price': course.get_selling_price(),
             'has_discount': course.has_discount(),
@@ -1359,6 +1367,10 @@ def admin_course_detail(req, pk):
                 course.discount_price = new_price
             except (ValueError, TypeError):
                 pass
+        if 'is_strike_off_enabled' in req.data:
+            course.is_strike_off_enabled = bool(req.data['is_strike_off_enabled'])
+        if 'enable_strike_price' in req.data:
+            course.is_strike_off_enabled = bool(req.data['enable_strike_price'])
         if 'original_price' in req.data or 'strike_price' in req.data:
             orig = req.data.get('original_price', req.data.get('strike_price'))
             if orig is None or orig == '' or orig == 0 or orig == '0':
@@ -1373,7 +1385,7 @@ def admin_course_detail(req, pk):
         if 'thumbnail' in req.data: course.thumbnail = req.data['thumbnail']
         if 'banner' in req.data: course.banner = req.data['banner']
         course.save()
-        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, OriginalPrice: {course.original_price}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
+        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, OriginalPrice: {course.original_price}, StrikeToggle: {course.is_strike_off_enabled}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
             'status': 'updated',
             'course': {
@@ -1382,6 +1394,8 @@ def admin_course_detail(req, pk):
                 'slug': course.slug,
                 'price': course.get_selling_price(),
                 'original_price': course.get_original_price(),
+                'raw_original_price': float(course.original_price) if course.original_price else None,
+                'is_strike_off_enabled': course.is_strike_off_enabled,
                 'strike_price': course.get_original_price(),
                 'discount_price': course.get_selling_price(),
                 'has_discount': course.has_discount(),

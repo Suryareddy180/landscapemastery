@@ -65,6 +65,7 @@ class Course(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Effective selling price charged at checkout.")
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=299.00, help_text="Synchronized selling price for backward compatibility.")
     original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None, help_text="Strike-off price (MRP) displayed with strikethrough. If null or <= price, no strike-off is shown.")
+    is_strike_off_enabled = models.BooleanField(default=True, help_text="Dynamic toggle: If True, discount strike-off (MRP) is shown. If False, strike-off is hidden.")
     duration_hrs = models.CharField(max_length=50, default='45 mins')
     level = models.CharField(max_length=50, default='All Levels')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED')
@@ -86,7 +87,9 @@ class Course(models.Model):
             return 299.0
 
     def get_original_price(self):
-        """Returns the strike-off price (MRP) if higher than selling price, else None."""
+        """Returns the strike-off price (MRP) if toggle is ON and higher than selling price, else None."""
+        if not self.is_strike_off_enabled:
+            return None
         try:
             if self.original_price is not None and float(self.original_price) > 0:
                 orig = float(self.original_price)
@@ -100,7 +103,7 @@ class Course(models.Model):
         return None
 
     def has_discount(self):
-        return self.get_original_price() is not None
+        return bool(self.is_strike_off_enabled and self.get_original_price() is not None)
 
     def get_discount_percentage(self):
         orig = self.get_original_price()
