@@ -244,7 +244,9 @@ def checkout_session(req):
     if course_id:
         try:
             course = Course.objects.get(pk=course_id, status='PUBLISHED')
-            base_course_price = float(course.original_price) if (course.original_price and float(course.original_price) >= 499.0) else float(course.price if course.price and float(course.price) >= 499.0 else 499.0)
+            base_course_price = float(course.get_selling_price())
+            if base_course_price < 499.0:
+                base_course_price = 499.0
             price = base_course_price
             course_title = course.title
         except Course.DoesNotExist:
@@ -252,9 +254,12 @@ def checkout_session(req):
     else:
         setting, _ = SiteSetting.objects.get_or_create(id=1)
         course = Course.objects.filter(status='PUBLISHED').first()
-        base_course_price = float(setting.course_price) if setting.course_price and float(setting.course_price) >= 499.0 else 499.0
+        base_course_price = float(setting.course_price or 499.0)
         if course:
-            base_course_price = float(course.original_price) if (course.original_price and float(course.original_price) >= 499.0) else float(course.price if course.price and float(course.price) >= 499.0 else base_course_price)
+            course_selling = float(course.get_selling_price())
+            base_course_price = course_selling if course_selling >= 499.0 else 499.0
+        elif base_course_price < 499.0:
+            base_course_price = 499.0
         price = base_course_price
         course_title = course.title if course else 'Landscape Mastery Masterclass'
 
