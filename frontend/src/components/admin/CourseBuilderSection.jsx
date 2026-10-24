@@ -37,6 +37,8 @@ export default function CourseBuilderSection({ token }) {
   const [editCoursePrice, setEditCoursePrice] = useState('499.00');
   const [editCourseHasStrikePrice, setEditCourseHasStrikePrice] = useState(false);
   const [editCourseOriginalPrice, setEditCourseOriginalPrice] = useState('');
+  const [editCourseIsLocked, setEditCourseIsLocked] = useState(false);
+  const [editCourseLockReason, setEditCourseLockReason] = useState('Course video is currently under editing. The final video will be unlocked soon.');
   const [editCourseSubmitting, setEditCourseSubmitting] = useState(false);
 
   // Promotional & Social Launch Suite Modal
@@ -238,6 +240,8 @@ export default function CourseBuilderSection({ token }) {
       const curr = parseFloat(sellingPrice) || 299;
       setEditCourseOriginalPrice(curr <= 299 ? '499' : curr <= 499 ? '999' : String(Math.round(curr * 1.5)));
     }
+    setEditCourseIsLocked(Boolean(course.is_locked));
+    setEditCourseLockReason(course.lock_reason || 'Course video is currently under editing. The final video will be unlocked soon.');
     setEditCourseModalOpen(true);
   };
 
@@ -282,7 +286,9 @@ export default function CourseBuilderSection({ token }) {
         price: parsedPrice,
         is_strike_off_enabled: editCourseHasStrikePrice,
         original_price: parsedOriginalPrice,
-        discount_price: parsedPrice
+        discount_price: parsedPrice,
+        is_locked: editCourseIsLocked,
+        lock_reason: editCourseLockReason.trim() || 'Course video is currently under editing. The final video will be unlocked soon.'
       };
       if (editCourseTitle.trim()) {
         payload.title = editCourseTitle.trim();
@@ -298,7 +304,7 @@ export default function CourseBuilderSection({ token }) {
         const data = await res.json();
         setMutationMessage({
           type: 'success',
-          text: `Course pricing for "${data.course?.title || selectedCourse.title}" updated: Selling Price ₹${parsedPrice}${editCourseHasStrikePrice && parsedOriginalPrice ? ` with strike-off ₹${parsedOriginalPrice} (ON)` : ' (Strike-off OFF)'} successfully!`
+          text: `Course settings for "${data.course?.title || selectedCourse.title}" updated (Price: ₹${parsedPrice}, Lock: ${editCourseIsLocked ? 'LOCKED for Editing' : 'UNLOCKED'}) successfully!`
         });
         setEditCourseModalOpen(false);
         await fetchCourses();
@@ -312,6 +318,46 @@ export default function CourseBuilderSection({ token }) {
       setMutationMessage({ type: 'error', text: 'Network error while updating course pricing.' });
     } finally {
       setEditCourseSubmitting(false);
+    }
+  };
+
+  const handleToggleCourseLock = async (course) => {
+    if (!course) return;
+    setStatusUpdating(true);
+    setMutationMessage(null);
+    const nextLocked = !course.is_locked;
+
+    try {
+      const authToken = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+      };
+
+      const res = await fetch(`${BASE_URL}/api/admin/courses/${course.id}/`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ is_locked: nextLocked })
+      });
+
+      if (res.ok) {
+        const msg = nextLocked
+          ? `🔒 Course "${course.title}" is now LOCKED for video editing. Enrolled students are blocked from opening or streaming until unlocked.`
+          : `🔓 Course "${course.title}" is now UNLOCKED! Enrolled students can now access and watch all video lessons.`;
+        setMutationMessage({ type: 'success', text: msg });
+        await fetchCourses();
+        if (selectedCourse?.id === course.id) {
+          setSelectedCourse(prev => prev ? { ...prev, is_locked: nextLocked } : null);
+        }
+      } else {
+        const errData = await res.json();
+        setMutationMessage({ type: 'error', text: errData.error || 'Failed to update course lock status.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMutationMessage({ type: 'error', text: 'Network error while updating course lock.' });
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
@@ -982,7 +1028,7 @@ export default function CourseBuilderSection({ token }) {
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] pt-1 border-t border-stone-100">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase border flex items-center gap-1.5 ${
                           isPub
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200/90'
@@ -993,6 +1039,12 @@ export default function CourseBuilderSection({ token }) {
                           <span className={`w-1.5 h-1.5 rounded-full ${isPub ? 'bg-emerald-600 animate-pulse' : 'bg-amber-600'}`} />
                           {isPub ? 'Active' : `Inactive (${c.status})`}
                         </span>
+                        {c.is_locked && (
+                          <span className="px-1.5 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase border bg-amber-100 text-amber-900 border-amber-300 flex items-center gap-0.5" title="Course video is under editing. Locked from students.">
+                            <span className="material-symbols-outlined text-[10px] text-amber-700">lock</span>
+                            <span>Editing</span>
+                          </span>
+                        )}
                         <span className="text-stone-500 font-medium flex items-center gap-0.5">
                           <span className="material-symbols-outlined text-[12px] text-stone-400">layers</span>
                           {c.modulesCount || 0} Modules
@@ -1048,6 +1100,33 @@ export default function CourseBuilderSection({ token }) {
 
                   {/* Actions Toolbar */}
                   <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                    {/* Course Lock / Video Editing Toggle Button */}
+                    <button
+                      onClick={() => handleToggleCourseLock(selectedCourse)}
+                      disabled={statusUpdating}
+                      className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                        selectedCourse.is_locked
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400/80 shadow-xs'
+                          : 'bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 border border-stone-200/90'
+                      }`}
+                      title={
+                        selectedCourse.is_locked
+                          ? 'Course is locked for video editing. Click to unlock for students.'
+                          : 'Lock course from students while video is undergoing editing.'
+                      }
+                    >
+                      <span className={`material-symbols-outlined text-base ${selectedCourse.is_locked ? 'text-amber-700' : 'text-stone-500'}`}>
+                        {selectedCourse.is_locked ? 'lock' : 'lock_open'}
+                      </span>
+                      <span>
+                        {statusUpdating
+                          ? 'Updating...'
+                          : selectedCourse.is_locked
+                          ? 'Locked (In Editing)'
+                          : 'Unlocked'}
+                      </span>
+                    </button>
+
                     {/* Launch & Promote Button */}
                     <button
                       onClick={() => setPromoteModalOpen(true)}
@@ -1124,6 +1203,35 @@ export default function CourseBuilderSection({ token }) {
                     </button>
                   </div>
                 </div>
+
+                {/* Course Locked Alert Notice Banner */}
+                {selectedCourse.is_locked && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/70 to-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="material-symbols-outlined text-xl">lock</span>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-amber-950 flex items-center gap-2">
+                          <span>Course Video Under Editing</span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-200/90 text-amber-900 uppercase border border-amber-300/80">LOCKED FOR STUDENTS</span>
+                        </div>
+                        <p className="text-[11px] text-amber-900/80 mt-0.5 leading-relaxed">
+                          Enrolled students cannot open or stream this course. As an instructor/admin, you can test and preview lessons below. When final video editing is done, click <strong>Unlock Course</strong> to release it to students.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleCourseLock(selectedCourse)}
+                      disabled={statusUpdating}
+                      className="px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex-shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-98"
+                    >
+                      <span className="material-symbols-outlined text-sm">lock_open</span>
+                      <span>Unlock Course</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Row 2: Metadata Badges (Slug, Promo Link, Price, Status, Modules) */}
                 <div className="flex flex-wrap items-center gap-2">
@@ -2167,6 +2275,43 @@ export default function CourseBuilderSection({ token }) {
                     <span>
                       Strike-off is turned <strong>OFF</strong>. The course will be presented cleanly at <strong>₹{editCoursePrice}</strong> with no crossed-out figures. Your configured MRP ({editCourseOriginalPrice ? `₹${editCourseOriginalPrice}` : '₹999'}) is preserved in the background.
                     </span>
+                  </div>
+                )}
+              </div>
+
+              {/* COURSE LOCK TOGGLE (VIDEO UNDER EDITING) */}
+              <div className="p-4 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-lg text-amber-600">lock</span>
+                    <div>
+                      <span className="text-xs font-bold text-amber-950 block">Lock Course (Video Under Editing)</span>
+                      <span className="text-[11px] text-amber-800">Prevent customers/students from opening lessons while video is in post-production.</span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editCourseIsLocked}
+                      onChange={(e) => setEditCourseIsLocked(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
+                {editCourseIsLocked && (
+                  <div className="pt-2.5 border-t border-amber-200/80 space-y-1">
+                    <label className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
+                      Lock Notice Displayed to Enrolled Students:
+                    </label>
+                    <input
+                      type="text"
+                      value={editCourseLockReason}
+                      onChange={(e) => setEditCourseLockReason(e.target.value)}
+                      placeholder="Course video is currently under editing. The final video will be unlocked soon."
+                      className="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none shadow-2xs"
+                    />
                   </div>
                 )}
               </div>

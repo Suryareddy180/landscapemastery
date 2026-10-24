@@ -67,6 +67,16 @@ class Course(models.Model):
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=499.00, help_text="Synchronized tuition price for backward compatibility.")
     original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None, help_text="Strike-off price (MRP) displayed with strikethrough. If null or <= price, no strike-off is shown.")
     is_strike_off_enabled = models.BooleanField(default=True, help_text="Dynamic toggle: If True, discount strike-off (MRP) is shown. If False, strike-off is hidden.")
+    is_locked = models.BooleanField(
+        default=False,
+        help_text="Locks the course from customer/student viewing while video content is undergoing editing or updates."
+    )
+    lock_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default="Course video is currently under editing. The final video will be unlocked soon.",
+        help_text="Custom notification displayed to enrolled students when course is locked."
+    )
     duration_hrs = models.CharField(max_length=50, default='45 mins')
     level = models.CharField(max_length=50, default='All Levels')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED')

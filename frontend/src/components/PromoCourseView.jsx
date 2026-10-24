@@ -482,6 +482,12 @@ export default function PromoCourseView({ onNavigate, siteSettings, user }) {
 
             {/* Primary Mobile-Friendly Action Button */}
             <div className="space-y-2.5 pt-1">
+              {course?.is_locked && (
+                <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold text-center">
+                  <span className="material-symbols-outlined text-sm text-amber-400">movie_edit</span>
+                  <span>Course video currently in editing — Enrollments open, unlocks immediately upon release.</span>
+                </div>
+              )}
               {isAlreadyPurchased ? (
                 <motion.button
                   whileHover={{ scale: 1.01 }}

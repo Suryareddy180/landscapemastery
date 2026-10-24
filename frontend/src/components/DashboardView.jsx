@@ -29,6 +29,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
   const [completedLessonIds, setCompletedLessonIds] = useState(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
+  const [courseLockModal, setCourseLockModal] = useState({ open: false, course: null, reason: '' });
 
   // Real-time Bookmarks persistence across portal and player
   const [bookmarkedLessonIds, setBookmarkedLessonIds] = useState(() => {
@@ -83,6 +84,16 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
   // --- Select Course: Transition to Photo 2 ---
   const handleOpenCourse = async (course) => {
+    // If course is locked for video editing and user is not admin/instructor, prevent entering player
+    if (course.is_locked && !isAdmin) {
+      setCourseLockModal({
+        open: true,
+        course: course,
+        reason: course.lock_reason || 'Course video is currently under editing. The final video will be unlocked soon.'
+      });
+      return;
+    }
+
     setSelectedCourse(course);
     setPortalTab('courses');
     setPlaybackLoading(true);
@@ -94,6 +105,17 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
       const res = await fetch(`${BASE_URL}/api/courses/${course.id}/curriculum/`, {
         headers
       });
+
+      if (res.status === 423) {
+        const data = await res.json();
+        setSelectedCourse(null);
+        setCourseLockModal({
+          open: true,
+          course: course,
+          reason: data.lock_reason || course.lock_reason || 'Course video is currently under editing. The final video will be unlocked soon.'
+        });
+        return;
+      }
 
       if (res.ok) {
         const data = await res.json();
@@ -540,7 +562,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                       <div
                         key={c.id}
                         onClick={() => handleOpenCourse(c)}
-                        className="bg-white border border-stone-200/90 rounded-xl overflow-hidden hover:shadow-xl hover:border-stone-300 transition-all cursor-pointer flex flex-col group"
+                        className="bg-white border border-stone-200/90 rounded-xl overflow-hidden hover:shadow-xl hover:border-stone-300 transition-all cursor-pointer flex flex-col group relative"
                       >
                         {/* Course Banner Thumbnail (16:9 ratio) */}
                         <div className="relative w-full aspect-video bg-stone-900 overflow-hidden">
@@ -550,30 +572,55 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/course_thumb_landscape.jpg'; }}
                             className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                           />
+                          {c.is_locked && (
+                            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-950/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-[11px] font-bold shadow-lg">
+                              <span className="material-symbols-outlined text-xs text-amber-400">lock</span>
+                              <span>Video In Editing</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Course Content Info */}
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div className="mb-4">
-                            <h3 className="font-bold text-sm text-stone-900 line-clamp-2 group-hover:text-amber-700 transition-colors">
-                              {c.title}
+                            <h3 className="font-bold text-sm text-stone-900 line-clamp-2 group-hover:text-amber-700 transition-colors flex items-center justify-between gap-2">
+                              <span>{c.title}</span>
+                              {c.is_locked && (
+                                <span className="material-symbols-outlined text-base text-amber-600 flex-shrink-0" title="Course locked while video is under editing">
+                                  lock
+                                </span>
+                              )}
                             </h3>
                           </div>
 
-                          {/* Progress Bar */}
-                          <div>
-                            <div className="w-full bg-stone-100 rounded-full h-2 mb-2 overflow-hidden">
-                              <div
-                                className="bg-amber-500 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${Math.min(100, Math.max(0, c.progress_percent || 0))}%` }}
-                              />
+                          {/* Progress Bar / Locked Status */}
+                          {c.is_locked ? (
+                            <div className="pt-2 border-t border-stone-100">
+                              <div className="flex items-center justify-between text-[11px] font-semibold text-amber-800">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-sm text-amber-600">movie_edit</span>
+                                  <span>Video In Post-Production</span>
+                                </span>
+                                <span className="text-[10px] font-mono text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
+                                  Unlocks Soon
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between text-[11px] font-semibold">
-                              <span className="text-amber-600 font-bold">
-                                {c.progress_percent || 0}% completed
-                              </span>
+                          ) : (
+                            <div>
+                              <div className="w-full bg-stone-100 rounded-full h-2 mb-2 overflow-hidden">
+                                <div
+                                  className="bg-amber-500 h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${Math.min(100, Math.max(0, c.progress_percent || 0))}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-[11px] font-semibold">
+                                <span className="text-amber-600 font-bold">
+                                  {c.progress_percent || 0}% completed
+                                </span>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -963,6 +1010,59 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             </div>
           </div>
         )}
+
+      {/* Course Locked (Video In Editing) Modal Dialog */}
+      {courseLockModal.open && courseLockModal.course && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-stone-200/90 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <span className="material-symbols-outlined text-2xl">movie_edit</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCourseLockModal({ open: false, course: null, reason: '' })}
+                className="text-stone-400 hover:text-stone-700 p-1 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                <span className="material-symbols-outlined text-xs">lock</span>
+                <span>Course Locked • Video Under Editing</span>
+              </div>
+              <h3 className="text-lg font-bold text-stone-900 tracking-tight">
+                {courseLockModal.course.title}
+              </h3>
+              <p className="text-xs text-stone-600 leading-relaxed">
+                {courseLockModal.reason || "We are currently editing and mastering the final high-definition video lessons for this course to ensure the best learning experience."}
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-amber-950 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold">
+                <span className="material-symbols-outlined text-base text-amber-600">verified</span>
+                <span>Your Enrollment is Confirmed &amp; Active</span>
+              </div>
+              <p className="text-[11px] text-amber-900/80 leading-relaxed">
+                Your payment and course registration are securely saved in your account. As soon as final video editing is completed and the course is unlocked, full streaming access will be immediately available right here in your dashboard.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCourseLockModal({ open: false, course: null, reason: '' })}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-98"
+              >
+                Got it, Thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Toast Notification (Video Auto-completed / Lock Feedback) */}
       {toastMessage && (

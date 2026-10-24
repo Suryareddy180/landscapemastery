@@ -764,6 +764,8 @@ def public_courses(req):
             'level': c.level,
             'thumbnail': c.thumbnail or '',
             'banner': c.banner or '',
+            'is_locked': c.is_locked,
+            'lock_reason': c.lock_reason or '',
             'module_count': module_count,
             'lesson_count': lesson_count
         })
@@ -828,6 +830,8 @@ def public_course_detail(req, slug):
         'level': c.level,
         'thumbnail': c.thumbnail or '',
         'banner': c.banner or '',
+        'is_locked': c.is_locked,
+        'lock_reason': c.lock_reason or '',
         'modules': modules_data,
         'promo_url': f"/landscapemastery/promo/{c.slug}",
         'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{c.slug}"
@@ -892,6 +896,8 @@ def public_course_promo(req, slug):
         'thumbnail': c.thumbnail or '',
         'banner': c.banner or '',
         'status': c.status,
+        'is_locked': c.is_locked,
+        'lock_reason': c.lock_reason or '',
         'already_purchased': check_user_has_purchased(email=req.query_params.get('email'), user=req.user, course=c),
         'module_count': module_count,
         'lesson_count': lesson_count,
@@ -1032,7 +1038,9 @@ def my_enrollments(req):
             'completed_lessons': completed_lessons,
             'total_lessons': total_lessons,
             'valid_until': valid_until_str,
-            'status': enr.status
+            'status': enr.status,
+            'is_locked': bool(c.is_locked),
+            'lock_reason': c.lock_reason or "Course video is currently under editing. The final video will be unlocked soon."
         }
 
         enrolled_courses.append(course_item)
@@ -1070,6 +1078,17 @@ def generate_signed_video_url(req, pk):
             enrolled_course_ids = set(Enrollment.objects.filter(user=req.user, status='ACTIVE').values_list('course_id', flat=True))
             if not asset_course_ids.intersection(enrolled_course_ids) and not req.user.paid:
                 return Response({'error': 'Access denied: You are not enrolled in this course'}, status=status.HTTP_403_FORBIDDEN)
+            # Check if any associated course is locked due to video editing
+            locked_courses = Course.objects.filter(id__in=asset_course_ids, is_locked=True)
+            if locked_courses.exists():
+                locked_c = locked_courses.first()
+                return Response({
+                    'error': locked_c.lock_reason or 'Course video is currently under editing. The final video will be unlocked soon.',
+                    'is_locked': True,
+                    'lock_reason': locked_c.lock_reason,
+                    'course_id': locked_c.id,
+                    'course_title': locked_c.title
+                }, status=status.HTTP_423_LOCKED)
         elif not req.user.paid:
             # Fallback for unattached assets — require at least one enrollment
             if not Enrollment.objects.filter(user=req.user, status='ACTIVE').exists():
@@ -1403,6 +1422,8 @@ def admin_courses(req):
                 'has_discount': c.has_discount(),
                 'discount_pct': c.get_discount_percentage(),
                 'status': c.status,
+                'is_locked': c.is_locked,
+                'lock_reason': c.lock_reason or '',
                 'thumbnail': c.thumbnail or '',
                 'banner': c.banner or '',
                 'modulesCount': c.modules.count(),
@@ -1428,6 +1449,8 @@ def admin_courses(req):
         full_desc = req.data.get('full_desc', '')
         price = req.data.get('price', 499.00)
         is_strike_off_enabled = bool(req.data.get('is_strike_off_enabled', True))
+        is_locked = bool(req.data.get('is_locked', False))
+        lock_reason = req.data.get('lock_reason', 'Course video is currently under editing. The final video will be unlocked soon.')
         original_price = req.data.get('original_price') or req.data.get('strike_price')
         if original_price:
             try:
@@ -1440,7 +1463,7 @@ def admin_courses(req):
 
         thumbnail = req.data.get('thumbnail', '')
         course = Course.objects.create(
-            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, original_price=original_price, is_strike_off_enabled=is_strike_off_enabled, discount_price=price, status='PUBLISHED', thumbnail=thumbnail
+            title=title, slug=slug, short_desc=short_desc, full_desc=full_desc, price=price, original_price=original_price, is_strike_off_enabled=is_strike_off_enabled, is_locked=is_locked, lock_reason=lock_reason, discount_price=price, status='PUBLISHED', thumbnail=thumbnail
         )
         log_admin_action(req.user, "COURSE_CREATED", target=course.title, details=f"ID: {course.id}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
@@ -1456,6 +1479,8 @@ def admin_courses(req):
             'discount_price': course.get_selling_price(),
             'has_discount': course.has_discount(),
             'discount_pct': course.get_discount_percentage(),
+            'is_locked': course.is_locked,
+            'lock_reason': course.lock_reason or '',
             'thumbnail': course.thumbnail or '',
             'promo_url': f"/landscapemastery/promo/{course.slug}",
             'full_promo_url': f"https://3capstech.com/landscapemastery/promo/{course.slug}",
@@ -1507,6 +1532,8 @@ def admin_course_detail(req, pk):
             'has_discount': course.has_discount(),
             'discount_pct': course.get_discount_percentage(),
             'status': course.status,
+            'is_locked': course.is_locked,
+            'lock_reason': course.lock_reason or '',
             'thumbnail': course.thumbnail or '',
             'banner': course.banner or '',
             'modules': modules,
@@ -1544,10 +1571,14 @@ def admin_course_detail(req, pk):
                 except (ValueError, TypeError):
                     course.original_price = None
         if 'status' in req.data: course.status = req.data['status']
+        if 'is_locked' in req.data:
+            course.is_locked = bool(req.data['is_locked'])
+        if 'lock_reason' in req.data:
+            course.lock_reason = str(req.data['lock_reason']).strip()
         if 'thumbnail' in req.data: course.thumbnail = req.data['thumbnail']
         if 'banner' in req.data: course.banner = req.data['banner']
         course.save()
-        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, OriginalPrice: {course.original_price}, StrikeToggle: {course.is_strike_off_enabled}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
+        log_admin_action(req.user, "COURSE_UPDATED", target=course.title, details=f"Price: {course.price}, OriginalPrice: {course.original_price}, StrikeToggle: {course.is_strike_off_enabled}, Locked: {course.is_locked}, Status: {course.status}", ip=req.META.get('REMOTE_ADDR'))
         return Response({
             'status': 'updated',
             'course': {
@@ -1563,6 +1594,8 @@ def admin_course_detail(req, pk):
                 'has_discount': course.has_discount(),
                 'discount_pct': course.get_discount_percentage(),
                 'status': course.status,
+                'is_locked': course.is_locked,
+                'lock_reason': course.lock_reason or '',
                 'thumbnail': course.thumbnail or '',
                 'banner': course.banner or ''
             }
@@ -1866,6 +1899,7 @@ def course_curriculum(req, course_id):
     Returns full curriculum of a course with modules and published lessons.
     Enforces that unpublished lessons are hidden from regular students.
     Includes lock status for paid lessons based on user's active enrollment.
+    Enforces HTTP 423 Locked when course is undergoing video editing.
     """
     try:
         course = Course.objects.get(pk=course_id, status='PUBLISHED')
@@ -1873,6 +1907,19 @@ def course_curriculum(req, course_id):
         return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
     is_admin = check_admin_permission(req.user) if req.user and req.user.is_authenticated else False
+
+    # Strict Course Lock Enforcement:
+    # If the course is locked (e.g. video in editing/post-production), block student access with HTTP 423.
+    # Admins/instructors are allowed access for preview and verification.
+    if course.is_locked and not is_admin:
+        return Response({
+            'error': course.lock_reason or 'Course video is currently under editing. The final video will be unlocked soon.',
+            'is_locked': True,
+            'lock_reason': course.lock_reason,
+            'course_id': course.id,
+            'course_title': course.title
+        }, status=status.HTTP_423_LOCKED)
+
     is_enrolled = False
 
     if req.user and req.user.is_authenticated:
@@ -1913,6 +1960,8 @@ def course_curriculum(req, course_id):
         'title': course.title,
         'slug': course.slug,
         'price': float(course.price),
+        'is_locked': course.is_locked,
+        'lock_reason': course.lock_reason or '',
         'is_enrolled': is_enrolled,
         'modules': modules_data
     })
@@ -1926,12 +1975,13 @@ def lesson_playback(req, course_id, lesson_id):
     
     Validates:
     1. Lesson exists and belongs to the requested course (IDOR / cross-course protection)
-    2. Lesson is published (unpublished lessons hidden from students)
-    3. User entitlement:
+    2. Course lock status: if video is in editing, block student playback with HTTP 423
+    3. Lesson is published (unpublished lessons hidden from students)
+    4. User entitlement:
        - Free-preview lessons are accessible without paid enrollment.
        - Paid lessons require authentication and an active, verified enrollment.
        - Refunded, cancelled, expired, or revoked enrollments explicitly denied.
-    4. Returns authorized playback payload with verified VEED embed URL.
+    5. Returns authorized playback payload with verified VEED embed URL.
     """
     try:
         lesson = Lesson.objects.select_related('module__course').get(pk=lesson_id)
@@ -1946,6 +1996,17 @@ def lesson_playback(req, course_id, lesson_id):
         )
 
     is_admin = check_admin_permission(req.user) if req.user and req.user.is_authenticated else False
+
+    # Strict Course Lock Enforcement:
+    course = lesson.module.course
+    if course and course.is_locked and not is_admin:
+        return Response({
+            'error': course.lock_reason or 'Course video is currently under editing. The final video will be unlocked soon.',
+            'is_locked': True,
+            'lock_reason': course.lock_reason,
+            'course_id': course.id,
+            'course_title': course.title
+        }, status=status.HTTP_423_LOCKED)
 
     # Check publication status
     if not is_admin and not lesson.is_published:

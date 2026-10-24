@@ -63,10 +63,18 @@ export default function CourseCatalog({ courses, onSelectCourse, onNavigate, enr
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-transparent" />
                 
-                {/* Level Badge */}
-                <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-stone-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-stone-200/80 shadow-xs">
-                  <span className="material-symbols-outlined text-xs text-emerald-700">{levelIcons[course.level] || 'school'}</span>
-                  <span>{course.level}</span>
+                {/* Level / Locked Badge */}
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
+                  <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-stone-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-stone-200/80 shadow-xs">
+                    <span className="material-symbols-outlined text-xs text-emerald-700">{levelIcons[course.level] || 'school'}</span>
+                    <span>{course.level}</span>
+                  </div>
+                  {course.is_locked && (
+                    <div className="inline-flex items-center gap-1 bg-amber-500/95 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs">
+                      <span className="material-symbols-outlined text-xs">lock</span>
+                      <span>In Editing</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Enrolled Badge */}

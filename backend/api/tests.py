@@ -1350,4 +1350,144 @@ class CourseStrikeOffToggleTests(TestCase):
         self.assertEqual(data_on['discount_pct'], 70)
 
 
+class CourseLockAccessAndBuilderTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.password = 'SecureTestPass123!'
+
+        # 1. Admin / Instructor User
+        self.admin = Usr.objects.create_user(
+            email='admin_coursebuilder@landscapemastery.com',
+            password=self.password,
+            full_name='Admin Builder',
+            role='SUPER_ADMIN',
+            is_staff=True,
+            is_active=True
+        )
+        self.admin_token = jwt.encode(
+            {'usr_id': self.admin.id, 'email': self.admin.email, 'role': self.admin.role, 'exp': int(time.time()) + 3600},
+            settings.SECRET_KEY,
+            algorithm='HS256'
+        )
+
+        # 2. Enrolled Student User
+        self.student = Usr.objects.create_user(
+            email='student_locktest@landscapemastery.com',
+            password=self.password,
+            full_name='Lock Test Student',
+            role='STUDENT',
+            paid=True,
+            is_active=True
+        )
+        self.student_token = jwt.encode(
+            {'usr_id': self.student.id, 'email': self.student.email, 'role': self.student.role, 'exp': int(time.time()) + 3600},
+            settings.SECRET_KEY,
+            algorithm='HS256'
+        )
+
+        # 3. Course under video editing (locked)
+        self.course = Course.objects.create(
+            title='Landscape Lens Editing Masterclass',
+            slug='landscape-lens-editing-test',
+            price=299.00,
+            original_price=499.00,
+            status='PUBLISHED',
+            is_locked=True,
+            lock_reason='Course video is currently under editing. The final video will be unlocked soon.'
+        )
+
+        # 4. Modules and lessons
+        self.module = Module.objects.create(course=self.course, title='Module 1: Principles', order=1)
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title='Lesson 1: Introduction',
+            video_url='https://www.veed.io/view/8317ab9c-7a4f-4088-bdcb-06cc3b04399a',
+            video_id='8317ab9c-7a4f-4088-bdcb-06cc3b04399a',
+            duration='15 mins',
+            order=1,
+            is_published=True
+        )
+
+        # 5. Enroll student
+        Enrollment.objects.create(
+            user=self.student,
+            course=self.course,
+            status='ACTIVE',
+            access_type='PAID'
+        )
+
+    def test_locked_course_blocks_student_curriculum_access(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        response = self.client.get(f'/api/courses/{self.course.id}/curriculum/')
+        self.assertEqual(response.status_code, 423)
+        data = response.json()
+        self.assertTrue(data.get('is_locked'))
+        self.assertIn('under editing', data.get('lock_reason', ''))
+
+    def test_locked_course_blocks_student_lesson_playback(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        response = self.client.get(f'/api/courses/{self.course.id}/lessons/{self.lesson.id}/playback/')
+        self.assertEqual(response.status_code, 423)
+        data = response.json()
+        self.assertTrue(data.get('is_locked'))
+
+    def test_admin_can_preview_locked_course(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.admin_token}')
+        # Curriculum preview allowed for admin
+        curric_res = self.client.get(f'/api/courses/{self.course.id}/curriculum/')
+        self.assertEqual(curric_res.status_code, 200)
+        # Playback preview allowed for admin
+        play_res = self.client.get(f'/api/courses/{self.course.id}/lessons/{self.lesson.id}/playback/')
+        self.assertEqual(play_res.status_code, 200)
+
+    def test_admin_can_toggle_course_lock_in_course_builder(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.admin_token}')
+
+        # 1. Unlock course via PATCH
+        unlock_res = self.client.patch(
+            f'/api/admin/courses/{self.course.id}/',
+            {'is_locked': False},
+            format='json'
+        )
+        self.assertEqual(unlock_res.status_code, 200)
+        self.assertFalse(unlock_res.json()['course']['is_locked'])
+
+        # 2. Enrolled student now accesses curriculum & playback with HTTP 200
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        student_curric = self.client.get(f'/api/courses/{self.course.id}/curriculum/')
+        self.assertEqual(student_curric.status_code, 200)
+        student_play = self.client.get(f'/api/courses/{self.course.id}/lessons/{self.lesson.id}/playback/')
+        self.assertEqual(student_play.status_code, 200)
+
+        # 3. Lock course back with custom lock reason
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.admin_token}')
+        lock_res = self.client.patch(
+            f'/api/admin/courses/{self.course.id}/',
+            {
+                'is_locked': True,
+                'lock_reason': 'High-definition 4K video rendering in progress.'
+            },
+            format='json'
+        )
+        self.assertEqual(lock_res.status_code, 200)
+        self.assertTrue(lock_res.json()['course']['is_locked'])
+        self.assertEqual(lock_res.json()['course']['lock_reason'], 'High-definition 4K video rendering in progress.')
+
+        # 4. Student is blocked again with HTTP 423 and custom notice
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        blocked_res = self.client.get(f'/api/courses/{self.course.id}/curriculum/')
+        self.assertEqual(blocked_res.status_code, 423)
+        self.assertEqual(blocked_res.json().get('lock_reason'), 'High-definition 4K video rendering in progress.')
+
+    def test_my_enrollments_returns_locked_status(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.student_token}')
+        res = self.client.get('/api/my/enrollments/')
+        self.assertEqual(res.status_code, 200)
+        active_list = res.json().get('active', [])
+        matched = next(c for c in active_list if c['id'] == self.course.id)
+        self.assertTrue(matched.get('is_locked'))
+        self.assertIn('under editing', matched.get('lock_reason', ''))
+
+
+
 
