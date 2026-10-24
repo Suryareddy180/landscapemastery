@@ -160,7 +160,7 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
 
   const handleShareWhatsApp = () => {
     const text = course?.share_templates?.whatsapp ||
-      `🌿 Start learning with *${course?.title || 'Landscape Mastery'}*!\n\nExclusive course access with lifetime validity for only ₹${course?.price || 299}.\n\n✨ Tap here or scan the QR pass to join:\n${promoPageUrl}`;
+      `🌿 Start learning with *${course?.title || 'Landscape Mastery'}*!\n\nExclusive course access with lifetime validity for only ₹${displayPrice}${hasSavings ? ` (Regular ₹${displayOriginal} • ${discountPct}% OFF)` : ''}.\n\n✨ Tap here or scan the QR pass to join:\n${promoPageUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -235,9 +235,13 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
   }
 
   const isStrikeOffOn = course.is_strike_off_enabled !== false;
-  const displayPrice = parseInt(course.price || course.discount_price || 299);
-  const rawOriginal = isStrikeOffOn ? (course.original_price || course.strike_price || (course.discount_price && Number(course.discount_price) < Number(course.price) ? course.price : null)) : null;
+  // Strike ₹499 to display the special promotional price of ₹299 (40% OFF) to grab user attention
+  const isBase499 = Number(course.price) === 499 || Number(course.discount_price) === 499 || (!course.price && !course.original_price);
+  const rawOriginal = isStrikeOffOn ? (course.original_price || course.strike_price || (isBase499 ? 499 : null)) : null;
   const displayOriginal = rawOriginal ? parseInt(rawOriginal) : null;
+  const displayPrice = isBase499 && (!course.original_price || Number(course.original_price) <= 499) 
+    ? 299 
+    : parseInt(course.price || course.discount_price || 299);
   const hasSavings = Boolean(isStrikeOffOn && displayOriginal && displayOriginal > displayPrice);
   const discountPct = isStrikeOffOn ? (course.discount_pct || (hasSavings ? Math.round(((displayOriginal - displayPrice) / displayOriginal) * 100) : 0)) : 0;
 
@@ -363,20 +367,20 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               <h2 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-tight leading-snug">
                 {course.title}
               </h2>
-              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 pt-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-0.5">
                 {hasSavings && (
-                  <span className="text-sm sm:text-lg font-mono text-stone-400 line-through">
+                  <span className="text-base sm:text-xl font-mono text-stone-400 line-through decoration-rose-500 decoration-2 font-medium">
                     ₹{displayOriginal}
                   </span>
                 )}
-                <span className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono">
+                <span className="text-2xl sm:text-4xl font-extrabold text-amber-300 font-mono tracking-tight drop-shadow-sm">
                   ₹{displayPrice}
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-300 bg-emerald-950/80 border border-emerald-600/40 px-2 py-0.5 rounded-md font-semibold">
                   Lifetime Access
                 </span>
                 {discountPct > 0 && (
-                  <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-950 bg-amber-400 px-2 py-0.5 rounded-md font-bold">
+                  <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-emerald-950 bg-gradient-to-r from-amber-400 to-amber-300 px-2.5 py-0.5 rounded-md font-extrabold shadow-sm">
                     {discountPct}% OFF
                   </span>
                 )}

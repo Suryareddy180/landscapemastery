@@ -724,8 +724,16 @@ def public_course_promo(req, slug):
     lesson_count = sum(m.lessons.count() for m in c.modules.all())
     selling_price = c.get_selling_price()
     original_price = c.get_original_price()
-    has_disc = c.has_discount()
-    discount_pct = c.get_discount_percentage()
+    
+    # On promotional invitation pass, strike 499 and showcase 299 (40% OFF) to grab user attention
+    if (original_price is None or float(original_price) <= 499.0) and float(selling_price) <= 499.0:
+        original_price = 499.0
+        selling_price = 299.0
+        has_disc = True
+        discount_pct = 40
+    else:
+        has_disc = c.has_discount()
+        discount_pct = c.get_discount_percentage()
 
     formatted_selling = int(selling_price) if float(selling_price).is_integer() else f"{selling_price:.2f}"
     formatted_original = int(original_price) if original_price and float(original_price).is_integer() else (f"{original_price:.2f}" if original_price else None)
@@ -762,8 +770,8 @@ def public_course_promo(req, slug):
             'subtext': 'We are excited to share this course with you! Scan the QR code with your phone or tap the card below to enroll and start learning today.'
         },
         'share_templates': {
-            'whatsapp': f"🌿 Master Landscape Architecture with *{c.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nExclusive course pass with lifetime access for only ₹{formatted_price}.\n\n✨ Tap here or scan the QR pass to claim your spot:\n{promo_url}",
-            'twitter': f"Start learning {c.title} today. Lifetime course access for ₹{formatted_price}: {promo_url} #LandscapeMastery #3CAPSTECH #OnlineLearning",
+            'whatsapp': f"🌿 Master Landscape Architecture with *{c.title}* by Landscape Mastery (a product of 3CAPSTECH)!\n\nExclusive course pass with lifetime access for only ₹{formatted_selling} (regular ₹{formatted_original or '499'} • {discount_pct}% OFF).\n\n✨ Tap here or scan the QR pass to claim your spot:\n{promo_url}",
+            'twitter': f"Start learning {c.title} today. Lifetime course access for ₹{formatted_selling} (regular ₹{formatted_original or '499'}): {promo_url} #LandscapeMastery #3CAPSTECH #OnlineLearning",
             'linkedin': f"Excited to share the {c.title} course by Landscape Mastery (a product of 3CAPSTECH). Learn more and enroll here: {promo_url}",
             'instagram_caption': f"✨ Start your learning journey with {c.title} by Landscape Mastery (a product of 3CAPSTECH).\n\n👉 Tap link in bio or visit: 3capstech.com/landscapemastery/promo/{c.slug}\n\n#landscapemastery #3capstech #course #learning"
         }
