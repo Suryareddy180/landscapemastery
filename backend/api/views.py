@@ -196,6 +196,101 @@ def reset_password(req):
 # PAYMENTS & CHECKOUT (Automated Account Creation Flow)
 # ---------------------------------------------------------
 
+def check_user_has_purchased(email=None, user=None, course=None) -> bool:
+    """
+    Authoritatively checks if a student/email already owns or is actively enrolled in the course.
+    Evaluates:
+    - Authenticated user active enrollment or successful payment
+    - Normalized email active enrollment or successful payment record
+    - Legacy / global paid student flag if single published course exists
+    """
+    clean_email = str(email or '').strip().lower()
+
+    # 1. Check authenticated user
+    if user and getattr(user, 'is_authenticated', False):
+        if course:
+            if Enrollment.objects.filter(user=user, course=course, status='ACTIVE').exists():
+                return True
+            if PaymentRecord.objects.filter(user=user, course=course, status='SUCCESS').exists():
+                return True
+        else:
+            if Enrollment.objects.filter(user=user, status='ACTIVE').exists():
+                return True
+            if PaymentRecord.objects.filter(user=user, status='SUCCESS').exists():
+                return True
+
+        if getattr(user, 'paid', False) and Course.objects.filter(status='PUBLISHED').count() <= 1:
+            return True
+
+        if not clean_email and getattr(user, 'email', None):
+            clean_email = str(user.email).strip().lower()
+
+    # 2. Check by email
+    if clean_email:
+        if course:
+            if Enrollment.objects.filter(user__email__iexact=clean_email, course=course, status='ACTIVE').exists():
+                return True
+            if PaymentRecord.objects.filter(customer_email__iexact=clean_email, course=course, status='SUCCESS').exists():
+                return True
+            if PaymentRecord.objects.filter(user__email__iexact=clean_email, course=course, status='SUCCESS').exists():
+                return True
+        else:
+            if Enrollment.objects.filter(user__email__iexact=clean_email, status='ACTIVE').exists():
+                return True
+            if PaymentRecord.objects.filter(customer_email__iexact=clean_email, status='SUCCESS').exists():
+                return True
+            if PaymentRecord.objects.filter(user__email__iexact=clean_email, status='SUCCESS').exists():
+                return True
+
+        published_count = Course.objects.filter(status='PUBLISHED').count()
+        if published_count <= 1:
+            if PaymentRecord.objects.filter(customer_email__iexact=clean_email, status='SUCCESS').exists():
+                return True
+            if PaymentRecord.objects.filter(user__email__iexact=clean_email, status='SUCCESS').exists():
+                return True
+            if Enrollment.objects.filter(user__email__iexact=clean_email, status='ACTIVE').exists():
+                return True
+            usr_match = Usr.objects.filter(email__iexact=clean_email).first()
+            if usr_match and (usr_match.paid or Enrollment.objects.filter(user=usr_match, status='ACTIVE').exists()):
+                return True
+
+    return False
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_course_purchase(req, course_id=None, course_slug=None):
+    """
+    Checks if a student or email has already purchased or is enrolled in a course.
+    Query param: ?email=<email>
+    """
+    email = str(req.query_params.get('email', '')).strip().lower()
+
+    target_course = None
+    if course_id:
+        target_course = Course.objects.filter(pk=course_id).first()
+    elif course_slug:
+        target_course = Course.objects.filter(slug__iexact=course_slug).first()
+        if not target_course and str(course_slug).lower() in ('landscape-lens', 'lanscape-lens', 'masterclass', 'landscape', 'default'):
+            target_course = Course.objects.filter(title__icontains='landscape').first() or Course.objects.filter(status='PUBLISHED').first()
+
+    if not target_course:
+        target_course = Course.objects.filter(status='PUBLISHED').first()
+
+    already_purchased = check_user_has_purchased(email=email, user=req.user, course=target_course)
+    course_title = target_course.title if target_course else 'Landscape Mastery Masterclass'
+
+    return Response({
+        'already_purchased': already_purchased,
+        'course_id': target_course.id if target_course else None,
+        'course_slug': target_course.slug if target_course else 'landscape-lens',
+        'course_title': course_title,
+        'email': email,
+        'message': 'You have already purchased the course.' if already_purchased else 'Eligible for checkout',
+        'login_url': '/landscapemastery/login'
+    }, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def checkout_session(req):
@@ -262,6 +357,22 @@ def checkout_session(req):
             base_course_price = 499.0
         price = base_course_price
         course_title = course.title if course else 'Landscape Mastery Masterclass'
+
+    # -------------------------------------------------------------
+    # CRITICAL DUPLICATE PURCHASE DEFENSE:
+    # If the student or email has already bought/enrolled in this course,
+    # reject checkout session immediately to prevent duplicate charge.
+    # -------------------------------------------------------------
+    if check_user_has_purchased(email=email, user=req.user, course=course):
+        logger.warning(f"Blocked duplicate checkout attempt for {email} on course '{course_title}'")
+        return Response({
+            'error': 'You have already purchased the course.',
+            'already_purchased': True,
+            'course_id': course.id if course else None,
+            'course_title': course_title,
+            'course_slug': course.slug if course else 'landscape-lens',
+            'login_url': '/landscapemastery/login'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     # Apply Coupon if provided (e.g. PRIVILEGE40 with 40% discount on 499 => 299)
     coupon_code = str(req.data.get('coupon_code', '')).strip().upper()
@@ -758,6 +869,7 @@ def public_course_promo(req, slug):
         'thumbnail': c.thumbnail or '',
         'banner': c.banner or '',
         'status': c.status,
+        'already_purchased': check_user_has_purchased(email=req.query_params.get('email'), user=req.user, course=c),
         'module_count': module_count,
         'lesson_count': lesson_count,
         'promo_url': promo_url,

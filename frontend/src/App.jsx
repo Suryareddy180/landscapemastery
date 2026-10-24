@@ -237,7 +237,7 @@ function LandscapeApp({ initialView = 'v1' }) {
         <div className="view-section active min-h-screen flex flex-col bg-[#FAF9F5]">
           <Header activeView={activeView} onNavigate={handleNavigate} logoSize={siteSettings.logoSize} logoUrl={siteSettings.logoUrl} user={user} onLogout={handleLogout} onOpenProfile={() => setProfileModalOpen(true)} />
           <main className="flex-1">
-            <EnrollView onNavigate={handleNavigate} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} initialCourse={selectedEnrollCourse} />
+            <EnrollView onNavigate={handleNavigate} siteSettings={siteSettings} onLoginSuccess={handleLoginSuccess} initialCourse={selectedEnrollCourse} user={user} />
           </main>
           <Footer />
         </div>

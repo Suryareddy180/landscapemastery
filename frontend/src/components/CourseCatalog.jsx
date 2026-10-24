@@ -15,7 +15,7 @@ const levelIcons = {
   'Advanced': 'engineering'
 };
 
-export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseIds = [] }) {
+export default function CourseCatalog({ courses, onSelectCourse, onNavigate, enrolledCourseIds = [] }) {
   if (!courses || courses.length === 0) return null;
 
   return (
@@ -120,11 +120,12 @@ export default function CourseCatalog({ courses, onSelectCourse, enrolledCourseI
                 {/* CTA Button */}
                 {isEnrolled ? (
                   <button
-                    disabled
-                    className="w-full bg-emerald-50 text-emerald-800 font-semibold text-xs py-3 rounded-xl border border-emerald-200 flex items-center justify-center gap-2"
+                    type="button"
+                    onClick={() => onNavigate ? onNavigate('v3') : window.location.assign('/landscapemastery/portal')}
+                    className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs py-3 rounded-xl border border-emerald-200 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-2xs"
                   >
-                    <span className="material-symbols-outlined text-base">check_circle</span>
-                    <span>Already Enrolled — Access from Dashboard</span>
+                    <span className="material-symbols-outlined text-base text-emerald-700">check_circle</span>
+                    <span>Already Enrolled — Access Course</span>
                   </button>
                 ) : (
                   <button

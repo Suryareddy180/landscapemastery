@@ -22,16 +22,33 @@ const loadRazorpayScript = () => {
   });
 };
 
-export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, initialCourse }) {
+export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, initialCourse, user }) {
   // Multi-course state
   const [catalogCourses, setCatalogCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(initialCourse || null);
 
-  // Learner & Billing Details
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [accountType, setAccountType] = useState('STUDENT'); // STUDENT | EMPLOYEE | HOUSEHOLD
+  // Detect active logged-in user (from prop or localStorage)
+  const activeUser = user || (() => {
+    try {
+      const saved = localStorage.getItem('lm_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [alreadyPurchased, setAlreadyPurchased] = useState(false);
+  const [checkingPurchase, setCheckingPurchase] = useState(false);
+
+  // Learner & Billing Details (Auto-prefill if logged in)
+  const [fullName, setFullName] = useState(() => activeUser?.name || activeUser?.full_name || '');
+  const [email, setEmail] = useState(() => activeUser?.email || '');
+  const [phone, setPhone] = useState(() => activeUser?.phone || '');
+  const [accountType, setAccountType] = useState(() => (
+    activeUser?.role && ['STUDENT', 'EMPLOYEE', 'HOUSEHOLD'].includes(activeUser.role)
+      ? activeUser.role
+      : 'STUDENT'
+  )); // STUDENT | EMPLOYEE | HOUSEHOLD
 
   // Student-specific fields
   const [qualification, setQualification] = useState('');
@@ -193,6 +210,63 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     }
   };
 
+  // Verify if candidate email or active user already purchased this course
+  const verifyPurchaseStatus = async (checkEmail, courseId) => {
+    const emailToTest = (checkEmail || email || activeUser?.email || '').trim().toLowerCase();
+    const targetCourseId = courseId || selectedCourse?.id;
+
+    // 1. Instant local verification if user is logged in
+    if (activeUser) {
+      const enrollments = activeUser.enrollments || [];
+      const isEnrolled = targetCourseId && (
+        enrollments.includes(targetCourseId) ||
+        enrollments.includes(Number(targetCourseId))
+      );
+      if (isEnrolled || (activeUser.paid && (!catalogCourses.length || catalogCourses.length === 1))) {
+        setAlreadyPurchased(true);
+        setStatusMessage({
+          type: 'warning',
+          text: 'You have already purchased the course.'
+        });
+        return true;
+      }
+    }
+
+    if (!emailToTest || !emailToTest.includes('@')) {
+      return false;
+    }
+
+    setCheckingPurchase(true);
+    try {
+      const courseParam = targetCourseId || 'default';
+      const res = await fetch(`${BASE_URL}/api/courses/${courseParam}/check-purchase/?email=${encodeURIComponent(emailToTest)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.already_purchased) {
+          setAlreadyPurchased(true);
+          setStatusMessage({
+            type: 'warning',
+            text: 'You have already purchased the course.'
+          });
+          return true;
+        } else {
+          setAlreadyPurchased(false);
+        }
+      }
+    } catch (e) {
+      // Backend /checkout/session/ remains authoritative defense
+    } finally {
+      setCheckingPurchase(false);
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (selectedCourse) {
+      verifyPurchaseStatus(email, selectedCourse.id);
+    }
+  }, [selectedCourse, activeUser]);
+
   // Base Course Tuition Price (Standard: ₹499)
   // Discount applies on ₹499 tuition (e.g. 40% OFF = -₹200 => ₹299 total payable)
   const basePrice = Math.round(
@@ -287,6 +361,15 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
       return;
     }
 
+    if (alreadyPurchased) {
+      setLoading(false);
+      setStatusMessage({
+        type: 'warning',
+        text: 'You have already purchased the course.'
+      });
+      return;
+    }
+
     setLoading(true);
     setStatusMessage(null);
 
@@ -323,6 +406,14 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         setLoading(false);
+        if (errData.already_purchased || errData.error === 'You have already purchased the course.') {
+          setAlreadyPurchased(true);
+          setStatusMessage({
+            type: 'warning',
+            text: 'You have already purchased the course.'
+          });
+          return;
+        }
         setStatusMessage({ type: 'error', text: errData.error || 'Unable to initialize checkout session. Please check details.' });
         return;
       }
@@ -615,6 +706,50 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
               </div>
             )}
 
+            {alreadyPurchased && (
+              <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 mb-2 shadow-sm">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/20 text-amber-600 mx-auto">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-serif font-bold text-amber-900">
+                  You have already purchased the course
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-700 max-w-md mx-auto leading-relaxed">
+                  Our records confirm that an active lifetime enrollment already exists for <strong className="text-stone-900">{email || 'your account'}</strong> in <strong className="text-stone-900">{selectedCourse?.title || 'this course'}</strong>. You cannot be charged again.
+                </p>
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeUser && onNavigate) {
+                        onNavigate('v3');
+                      } else if (onNavigate) {
+                        onNavigate('v2');
+                      } else {
+                        window.location.assign('/landscapemastery/portal');
+                      }
+                    }}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-800 to-teal-800 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>{activeUser ? 'Access Course in Student Portal →' : 'Log In to Access Your Course →'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('');
+                      setAlreadyPurchased(false);
+                      setStatusMessage(null);
+                    }}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 text-stone-800 font-semibold text-xs border border-stone-300 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Enter Different Email</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handlePayment} className="space-y-5 sm:space-y-6">
               {/* Course Selection Dropdown */}
               {catalogCourses.length > 0 && (
@@ -727,10 +862,20 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
                         type="email"
                         required
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (alreadyPurchased) setAlreadyPurchased(false);
+                        }}
+                        onBlur={(e) => verifyPurchaseStatus(e.target.value, selectedCourse?.id)}
                         className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3.5 py-2.5 text-sm sm:text-xs text-stone-900 focus:outline-none focus:border-emerald-700 focus:bg-white transition-all"
                       />
                     </div>
+                    {alreadyPurchased && (
+                      <p className="mt-1 text-[11px] text-amber-700 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>You have already purchased the course.</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Mobile Number */}
@@ -1074,14 +1219,44 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
               </div>
 
               {/* Submit / Proceed to Payment Button */}
-              <button
-                type="submit"
-                disabled={loading || (!selectedCourse && catalogCourses.length > 0)}
-                className="w-full bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-sm sm:text-base py-3.5 sm:py-4 px-4 rounded-2xl shadow-xl shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer btn-shine disabled:opacity-60 disabled:cursor-not-allowed text-center"
-              >
-                <span className="material-symbols-outlined text-base sm:text-lg shrink-0">lock</span>
-                <span className="truncate">{loading ? 'Initializing Secure Gateway...' : `Proceed to Secure Payment • ₹${price}`}</span>
-              </button>
+              {alreadyPurchased ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl text-xs sm:text-sm text-amber-950 flex items-start gap-3 shadow-xs">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="font-bold text-amber-950 block text-sm sm:text-base">You have already purchased the course</strong>
+                      <p className="mt-1 text-xs text-amber-900 leading-relaxed">
+                        An active lifetime enrollment already exists for <b>{email || 'this account'}</b> on <b>{selectedCourse?.title || 'this course'}</b>. Your card or UPI will not be charged again.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeUser && onNavigate) {
+                        onNavigate('v3');
+                      } else if (onNavigate) {
+                        onNavigate('v2');
+                      } else {
+                        window.location.assign('/landscapemastery/portal');
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-emerald-800 to-teal-800 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm sm:text-base py-3.5 sm:py-4 px-4 rounded-2xl shadow-xl shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+                  >
+                    <GraduationCap className="w-5 h-5 text-amber-300 shrink-0" />
+                    <span>{activeUser ? 'Access Your Course in Portal →' : 'Log In to Access Your Course →'}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading || (!selectedCourse && catalogCourses.length > 0)}
+                  className="w-full bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-950 hover:from-emerald-800 hover:to-emerald-900 text-white font-semibold text-sm sm:text-base py-3.5 sm:py-4 px-4 rounded-2xl shadow-xl shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer btn-shine disabled:opacity-60 disabled:cursor-not-allowed text-center"
+                >
+                  <span className="material-symbols-outlined text-base sm:text-lg shrink-0">lock</span>
+                  <span className="truncate">{loading ? 'Initializing Secure Gateway...' : `Proceed to Secure Payment • ₹${price}`}</span>
+                </button>
+              )}
 
               {/* Trust & Verification Badges */}
               <div className="pt-2 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-[10px] sm:text-[11px] text-stone-500 font-semibold uppercase tracking-wider text-center">

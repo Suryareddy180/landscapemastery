@@ -8,9 +8,20 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
   const [catalogCourses, setCatalogCourses] = useState([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
 
-  // Fetch course catalog on mount
+  // Fetch course catalog on mount and load enrolled courses
   useEffect(() => {
     fetchCatalog();
+    try {
+      const saved = localStorage.getItem('lm_auth_user');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u.enrollments && Array.isArray(u.enrollments)) {
+          setEnrolledCourseIds(u.enrollments.map(Number));
+        }
+      }
+    } catch {
+      // Ignore
+    }
     if (window.location.pathname.endsWith('/courses')) {
       setTimeout(() => {
         const el = document.getElementById('course-catalog');
@@ -399,7 +410,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
       )}
 
       {/* 4.5. COURSE CATALOG */}
-      <CourseCatalog courses={catalogCourses} onSelectCourse={handleSelectCourse} enrolledCourseIds={enrolledCourseIds} />
+      <CourseCatalog courses={catalogCourses} onSelectCourse={handleSelectCourse} onNavigate={onNavigate} enrolledCourseIds={enrolledCourseIds} />
 
       {/* 6. FREQUENTLY ASKED QUESTIONS */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

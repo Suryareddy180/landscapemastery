@@ -24,13 +24,24 @@ import {
 } from 'lucide-react';
 import { BASE_URL } from '../lib/api.js';
 
-export default function PromoCourseView({ onNavigate, siteSettings }) {
+export default function PromoCourseView({ onNavigate, siteSettings, user }) {
   const { courseSlug } = useParams();
   const navigate = useNavigate();
+
+  // Detect active logged-in learner
+  const activeUser = user || (() => {
+    try {
+      const saved = localStorage.getItem('lm_auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAlreadyPurchased, setIsAlreadyPurchased] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedWhatsapp, setCopiedWhatsapp] = useState(false);
   const [qrTapped, setQrTapped] = useState(false);
@@ -56,11 +67,17 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
     setLoading(true);
     setError(null);
     try {
+      const queryEmail = activeUser?.email ? `?email=${encodeURIComponent(activeUser.email)}` : '';
       // 1. Try dedicated promotional endpoint
-      const res = await fetch(`${BASE_URL}/api/public/courses/${activeSlug}/promo/`);
+      const res = await fetch(`${BASE_URL}/api/public/courses/${activeSlug}/promo/${queryEmail}`);
       if (res.ok) {
         const data = await res.json();
         setCourse(data);
+        if (data.already_purchased || (activeUser?.enrollments && (activeUser.enrollments.includes(data.id) || activeUser.enrollments.includes(Number(data.id))))) {
+          setIsAlreadyPurchased(true);
+        } else if (activeUser?.paid && !data.id) {
+          setIsAlreadyPurchased(true);
+        }
         setLoading(false);
         return;
       }
@@ -133,6 +150,14 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
   const handleRedirectToEnroll = () => {
     setQrTapped(true);
     setTimeout(() => {
+      if (isAlreadyPurchased) {
+        if (onNavigate) {
+          onNavigate('v3');
+        } else {
+          navigate('/landscapemastery/portal');
+        }
+        return;
+      }
       const targetSlug = course?.slug || activeSlug;
       if (onNavigate) {
         onNavigate('enroll', course);
@@ -357,10 +382,18 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
               </div>
               <div className="text-right">
                 <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-emerald-900/60 border border-emerald-600/40 text-emerald-300 font-bold">
-                  {course.status === 'PUBLISHED' ? 'Verified Active' : 'Special Invite'}
+                  {isAlreadyPurchased ? 'Already Enrolled' : (course.status === 'PUBLISHED' ? 'Verified Active' : 'Special Invite')}
                 </span>
               </div>
             </div>
+
+            {/* Already Purchased Status Banner on Pass */}
+            {isAlreadyPurchased && (
+              <div className="bg-amber-500/15 border border-amber-500/50 rounded-xl p-3 text-center flex items-center justify-center gap-2 text-amber-300 text-xs sm:text-sm font-semibold shadow-inner">
+                <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>You have already purchased the course. Your access is active!</span>
+              </div>
+            )}
 
             {/* Course Title & Investment Tag */}
             <div className="text-center space-y-1.5">
@@ -449,18 +482,31 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
 
             {/* Primary Mobile-Friendly Action Button */}
             <div className="space-y-2.5 pt-1">
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleRedirectToEnroll}
-                className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-950/60 border border-emerald-400/40 flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
-              >
-                <span className="material-symbols-outlined text-amber-300 text-lg sm:text-xl group-hover:translate-x-0.5 transition-transform">
-                  verified
-                </span>
-                <span>Claim Your Spot Now • ₹{displayPrice}</span>
-                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
+              {isAlreadyPurchased ? (
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleRedirectToEnroll}
+                  className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-700 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-950/60 border border-emerald-400/50 flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
+                >
+                  <GraduationCap className="w-5 h-5 text-amber-300 group-hover:scale-110 transition-transform" />
+                  <span>You have already purchased the course — Access Now</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleRedirectToEnroll}
+                  className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-950/60 border border-emerald-400/40 flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
+                >
+                  <span className="material-symbols-outlined text-amber-300 text-lg sm:text-xl group-hover:translate-x-0.5 transition-transform">
+                    verified
+                  </span>
+                  <span>Claim Your Spot Now • ₹{displayPrice}</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              )}
 
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] text-stone-400 font-mono">
                 <span className="flex items-center gap-1">

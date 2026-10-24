@@ -857,6 +857,91 @@ class UniversalProfileManagementTests(TestCase):
         self.assertEqual(record.account_type, 'STUDENT')
         self.assertEqual(record.checkout_metadata.get('qualification'), 'B.Arch')
 
+    def test_duplicate_purchase_prevented_in_checkout_session(self):
+        """
+        Guarantees that a student who already purchased the course cannot repurchase it.
+        Checkout session must reject with HTTP 400 and 'You have already purchased the course.'
+        """
+        course = Course.objects.create(
+            title='Landscape Mastery Masterclass',
+            slug='landscape-mastery-masterclass',
+            price=499.00,
+            status='PUBLISHED'
+        )
+
+        student = Usr.objects.create_user(
+            email='already.enrolled@example.com',
+            password='Password@123',
+            role='STUDENT',
+            paid=True
+        )
+        Enrollment.objects.create(
+            user=student,
+            course=course,
+            status='ACTIVE'
+        )
+
+        # Attempt to checkout for the same course with the same email
+        res = self.client.post('/api/checkout/session/', {
+            'full_name': 'Already Enrolled Student',
+            'email': 'already.enrolled@example.com',
+            'phone': '+91 9876543210',
+            'account_type': 'STUDENT',
+            'course_id': course.id
+        }, format='json')
+
+        self.assertEqual(res.status_code, 400)
+        data = res.json()
+        self.assertTrue(data.get('already_purchased'))
+        self.assertEqual(data.get('error'), 'You have already purchased the course.')
+
+        # Attempt check endpoint
+        chk_res = self.client.get(f'/api/courses/{course.id}/check-purchase/?email=already.enrolled@example.com')
+        self.assertEqual(chk_res.status_code, 200)
+        self.assertTrue(chk_res.json().get('already_purchased'))
+
+        # Check for unpurchased email returns already_purchased False
+        chk_new = self.client.get(f'/api/courses/{course.id}/check-purchase/?email=fresh.buyer@example.com')
+        self.assertEqual(chk_new.status_code, 200)
+        self.assertFalse(chk_new.json().get('already_purchased'))
+
+        # Also test: PaymentRecord with status='SUCCESS' blocks rebuy even without explicit Enrollment object
+        course2 = Course.objects.create(
+            title='Advanced Botanical Scenography',
+            slug='advanced-botanical-scenography',
+            price=499.00,
+            status='PUBLISHED'
+        )
+        PaymentRecord.objects.create(
+            order_id='order_prev_success_888',
+            payment_id='pay_prev_success_888',
+            customer_email='paid.record.only@example.com',
+            course=course2,
+            status='SUCCESS',
+            amount=499.00
+        )
+        res_pr = self.client.post('/api/checkout/session/', {
+            'full_name': 'Record Holder',
+            'email': 'paid.record.only@example.com',
+            'phone': '+91 9876543210',
+            'account_type': 'STUDENT',
+            'course_id': course2.id
+        }, format='json')
+        self.assertEqual(res_pr.status_code, 400)
+        self.assertTrue(res_pr.json().get('already_purchased'))
+        self.assertEqual(res_pr.json().get('error'), 'You have already purchased the course.')
+
+        # But this same user CAN purchase a different course (e.g. course 1)
+        res_diff = self.client.post('/api/checkout/session/', {
+            'full_name': 'Record Holder',
+            'email': 'paid.record.only@example.com',
+            'phone': '+91 9876543210',
+            'account_type': 'STUDENT',
+            'course_id': course.id
+        }, format='json')
+        self.assertEqual(res_diff.status_code, 200)
+        self.assertTrue(res_diff.json().get('success'))
+
     def test_payment_verification_and_automatic_student_account_creation(self):
         """
         Requirements 3, 4, 5, 6, 8:
