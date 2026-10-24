@@ -263,21 +263,8 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
           </div>
         </Link>
 
-        {/* Top Right: 3CAPSTECH Parent Company Logo + Actions */}
+        {/* Top Right: 3CAPSTECH Parent Company Logo */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          <button
-            onClick={() => handleRedirectToEnroll()}
-            className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950/40 cursor-pointer active:scale-98"
-          >
-            <span>Direct Enroll</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-          <Link
-            to="/login"
-            className="hidden sm:inline-flex px-3 py-1.5 rounded-xl border border-emerald-800/60 hover:border-emerald-600 text-stone-300 hover:text-white text-xs font-medium transition-all"
-          >
-            Student Portal
-          </Link>
 
           {/* 3CAPSTECH Corporate Logo at Top Right Corner */}
           <a
