@@ -49,7 +49,7 @@ export default function PromoCourseView({ onNavigate, siteSettings, user }) {
 
   useEffect(() => {
     const handleResize = () => {
-      setQrSize(window.innerWidth < 640 ? 170 : 200);
+      setQrSize(window.innerWidth < 360 ? 150 : window.innerWidth < 640 ? 175 : 200);
     };
     handleResize();
     window.addEventListener('resize', handleResize);

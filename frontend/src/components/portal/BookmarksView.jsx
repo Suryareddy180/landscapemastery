@@ -255,41 +255,41 @@ export default function BookmarksView({ onJumpToLesson, enrolledCourses = [] }) 
   return (
     <div className="space-y-6">
       {/* Top Header & View Switcher */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-2">
             <span className="material-symbols-outlined text-[15px]">bookmark</span>
-            Study Vault & Field Notebook
+            Study Vault &amp; Field Notebook
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bookmarks & Personal Knowledge</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Bookmarks &amp; Personal Knowledge</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Access your saved course lectures, timestamped field references, and real-time architectural specifications.
           </p>
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl self-start md:self-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl self-start md:self-auto w-full sm:w-auto">
           <button
             onClick={() => { setActiveTab('saved-lessons'); setSelectedCategory('All'); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'saved-lessons'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">menu_book</span>
-            Saved Lessons ({bookmarks.length})
+            <span>Saved Lessons ({bookmarks.length})</span>
           </button>
           <button
             onClick={() => { setActiveTab('field-notes'); setSelectedCategory('All'); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'field-notes'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">edit_note</span>
-            Field Notebook ({notes.length})
+            <span>Field Notebook ({notes.length})</span>
           </button>
         </div>
       </div>

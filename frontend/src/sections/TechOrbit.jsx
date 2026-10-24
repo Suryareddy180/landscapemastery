@@ -89,15 +89,16 @@ export default function TechOrbit() {
           </div>
 
           {/* Right Column: Planetary Orbit Visualization */}
-          <div className="relative grid place-items-center h-[480px] sm:h-[540px] w-full" data-testid="tech-orbit">
-            {/* Concentric Orbital Tracks */}
-            <div className="absolute h-[430px] w-[430px] rounded-full border border-line/60 pointer-events-none" />
-            <div className="absolute h-[260px] w-[260px] rounded-full border border-line/50 pointer-events-none" />
-            <div className="absolute h-[160px] w-[160px] rounded-full border border-emerald-500/20 pointer-events-none" />
-            <div className="blob w-[280px] h-[280px] pointer-events-none" style={{ background: "var(--accent)", opacity: 0.22 }} />
+          <div className="relative grid place-items-center h-[380px] xs:h-[430px] sm:h-[500px] md:h-[540px] w-full overflow-hidden" data-testid="tech-orbit">
+            <div className="relative grid place-items-center w-[460px] h-[460px] scale-[0.68] xs:scale-[0.78] sm:scale-[0.9] md:scale-100 origin-center transition-transform">
+              {/* Concentric Orbital Tracks */}
+              <div className="absolute h-[430px] w-[430px] rounded-full border border-line/60 pointer-events-none" />
+              <div className="absolute h-[260px] w-[260px] rounded-full border border-line/50 pointer-events-none" />
+              <div className="absolute h-[160px] w-[160px] rounded-full border border-emerald-500/20 pointer-events-none" />
+              <div className="blob w-[280px] h-[280px] pointer-events-none" style={{ background: "var(--accent)", opacity: 0.22 }} />
 
-            {/* Central 3CapsTech Core */}
-            <div className="relative z-20 h-24 w-28 rounded-3xl glass grid place-items-center shadow-[0_0_40px_rgba(17,168,49,0.25)] border border-emerald-500/30 p-2.5">
+              {/* Central 3CapsTech Core */}
+              <div className="relative z-20 h-24 w-28 rounded-3xl glass grid place-items-center shadow-[0_0_40px_rgba(17,168,49,0.25)] border border-emerald-500/30 p-2.5">
               <img
                 src="/logo.png"
                 alt="3CapsTech Logo"
@@ -203,6 +204,7 @@ export default function TechOrbit() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
   );
 }

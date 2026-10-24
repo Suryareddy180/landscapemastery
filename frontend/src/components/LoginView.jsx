@@ -191,7 +191,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F5F4EC] to-[#ECE9DF] text-stone-900 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 min-h-[calc(100vh-80px)] relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
+      className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#FAF9F5] via-[#F5F4EC] to-[#ECE9DF] text-stone-900 px-3 xs:px-4 sm:px-6 lg:px-8 py-6 sm:py-12 min-h-[calc(100vh-80px)] relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900"
     >
       {/* Architectural Blueprint Grid Pattern */}
       <div 
@@ -234,7 +234,7 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
           initial={{ opacity: 0, scale: 0.98, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="bg-white/95 border border-stone-200/90 rounded-3xl p-7 sm:p-9 shadow-[0_25px_65px_-12px_rgba(6,78,59,0.11),0_1px_3px_rgba(28,25,23,0.04)] backdrop-blur-2xl space-y-5 ring-1 ring-stone-900/[0.04] relative overflow-hidden"
+          className="bg-white/95 border border-stone-200/90 rounded-2xl sm:rounded-3xl p-5 xs:p-7 sm:p-9 shadow-[0_25px_65px_-12px_rgba(6,78,59,0.11),0_1px_3px_rgba(28,25,23,0.04)] backdrop-blur-2xl space-y-5 ring-1 ring-stone-900/[0.04] relative overflow-hidden"
         >
           {/* Top Emerald Accent Hairline */}
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-800 via-emerald-600 to-teal-700" />
@@ -404,13 +404,13 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
-              className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-stone-200/90 space-y-4 text-stone-900 ring-1 ring-stone-900/5"
+              className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 max-w-sm w-full shadow-2xl border border-stone-200/90 space-y-4 text-stone-900 ring-1 ring-stone-900/5"
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">

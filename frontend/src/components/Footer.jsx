@@ -3,11 +3,11 @@ import React from 'react';
 export default function Footer() {
   return (
     <footer className="w-full py-12 border-t border-stone-200 bg-white text-stone-600 font-body-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
         <span className="text-xs font-semibold text-stone-500">
           © 2026 Landscape Mastery. All Rights Reserved. Secure &amp; DRM Encrypted.
         </span>
-        <div className="flex gap-6 text-xs font-semibold">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs font-semibold">
           <a 
             href="#course-catalog" 
             className="hover:text-emerald-800 transition-colors"

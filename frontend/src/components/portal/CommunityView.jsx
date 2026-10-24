@@ -313,7 +313,7 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden flex flex-col h-[750px]">
+    <div className="bg-white rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[500px] md:h-[750px]">
       {/* Toast Notice */}
       <AnimatePresence>
         {actionNotice && (
@@ -335,8 +335,8 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
 
       {/* MODERATOR BANNER (Super Admin & Content Manager only) */}
       {isModerator && (
-        <div className="px-5 py-2.5 bg-gradient-to-r from-emerald-900 to-stone-900 text-white flex items-center justify-between text-xs shadow-inner">
-          <div className="flex items-center gap-2">
+        <div className="px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-emerald-900 to-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-inner">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="material-symbols-outlined text-amber-400 text-base">verified_user</span>
             <span className="font-bold tracking-tight">
               Community Moderator Rights Enabled
@@ -349,7 +349,7 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
           {onOpenAdminCommunity && (
             <button
               onClick={onOpenAdminCommunity}
-              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer self-start sm:self-auto"
             >
               <span>Open Admin Community Console</span>
               <span className="material-symbols-outlined text-xs">arrow_forward</span>
@@ -359,20 +359,20 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
       )}
 
       {/* Top Bar */}
-      <div className="p-4 sm:p-5 border-b border-stone-200 bg-stone-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+      <div className="p-3.5 sm:p-5 border-b border-stone-200 bg-stone-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-xs flex-shrink-0">
             #
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-stone-900 tracking-tight">#{activeChannel.name}</h2>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-100">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight truncate">#{activeChannel.name}</h2>
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-semibold border border-emerald-100 flex-shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {activeOnlineCount} Online
               </span>
               {activeChannel.is_read_only && (
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200 flex-shrink-0">
                   🔒 Read-Only
                 </span>
               )}
@@ -394,6 +394,28 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
             className="w-full pl-8 pr-3 py-1.5 text-xs bg-white rounded-lg border border-stone-200 focus:outline-hidden focus:border-blue-500 text-stone-800"
           />
         </div>
+      </div>
+
+      {/* Mobile Horizontal Channels Rail (md:hidden) */}
+      <div className="md:hidden flex items-center gap-1.5 p-2 overflow-x-auto border-b border-stone-200 bg-stone-50/90 no-scrollbar flex-shrink-0">
+        {channels.map(ch => {
+          const chSlug = ch.slug || ch.id;
+          const isSelected = chSlug === selectedChannelId;
+          return (
+            <button
+              key={chSlug}
+              onClick={() => setSelectedChannelId(chSlug)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-blue-600 text-white shadow-2xs font-bold'
+                  : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <span># {ch.name}</span>
+              {ch.is_read_only && <span className="ml-1 text-[10px]">🔒</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Split Layout: Channels Rail (left) + Chat Stream (right) */}

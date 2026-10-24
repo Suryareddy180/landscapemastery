@@ -81,24 +81,36 @@ html {
     -webkit-text-fill-color: transparent;
   }
 
-  /* 3CAPSTECH Utilities */
+  /* 3CAPSTECH Utilities with fluid mobile-first clamps (supports 320px+) */
   .display-xl {
-    font-size: clamp(2.75rem, 8.5vw, 8rem);
-    line-height: 0.94;
+    font-size: clamp(2.15rem, 7.8vw, 8rem);
+    line-height: 0.98;
     letter-spacing: -0.045em;
     font-weight: 900;
+    overflow-wrap: break-word;
   }
   .display-lg {
-    font-size: clamp(2rem, 4.8vw, 4rem);
-    line-height: 1.04;
+    font-size: clamp(1.65rem, 4.4vw, 4rem);
+    line-height: 1.08;
     letter-spacing: -0.035em;
     font-weight: 800;
+    overflow-wrap: break-word;
   }
   .display-md {
-    font-size: clamp(1.4rem, 2.8vw, 2.4rem);
-    line-height: 1.1;
+    font-size: clamp(1.25rem, 2.6vw, 2.4rem);
+    line-height: 1.15;
     letter-spacing: -0.025em;
     font-weight: 700;
+    overflow-wrap: break-word;
+  }
+
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 
   .label {

@@ -600,19 +600,19 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
               <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-emerald-950/90 border border-emerald-500/40 px-3.5 sm:px-6 py-2 rounded-2xl shadow-inner backdrop-blur-xs max-w-full">
                 {/* 1. Strike off the original/MRP figure if configured */}
                 {originalPrice && (
-                  <span className="text-base sm:text-xl font-bold line-through text-emerald-400/50 font-sans tracking-tight">
+                  <span className="text-sm xs:text-base sm:text-xl font-bold line-through text-emerald-400/50 font-sans tracking-tight">
                     ₹{originalPrice}
                   </span>
                 )}
 
                 {/* 2. Current payable price */}
-                <span className="text-2.5xl sm:text-4.5xl font-extrabold font-serif text-amber-300 tracking-tight">
+                <span className="text-2xl xs:text-3xl sm:text-4xl font-extrabold font-serif text-amber-300 tracking-tight">
                   ₹{price}
                 </span>
 
                 <span className="text-emerald-500/50 hidden xs:inline">•</span>
 
-                <span className="text-[10.5px] sm:text-[11px] font-semibold text-emerald-200 uppercase tracking-wider">
+                <span className="text-[10px] xs:text-[10.5px] sm:text-[11px] font-semibold text-emerald-200 uppercase tracking-wider">
                   Lifetime Access
                 </span>
 

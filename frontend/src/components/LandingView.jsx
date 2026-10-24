@@ -193,10 +193,10 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1 px-3.5 rounded-full shadow-xs"
+            className="inline-flex items-center gap-1.5 xs:gap-2 bg-white/95 backdrop-blur-md border border-emerald-900/15 py-1 px-3 xs:px-3.5 rounded-full shadow-xs max-w-full"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669]" />
-            <span className="text-[10px] sm:text-[10.5px] font-bold text-emerald-950 uppercase tracking-[0.16em] font-sans">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_#059669] shrink-0" />
+            <span className="text-[9px] xs:text-[10px] sm:text-[10.5px] font-bold text-emerald-950 uppercase tracking-[0.12em] xs:tracking-[0.16em] font-sans truncate">
               Executive Architectural Masterclass • 2026 Edition
             </span>
           </motion.div>
@@ -206,7 +206,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.05 }}
-            className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.2rem] font-bold tracking-tight text-emerald-950 leading-[1.12] max-w-3xl mx-auto"
+            className="font-serif text-[26px] xs:text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.2rem] font-bold tracking-tight text-emerald-950 leading-[1.15] xs:leading-[1.12] max-w-3xl mx-auto break-words px-1"
           >
             Master the Art of <br />
             <span className="italic font-normal bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-800 bg-clip-text text-transparent">
@@ -219,7 +219,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.1 }}
-            className="text-xs sm:text-[14px] text-stone-600 leading-relaxed font-light max-w-2xl mx-auto"
+            className="text-xs sm:text-[14px] text-stone-600 leading-relaxed font-light max-w-2xl mx-auto px-1"
           >
             {heroSubtitle}
           </motion.p>
@@ -229,11 +229,11 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.15 }}
-            className="flex flex-wrap items-center justify-center gap-3 pt-0.5"
+            className="flex flex-col xs:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-3 pt-0.5 w-full max-w-md mx-auto"
           >
             <a 
               href="#course-catalog"
-              className="bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-emerald-950/20 hover:shadow-emerald-900/35 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer btn-shine"
+              className="w-full xs:w-auto bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-emerald-950/20 hover:shadow-emerald-900/35 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer btn-shine"
             >
               <span>Explore Course Library</span>
               <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -241,7 +241,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
             <button
               onClick={() => onNavigate('v2')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-xs sm:text-sm border border-stone-200/90 hover:border-emerald-700/40 shadow-xs hover:shadow-sm transition-all cursor-pointer"
+              className="w-full xs:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-semibold text-xs sm:text-sm border border-stone-200/90 hover:border-emerald-700/40 shadow-xs hover:shadow-sm transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-emerald-800 text-base">lock</span>
               <span>Student Portal</span>
@@ -335,7 +335,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.45, delay: 0.25 }}
-            className="pt-2 max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-y-1 gap-x-4 text-[10px] sm:text-[10.5px] font-mono text-stone-500 uppercase tracking-wider border-t border-stone-200/60"
+            className="pt-2 max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-y-1.5 gap-x-2.5 xs:gap-x-4 text-[9px] xs:text-[9.5px] sm:text-[10.5px] font-mono text-stone-500 uppercase tracking-wider border-t border-stone-200/60"
           >
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
@@ -414,17 +414,17 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
 
       {/* 6. FREQUENTLY ASKED QUESTIONS */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10 space-y-2">
+        <div className="text-center mb-8 sm:mb-10 space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full">
             Assistance &amp; Curriculum Details
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-emerald-950">Frequently Asked Questions</h2>
-          <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto">
+          <h2 className="font-serif text-2xl xs:text-3xl sm:text-4xl font-bold text-emerald-950 break-words px-1">Frequently Asked Questions</h2>
+          <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto px-1">
             Everything you need to know about course access, downloadable blueprints, practical toolkits, and learning resources.
           </p>
         </div>
 
-        <div className="space-y-3.5">
+        <div className="space-y-3 sm:space-y-3.5">
           {faqs.map((f, idx) => {
             const isOpen = activeFaq === idx;
             return (
@@ -438,15 +438,15 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
               >
                 <button
                   onClick={() => setActiveFaq(isOpen ? null : idx)}
-                  className="w-full text-left p-5 sm:p-6 font-semibold text-xs sm:text-sm text-stone-900 flex justify-between items-center gap-4 hover:bg-stone-50/60 transition-colors cursor-pointer"
+                  className="w-full text-left p-4 sm:p-6 font-semibold text-xs sm:text-sm text-stone-900 flex justify-between items-center gap-3 sm:gap-4 hover:bg-stone-50/60 transition-colors cursor-pointer"
                 >
-                  <span className="font-serif font-bold sm:text-base text-emerald-950 flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-emerald-100/70 text-emerald-900 border border-emerald-200 text-xs font-mono flex items-center justify-center flex-shrink-0">
+                  <div className="font-serif font-bold text-xs xs:text-sm sm:text-base text-emerald-950 flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1 break-words">
+                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-emerald-100/70 text-emerald-900 border border-emerald-200 text-[10.5px] sm:text-xs font-mono flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
                       0{idx + 1}
                     </span>
-                    {f.q}
-                  </span>
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 flex-shrink-0 ${
+                    <span className="min-w-0 flex-1 leading-snug">{f.q}</span>
+                  </div>
+                  <span className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-transform duration-200 shrink-0 ${
                     isOpen ? 'bg-emerald-800 text-white rotate-180' : 'bg-stone-100 text-stone-600'
                   }`}>
                     <span className="material-symbols-outlined text-sm">
@@ -461,7 +461,7 @@ export default function LandingView({ onNavigate, siteSettings, onLoginSuccess }
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="px-5 sm:px-6 pb-6 text-xs sm:text-sm text-stone-600 leading-relaxed border-t border-emerald-200/40 pt-4"
+                      className="px-4 sm:px-6 pb-5 sm:pb-6 text-xs sm:text-sm text-stone-600 leading-relaxed border-t border-emerald-200/40 pt-4"
                     >
                       {f.a}
                     </motion.div>

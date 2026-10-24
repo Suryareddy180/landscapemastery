@@ -60,12 +60,12 @@ export default function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.05 }}
-              className="mt-10 flex flex-wrap items-center gap-4"
+              className="mt-10 flex flex-wrap items-center gap-3 sm:gap-4"
             >
               <MagneticButton
                 onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
                 data-testid="hero-cta-solutions"
-                className="group relative inline-flex items-center gap-2.5 rounded-full bg-[var(--text-primary)] text-[var(--bg)] px-8 py-4 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="group relative inline-flex items-center justify-center gap-2.5 rounded-full bg-[var(--text-primary)] text-[var(--bg)] px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full xs:w-auto"
               >
                 Explore Solutions
                 <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform duration-300" />
@@ -74,7 +74,7 @@ export default function Hero() {
               <MagneticButton
                 onClick={() => document.getElementById("solutions")?.scrollIntoView({ behavior: "smooth" })}
                 data-testid="hero-cta-enterprise"
-                className="inline-flex items-center gap-2.5 rounded-full glass px-8 py-4 font-semibold hover:text-accent hover:border-accent/40 transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2.5 rounded-full glass px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-semibold hover:text-accent hover:border-accent/40 transition-all duration-300 w-full xs:w-auto"
               >
                 Enterprise Platforms
               </MagneticButton>
@@ -82,9 +82,9 @@ export default function Hero() {
               <button
                 onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
                 data-testid="hero-cta-consult"
-                className="inline-flex items-center gap-2.5 px-5 py-4 font-medium text-muted hover:text-text-primary transition-colors"
+                className="inline-flex items-center justify-center gap-2.5 px-4 sm:px-5 py-3 sm:py-4 font-medium text-muted hover:text-text-primary transition-colors text-xs sm:text-sm w-full xs:w-auto cursor-pointer"
               >
-                <span className="h-10 w-10 grid place-items-center rounded-full glass border border-line text-accent"><Play size={14} fill="currentColor" /></span>
+                <span className="h-9 w-9 sm:h-10 sm:w-10 grid place-items-center rounded-full glass border border-line text-accent"><Play size={13} fill="currentColor" /></span>
                 Book Consultation
               </button>
             </motion.div>

@@ -7,6 +7,9 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      screens: {
+        xs: "380px",
+      },
       colors: {
         // Landscape Mastery Tokens
         "surface": "#fcf9f8",

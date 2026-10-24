@@ -18,6 +18,17 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [mobileMenuOpen]);
+
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
     const doScroll = () => {
@@ -48,31 +59,30 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full top-0 sticky bg-white/85 backdrop-blur-xl border-b border-stone-200/80 z-50 shadow-[0_4px_30px_-4px_rgba(6,78,59,0.06)]"
+      className="w-full top-0 sticky bg-white/90 backdrop-blur-xl border-b border-stone-200/80 z-50 shadow-[0_4px_30px_-4px_rgba(6,78,59,0.06)]"
     >
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3 gap-2">
         {/* Brand Logo & Editorial Title */}
         <motion.button 
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           onClick={() => onNavigate('v1')} 
-          className="flex items-center gap-3.5 group focus:outline-none cursor-pointer text-left"
+          className="flex items-center gap-2 sm:gap-3.5 group focus:outline-none cursor-pointer text-left min-w-0 flex-shrink"
         >
-          <div className="relative rounded-2xl shadow-sm overflow-hidden flex items-center justify-center p-1.5 ring-1 ring-emerald-900/15 bg-stone-50 transition-all duration-300 group-hover:ring-emerald-700/50 group-hover:shadow-md">
+          <div className="relative rounded-xl sm:rounded-2xl shadow-sm overflow-hidden flex items-center justify-center p-1 sm:p-1.5 ring-1 ring-emerald-900/15 bg-stone-50 transition-all duration-300 group-hover:ring-emerald-700/50 group-hover:shadow-md shrink-0">
             <img 
               src={(logoUrl && (logoUrl.startsWith('/media/') ? `${BASE_URL}${logoUrl}` : logoUrl)) || '/lm_logo.png'} 
               alt="Landscape Mastery Logo" 
               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/lm_logo.png'; }}
-              style={{ height: `${Math.max(logoSize || 46, 42)}px`, width: `${Math.max(logoSize || 46, 42)}px` }}
-              className="object-contain transition-transform duration-300 group-hover:scale-105 rounded-xl"
+              className="h-8 w-8 xs:h-9 xs:w-9 sm:h-11 sm:w-11 object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg sm:rounded-xl"
             />
           </div>
 
-          <div>
-            <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-emerald-950 block leading-tight">
+          <div className="min-w-0 flex-1">
+            <span className="font-serif text-[15px] xs:text-base sm:text-2xl font-bold tracking-tight text-emerald-950 block leading-tight truncate">
               Landscape Mastery
             </span>
-            <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-[0.2em] block font-sans">
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] uppercase font-bold text-emerald-800 tracking-[0.12em] xs:tracking-[0.16em] sm:tracking-[0.2em] block font-sans truncate">
               Architectural Masterclass
             </span>
           </div>
@@ -236,93 +246,122 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
             </motion.button>
           )}
 
+          {/* Mobile Profile Trigger (Visible on small screens if logged in) */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => { if (onOpenProfile) onOpenProfile(); }}
+              className="sm:hidden w-8 h-8 rounded-full bg-emerald-900 text-white font-bold text-xs flex items-center justify-center overflow-hidden border border-emerald-700/40 shrink-0 cursor-pointer shadow-xs"
+              title="My Profile"
+              aria-label="Open User Profile"
+            >
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+              ) : (
+                <span>{(user.name || user.email || 'U')[0].toUpperCase()}</span>
+              )}
+            </button>
+          )}
+
           {/* Mobile Hamburger Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2.5 rounded-xl text-stone-700 hover:bg-stone-100 focus:outline-none border border-stone-200 cursor-pointer"
+            className="md:hidden p-2 rounded-xl text-stone-700 hover:bg-stone-100 focus:outline-none border border-stone-200 cursor-pointer transition-colors"
             aria-label="Toggle Navigation Menu"
           >
-            <span className="material-symbols-outlined text-2xl">
+            <span className="material-symbols-outlined text-2xl block">
               {mobileMenuOpen ? 'close' : 'menu'}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Responsive Mobile Drawer Navigation */}
+      {/* Responsive Mobile Drawer Navigation with Backdrop */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-white border-b border-stone-200 px-6 py-5 shadow-xl space-y-4"
-          >
-            <nav className="flex flex-col gap-2 text-sm font-semibold text-stone-700">
-              <button 
-                onClick={() => scrollToSection('course-catalog')}
-                className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors"
-              >
-                <span>Courses</span>
-                <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
-              </button>
-              <button 
-                onClick={() => { setMobileMenuOpen(false); onNavigate('enroll'); }}
-                className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors"
-              >
-                <span>Enroll Now</span>
-                <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
-              </button>
-              <Link 
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors text-stone-700 font-semibold"
-              >
-                <span>3CAPSTECH Company</span>
-                <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
-              </Link>
-            </nav>
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 top-[57px] bg-stone-950/40 backdrop-blur-xs z-40 md:hidden"
+            />
 
-            <div className="pt-3 border-t border-stone-100 flex flex-col gap-2">
-              {user ? (
-                <>
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); if (onOpenProfile) onOpenProfile(); }}
-                    className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 border border-stone-200 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm text-emerald-800">account_circle</span>
-                    <span>My Profile &amp; Settings</span>
-                  </button>
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); onNavigate(isAdmin ? 'admin' : 'v3'); }}
-                    className="w-full bg-emerald-900 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">{isAdmin ? 'admin_panel_settings' : 'play_circle'}</span>
-                    <span>{isAdmin ? 'Open Admin Console' : 'Access Course Portal'}</span>
-                  </button>
-                  {onLogout && (
-                    <button
-                      onClick={() => { setMobileMenuOpen(false); onLogout(); }}
-                      className="w-full bg-rose-50 text-rose-700 font-semibold text-xs py-2.5 rounded-xl hover:bg-rose-100 cursor-pointer border border-rose-200"
-                    >
-                      Logout
-                    </button>
-                  )}
-                </>
-              ) : (
-                <button
-                  onClick={() => { setMobileMenuOpen(false); onNavigate(['v2', 'admin'].includes(activeView) ? 'v1' : 'v2'); }}
-                  className="w-full bg-emerald-900 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer btn-shine"
+            {/* Mobile Drawer */}
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-50 md:hidden bg-white/98 border-b border-stone-200 px-4 sm:px-6 py-4 shadow-2xl space-y-4 max-h-[calc(100vh-64px)] overflow-y-auto safe-area-bottom"
+            >
+              <nav className="flex flex-col gap-1.5 text-sm font-semibold text-stone-700">
+                <button 
+                  onClick={() => scrollToSection('course-catalog')}
+                  className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-sm">
-                    {['v2', 'admin'].includes(activeView) ? 'arrow_back' : 'lock'}
-                  </span>
-                  <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student Login'}</span>
+                  <span>Courses</span>
+                  <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
                 </button>
-              )}
-            </div>
-          </motion.div>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); onNavigate('enroll'); }}
+                  className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>Enroll Now</span>
+                  <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
+                </button>
+                <Link 
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-left py-2.5 px-3.5 rounded-xl hover:bg-stone-50 hover:text-emerald-900 flex items-center justify-between transition-colors text-stone-700 font-semibold cursor-pointer"
+                >
+                  <span>3CAPSTECH Company</span>
+                  <span className="material-symbols-outlined text-sm text-stone-400">chevron_right</span>
+                </Link>
+              </nav>
+
+              <div className="pt-3 border-t border-stone-100 flex flex-col gap-2">
+                {user ? (
+                  <>
+                    <button
+                      onClick={() => { setMobileMenuOpen(false); if (onOpenProfile) onOpenProfile(); }}
+                      className="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 border border-stone-200 cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm text-emerald-800">account_circle</span>
+                      <span>My Profile &amp; Settings</span>
+                    </button>
+                    <button
+                      onClick={() => { setMobileMenuOpen(false); onNavigate(isAdmin ? 'admin' : 'v3'); }}
+                      className="w-full bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">{isAdmin ? 'admin_panel_settings' : 'play_circle'}</span>
+                      <span>{isAdmin ? 'Open Admin Console' : 'Access Course Portal'}</span>
+                    </button>
+                    {onLogout && (
+                      <button
+                        onClick={() => { setMobileMenuOpen(false); onLogout(); }}
+                        className="w-full bg-rose-50 text-rose-700 font-semibold text-xs py-2.5 rounded-xl hover:bg-rose-100 cursor-pointer border border-rose-200 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); onNavigate(['v2', 'admin'].includes(activeView) ? 'v1' : 'v2'); }}
+                    className="w-full bg-emerald-900 hover:bg-emerald-800 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md cursor-pointer btn-shine transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {['v2', 'admin'].includes(activeView) ? 'arrow_back' : 'lock'}
+                    </span>
+                    <span>{['v2', 'admin'].includes(activeView) ? 'Back to Landing' : 'Student Login'}</span>
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.header>

@@ -429,30 +429,30 @@ export default function ProfileModal({
   }[role] || 'bg-stone-50 text-stone-800 border-stone-200';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-stone-900/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 xs:p-3 sm:p-5 overflow-y-auto bg-stone-900/60 backdrop-blur-md animate-in fade-in duration-200">
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col max-h-[92vh] text-stone-900"
+        className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col max-h-[94vh] text-stone-900"
       >
         {/* ============================================================== */}
         {/* HEADER & AVATAR BANNER                                         */}
         {/* ============================================================== */}
-        <div className="relative bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 p-6 sm:p-8 text-white flex-shrink-0">
+        <div className="relative bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 p-4 sm:p-8 text-white flex-shrink-0">
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm z-10"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
             {/* Circular Avatar with Camera Overlay */}
-            <div className="relative group">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white/30 shadow-xl overflow-hidden bg-stone-100 flex items-center justify-center relative">
+            <div className="relative group flex-shrink-0">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white/30 shadow-xl overflow-hidden bg-stone-100 flex items-center justify-center relative">
                 {avatarPreview ? (
                   <img
                     src={avatarPreview}
@@ -460,13 +460,13 @@ export default function ProfileModal({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-white text-3xl font-serif font-bold">
+                  <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-white text-2xl sm:text-3xl font-serif font-bold">
                     {(formData.full_name || profile?.email || 'U')[0]?.toUpperCase()}
                   </div>
                 )}
                 {avatarLoading && (
                   <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-white animate-spin" />
+                    <RefreshCw className="w-5 h-5 text-white animate-spin" />
                   </div>
                 )}
               </div>
@@ -477,9 +477,9 @@ export default function ProfileModal({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={avatarLoading}
                 title="Upload or change profile picture"
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-pointer border-2 border-white"
+                className="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-pointer border-2 border-white"
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <input
                 ref={fileInputRef}
@@ -491,33 +491,33 @@ export default function ProfileModal({
             </div>
 
             {/* User Meta Information */}
-            <div className="flex-1 text-center sm:text-left space-y-1.5">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-white">
+            <div className="flex-1 text-center sm:text-left space-y-1.5 min-w-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-lg sm:text-2xl font-serif font-bold tracking-tight text-white truncate max-w-full">
                   {formData.full_name || profile?.email || 'Account Profile'}
                 </h2>
-                <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.8 rounded-full border ${roleBadgeColor}`}>
+                <span className={`text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${roleBadgeColor}`}>
                   {roleLabel}
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-emerald-100/90 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>{profile?.email}</span>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 text-xs text-emerald-100/90 font-medium">
+                <span className="flex items-center gap-1.5 truncate max-w-full">
+                  <Mail className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+                  <span className="truncate">{profile?.email}</span>
                   {profile?.email_verified ? (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-400/30">
+                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-400/30 flex-shrink-0">
                       <Check className="w-2.5 h-2.5" /> Verified
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/30">
+                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/30 flex-shrink-0">
                       Unverified
                     </span>
                   )}
                 </span>
                 {profile?.created_at && (
                   <span className="flex items-center gap-1 opacity-75">
-                    <Calendar className="w-3.5 h-3.5" />
+                    <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                     Member since {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
                 )}
@@ -543,38 +543,38 @@ export default function ProfileModal({
         {/* ============================================================== */}
         {/* NAVIGATION TABS                                                */}
         {/* ============================================================== */}
-        <div className="flex border-b border-stone-200 bg-stone-50/80 px-6 gap-2 text-xs font-bold text-stone-600 flex-shrink-0">
+        <div className="flex border-b border-stone-200 bg-stone-50/80 px-3 sm:px-6 gap-1 sm:gap-2 text-xs font-bold text-stone-600 flex-shrink-0 overflow-x-auto no-scrollbar">
           <button
             onClick={() => { setActiveTab('profile'); setError(null); setSuccessMsg(null); }}
-            className={`py-3.5 px-3 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+            className={`py-3 px-2 sm:px-3 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer text-xs ${
               activeTab === 'profile'
                 ? 'border-emerald-800 text-emerald-950 bg-white font-extrabold shadow-2xs'
                 : 'border-transparent hover:text-stone-900 hover:bg-stone-100/60'
             }`}
           >
-            <User className="w-4 h-4 text-emerald-700" />
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" />
             <span>Profile Details</span>
           </button>
           <button
             onClick={() => { setActiveTab('security'); setPwdError(null); setPwdSuccess(null); }}
-            className={`py-3.5 px-3 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+            className={`py-3 px-2 sm:px-3 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer text-xs ${
               activeTab === 'security'
                 ? 'border-emerald-800 text-emerald-950 bg-white font-extrabold shadow-2xs'
                 : 'border-transparent hover:text-stone-900 hover:bg-stone-100/60'
             }`}
           >
-            <Lock className="w-4 h-4 text-emerald-700" />
+            <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" />
             <span>Security &amp; Password</span>
           </button>
           <button
             onClick={() => { setActiveTab('delete'); setDeleteError(null); }}
-            className={`py-3.5 px-3 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+            className={`py-3 px-2 sm:px-3 border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer text-xs ${
               activeTab === 'delete'
                 ? 'border-rose-600 text-rose-800 bg-white font-extrabold shadow-2xs'
                 : 'border-transparent hover:text-rose-700 hover:bg-stone-100/60'
             }`}
           >
-            <Trash2 className="w-4 h-4 text-rose-600" />
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-600" />
             <span>Delete Account</span>
           </button>
         </div>

@@ -41,7 +41,15 @@ export default function AdminDashboardLayout({
   const currentNav = navItems.find(i => i.id === activeSection) || navItems[0];
 
   return (
-    <div className="h-screen bg-stone-100/70 text-stone-800 flex overflow-hidden font-body-md">
+    <div className="h-screen bg-stone-100/70 text-stone-800 flex overflow-hidden font-body-md relative">
+      {/* Mobile Backdrop Overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-stone-950/60 z-40 md:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR NAVIGATION (Executive Luxury Architecture Theme) */}
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-72 lg:w-76 bg-white border-r border-stone-200 shadow-sm flex flex-col justify-between transition-transform duration-300 ${
         mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
@@ -178,22 +186,22 @@ export default function AdminDashboardLayout({
       {/* MAIN CONTENT CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-full bg-stone-100/70">
         {/* ENHANCED EXECUTIVE TOP NAVBAR */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-stone-200 px-6 py-4 flex justify-between items-center gap-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center gap-4 min-w-0">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-stone-200 px-3 xs:px-4 sm:px-6 py-2.5 sm:py-4 flex justify-between items-center gap-2 sm:gap-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button 
               onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden text-stone-600 hover:text-stone-900 p-1.5 rounded-lg border border-stone-200"
+              className="md:hidden text-stone-600 hover:text-stone-900 p-1.5 rounded-lg border border-stone-200 cursor-pointer"
             >
               <span className="material-symbols-outlined text-xl">menu</span>
             </button>
             
             {/* Breadcrumb & Section Name */}
-            <div className="hidden sm:flex items-center gap-2 text-xs">
-              <span className="text-stone-400 font-medium">Admin</span>
-              <span className="text-stone-300">/</span>
-              <span className="font-bold text-stone-800 flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200/60">
-                <span className="material-symbols-outlined text-base text-emerald-700">{currentNav.icon}</span>
-                {currentNav.label}
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 truncate">
+              <span className="text-stone-400 font-medium hidden xs:inline">Admin</span>
+              <span className="text-stone-300 hidden xs:inline">/</span>
+              <span className="font-bold text-stone-800 flex items-center gap-1.5 bg-stone-100 px-2 sm:px-2.5 py-1 rounded-lg border border-stone-200/60 truncate">
+                <span className="material-symbols-outlined text-sm sm:text-base text-emerald-700 flex-shrink-0">{currentNav.icon}</span>
+                <span className="truncate">{currentNav.label}</span>
               </span>
             </div>
 
@@ -207,15 +215,15 @@ export default function AdminDashboardLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* Quick Add Menu Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setQuickAddOpen(!quickAddOpen)}
-                className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm shadow-emerald-950/20 transition-all cursor-pointer"
+                className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-1.5 shadow-sm shadow-emerald-950/20 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
-                Quick Add
+                <span className="hidden xs:inline">Quick Add</span>
               </button>
 
               <AnimatePresence>

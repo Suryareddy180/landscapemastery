@@ -66,10 +66,10 @@ export default function Industries() {
             </p>
           </div>
 
-          <div className="flex rounded-full glass p-1.5 border border-line shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap rounded-2xl sm:rounded-full glass p-1 sm:p-1.5 border border-line shrink-0 w-full sm:w-auto justify-center gap-1">
             <button
               onClick={() => setActiveTab("solutions")}
-              className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+              className={`flex-1 sm:flex-initial rounded-xl sm:rounded-full px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all text-center ${
                 activeTab === "solutions"
                   ? "bg-accent text-white shadow-md"
                   : "text-muted hover:text-ink"
@@ -79,7 +79,7 @@ export default function Industries() {
             </button>
             <button
               onClick={() => setActiveTab("industries")}
-              className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+              className={`flex-1 sm:flex-initial rounded-xl sm:rounded-full px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all text-center ${
                 activeTab === "industries"
                   ? "bg-accent text-white shadow-md"
                   : "text-muted hover:text-ink"

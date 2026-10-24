@@ -371,7 +371,7 @@ export default function PracticeView({ onOpenProfile }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto px-6 md:px-12 py-8 bg-[#FAFAFA]">
+    <div className="space-y-6 max-w-5xl">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
@@ -379,17 +379,17 @@ export default function PracticeView({ onOpenProfile }) {
             <span className="material-symbols-outlined text-sm">shuffle</span>
             <span>Real-Time Practice Hub</span>
           </div>
-          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Practice &amp; Field Assignments</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">Practice &amp; Field Assignments</h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Solidify your spatial engineering skills through interactive architectural quizzes and project drafting exercises.
           </p>
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-xl border border-stone-200">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 bg-stone-100 p-1.5 rounded-xl border border-stone-200">
           <button
             onClick={() => { setActiveSection('quizzes'); setActiveQuiz(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeSection === 'quizzes'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-500 hover:text-stone-800'
@@ -400,7 +400,7 @@ export default function PracticeView({ onOpenProfile }) {
           </button>
           <button
             onClick={() => { setActiveSection('assignments'); setActiveQuiz(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeSection === 'assignments'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-500 hover:text-stone-800'

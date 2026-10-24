@@ -113,9 +113,9 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="mt-14 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
           <div className="text-xs text-muted">© {new Date().getFullYear()} 3CAPSTECH Software Private Limited. All rights reserved.</div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             {[
               { icon: MessageCircle, href: WHATSAPP, label: "WhatsApp" },
               { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },

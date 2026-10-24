@@ -302,9 +302,9 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
     <div className="flex w-full h-screen bg-[#F8F9FA] overflow-hidden text-stone-900 font-sans select-none">
 
       {/* ============================================================== */}
-      {/* 1. PERSISTENT LEFT APP RAIL (Matching Photo 1 & 5 Icons)       */}
+      {/* 1. PERSISTENT LEFT APP RAIL (Desktop ≥ md)                     */}
       {/* ============================================================== */}
-      <aside className="w-16 h-full bg-white border-r border-stone-200 flex flex-col items-center justify-between py-4 flex-shrink-0 z-30 shadow-2xs">
+      <aside className="hidden md:flex w-16 h-full bg-white border-r border-stone-200 flex-col items-center justify-between py-4 flex-shrink-0 z-30 shadow-2xs">
         <div className="flex flex-col items-center gap-5 w-full">
           {/* LMS Brand Logo */}
           <button
@@ -323,7 +323,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             />
           </button>
 
-          {/* 1. Book / Active Courses (Icon 1 in uploaded photo) */}
+          {/* 1. Book / Active Courses (Icon 1) */}
           <button
             onClick={() => {
               setPortalTab('courses');
@@ -341,7 +341,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             <span className="material-symbols-outlined text-xl">menu_book</span>
           </button>
 
-          {/* 2. Practice / Quizzes (Icon 2 in uploaded photo: shuffle) */}
+          {/* 2. Practice / Quizzes (Icon 2: shuffle) */}
           <button
             onClick={() => {
               setPortalTab('practice');
@@ -357,7 +357,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             <span className="material-symbols-outlined text-xl">shuffle</span>
           </button>
 
-          {/* 3. Bookmarks & Field Notes (Icon 3 in uploaded photo: bookmark) */}
+          {/* 3. Bookmarks & Field Notes (Icon 3: bookmark) */}
           <button
             onClick={() => {
               setPortalTab('bookmarks');
@@ -375,7 +375,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             </span>
           </button>
 
-          {/* 4. Community Discussions (Icon 4 in uploaded photo: chat_bubble) */}
+          {/* 4. Community Discussions (Icon 4: chat_bubble) */}
           <button
             onClick={() => {
               setPortalTab('community');
@@ -396,7 +396,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
 
         {/* Bottom Actions: Storefront (Icon 5) & User Profile */}
         <div className="flex flex-col items-center gap-4">
-          {/* 5. Storefront / Course Catalog (Icon 5 in uploaded photo) */}
+          {/* 5. Storefront / Course Catalog (Icon 5) */}
           <button
             onClick={() => onNavigate('v1')}
             title="Browse Course Catalog"
@@ -429,7 +429,8 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
         {/* VIEW 1: PORTAL TABS (Courses / Practice / Bookmarks / Comm)  */}
         {/* ------------------------------------------------------------ */}
         {!selectedCourse ? (
-          <div className="flex-1 flex flex-col h-full overflow-y-auto px-6 md:px-12 py-8 bg-[#FAFAFA] relative">
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#FAFAFA] relative">
+            <div className="flex-1 flex flex-col overflow-y-auto px-3.5 xs:px-5 md:px-12 py-5 sm:py-8">
             
             {/* PRACTICE TAB (Icon 2) */}
             {portalTab === 'practice' ? (
@@ -581,28 +582,93 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
               </>
             )}
 
-            {/* Floating Support & Chat Widgets */}
-            <div className="fixed bottom-6 right-6 flex items-center gap-3 z-50">
-              <a
-                href="https://wa.me/919999999999"
-                target="_blank"
-                rel="noreferrer"
-                title="WhatsApp Support"
-                className="w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105"
-              >
-                <span className="material-symbols-outlined text-2xl">call</span>
-              </a>
-              <button
-                onClick={() => {
-                  setSelectedCourse(null);
-                  setPortalTab('community');
-                }}
-                title="Live Studio Chat"
-                className="w-13 h-13 rounded-full bg-[#0052CC] hover:bg-[#0047B3] text-white flex items-center justify-center shadow-xl transition-transform hover:scale-105 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-2xl">chat</span>
-              </button>
+              {/* Floating Support & Chat Widgets */}
+              <div className="fixed bottom-16 md:bottom-6 right-3 sm:right-6 flex items-center gap-2 sm:gap-3 z-20">
+                <a
+                  href="https://wa.me/919999999999"
+                  target="_blank"
+                  rel="noreferrer"
+                  title="WhatsApp Support"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+                >
+                  <span className="material-symbols-outlined text-xl sm:text-2xl">call</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setSelectedCourse(null);
+                    setPortalTab('community');
+                  }}
+                  title="Live Studio Chat"
+                  className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-[#0052CC] hover:bg-[#0047B3] text-white flex items-center justify-center shadow-xl transition-transform hover:scale-105 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-xl sm:text-2xl">chat</span>
+                </button>
+              </div>
             </div>
+
+            {/* Mobile Bottom Navigation Bar (md:hidden) */}
+            <nav className="md:hidden flex items-center justify-around bg-white border-t border-stone-200 py-1.5 px-2 z-30 flex-shrink-0 safe-area-bottom shadow-lg">
+              <button
+                onClick={() => { setPortalTab('courses'); setSelectedCourse(null); }}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                  portalTab === 'courses' ? 'text-blue-600 font-bold' : 'text-stone-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">menu_book</span>
+                <span>Courses</span>
+              </button>
+              <button
+                onClick={() => { setPortalTab('practice'); setSelectedCourse(null); }}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                  portalTab === 'practice' ? 'text-blue-600 font-bold' : 'text-stone-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">shuffle</span>
+                <span>Practice</span>
+              </button>
+              <button
+                onClick={() => { setPortalTab('bookmarks'); setSelectedCourse(null); }}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                  portalTab === 'bookmarks' ? 'text-blue-600 font-bold' : 'text-stone-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">
+                  {portalTab === 'bookmarks' ? 'bookmark' : 'bookmark_border'}
+                </span>
+                <span>Saved</span>
+              </button>
+              <button
+                onClick={() => { setPortalTab('community'); setSelectedCourse(null); }}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                  portalTab === 'community' ? 'text-blue-600 font-bold' : 'text-stone-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">
+                  {portalTab === 'community' ? 'chat_bubble' : 'chat_bubble_outline'}
+                </span>
+                <span>Studio</span>
+              </button>
+              <button
+                onClick={() => onNavigate('v1')}
+                className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold text-stone-400 hover:text-stone-700 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-xl">storefront</span>
+                <span>Catalog</span>
+              </button>
+              <button
+                onClick={() => { if (onOpenProfile) onOpenProfile(); }}
+                className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold text-stone-600 cursor-pointer"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-900 text-white flex items-center justify-center text-[9px] font-bold overflow-hidden">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'S'}</span>
+                  )}
+                </div>
+                <span>Profile</span>
+              </button>
+            </nav>
           </div>
         ) : (
 
@@ -612,38 +678,39 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
           <div className="flex-1 flex flex-col h-full overflow-hidden">
 
             {/* Top Learning Navigation Bar */}
-            <div className="h-14 border-b border-stone-200 px-4 flex items-center justify-between bg-white flex-shrink-0 z-20">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="h-14 border-b border-stone-200 px-2 xs:px-3 sm:px-4 flex items-center justify-between bg-white flex-shrink-0 z-20 gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
                 {/* Back Arrow to Courses Grid */}
                 <button
                   onClick={() => setSelectedCourse(null)}
                   title="Back to Active Courses"
-                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer flex-shrink-0"
                 >
-                  <span className="material-symbols-outlined text-xl">arrow_back</span>
+                  <span className="material-symbols-outlined text-lg sm:text-xl">arrow_back</span>
                 </button>
 
                 {/* Left Drawer Toggle (Hamburger Icon) */}
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   title="Toggle Curriculum Sidebar"
-                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-amber-600 transition-colors cursor-pointer"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center hover:bg-stone-100 text-amber-600 transition-colors cursor-pointer flex-shrink-0"
                 >
-                  <span className="material-symbols-outlined text-xl">menu</span>
+                  <span className="material-symbols-outlined text-lg sm:text-xl">menu</span>
                 </button>
 
                 {/* Course Title Header */}
-                <h2 className="font-bold text-sm text-stone-900 truncate max-w-xs sm:max-w-md md:max-w-xl">
+                <h2 className="font-bold text-xs sm:text-sm text-stone-900 truncate flex-1 min-w-0">
                   {selectedCourse.title}
                 </h2>
               </div>
 
               {/* Prev / Bookmark / Next Buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <button
                   disabled={!prevLesson}
                   onClick={() => prevLesson && handleSelectLesson(prevLesson)}
-                  className="px-3 py-1.5 rounded-md border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Previous Lecture"
+                  className="p-1.5 sm:px-3 sm:py-1.5 rounded-md border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">chevron_left</span>
                   <span className="hidden sm:inline">Previous</span>
@@ -653,7 +720,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                 <button
                   onClick={() => toggleBookmarkLesson(activeLesson)}
                   title={bookmarkedLessonIds.has(activeLesson?.id) ? 'Remove Bookmark' : 'Bookmark this Lecture'}
-                  className={`px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  className={`p-1.5 sm:px-3 sm:py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                     bookmarkedLessonIds.has(activeLesson?.id)
                       ? 'bg-amber-50 border-amber-300 text-amber-700'
                       : 'border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -671,7 +738,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                 <button
                   onClick={() => activeLesson && handleToggleComplete(activeLesson.id)}
                   title={completedLessonIds.has(activeLesson?.id) ? 'Completed' : 'Mark this Lecture as Completed'}
-                  className={`px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  className={`p-1.5 sm:px-3 sm:py-1.5 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                     completedLessonIds.has(activeLesson?.id)
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                       : 'border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -699,7 +766,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
                       ? 'Please complete the current video to unlock next lecture'
                       : 'Proceed to Next Lecture'
                   }
-                  className={`px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs ${
+                  className={`p-1.5 sm:px-4 sm:py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs ${
                     !nextLesson || !completedLessonIds.has(activeLesson?.id)
                       ? 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed opacity-60'
                       : 'bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer hover:shadow-sm'
@@ -714,11 +781,29 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
             </div>
 
             {/* Main Stage & Curriculum Split View */}
-            <div className="flex-1 flex overflow-hidden">
-
-              {/* Left Curriculum Sidebar (Collapsible Drawer) */}
+            <div className="flex-1 flex overflow-hidden relative">
+              {/* Mobile backdrop overlay when curriculum drawer is open */}
               {sidebarOpen && (
-                <aside className="w-80 md:w-88 h-full border-r border-stone-200 bg-white flex flex-col flex-shrink-0 overflow-hidden z-10 animate-in slide-in-from-left duration-200">
+                <div
+                  className="md:hidden fixed inset-0 bg-stone-950/60 z-30 backdrop-blur-xs transition-opacity"
+                  onClick={() => setSidebarOpen(false)}
+                />
+              )}
+
+              {/* Left Curriculum Sidebar (Collapsible Drawer on mobile, inline on desktop) */}
+              {sidebarOpen && (
+                <aside className="fixed md:static inset-y-0 left-0 z-40 md:z-10 w-[85vw] max-w-xs sm:w-80 md:w-88 h-full border-r border-stone-200 bg-white flex flex-col flex-shrink-0 overflow-hidden shadow-2xl md:shadow-none animate-in slide-in-from-left duration-200">
+                  
+                  {/* Mobile Drawer Header with Close Button */}
+                  <div className="md:hidden px-4 py-3 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+                    <span className="font-bold text-xs text-stone-800 uppercase tracking-wider">Course Curriculum</span>
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="w-7 h-7 rounded-full bg-stone-200/80 flex items-center justify-center text-stone-600 hover:text-stone-900 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-base">close</span>
+                    </button>
+                  </div>
                   
                   {/* Progress Header (Accurate Progress & Removed "in 12.5 hrs") */}
                   <div className="p-4 border-b border-stone-100 bg-[#FAFAFA]">
@@ -864,7 +949,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
               )}
 
               {/* Center Main Content Stage (Video Player) */}
-              <main className="flex-1 bg-stone-950 flex flex-col items-center justify-center relative p-4 overflow-hidden">
+              <main className="flex-1 bg-stone-950 flex flex-col items-center justify-center relative p-1 sm:p-4 overflow-hidden">
                 <CourseVideoPlayer
                   playbackData={playbackData}
                   isLoading={playbackLoading}
