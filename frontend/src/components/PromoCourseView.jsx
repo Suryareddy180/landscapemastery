@@ -45,8 +45,8 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fallback slug if accessed via root or empty
-  const activeSlug = courseSlug || 'lanscape-lens';
+  // Fallback slug if accessed via root or empty (rectified 'landscape-lens')
+  const activeSlug = (courseSlug === 'lanscape-lens' ? 'landscape-lens' : courseSlug) || 'landscape-lens';
 
   useEffect(() => {
     fetchCoursePromo();
@@ -96,9 +96,13 @@ export default function PromoCourseView({ onNavigate, siteSettings }) {
       const listRes = await fetch(`${BASE_URL}/api/public/courses/`);
       if (listRes.ok) {
         const listData = await listRes.json();
-        const match = (listData.courses || []).find(
-          c => c.slug === activeSlug || c.title.toLowerCase().replace(/\s+/g, '-').includes(activeSlug)
-        );
+        const courses = listData.courses || [];
+        const match = courses.find(
+          c => c.slug === activeSlug ||
+               (activeSlug === 'landscape-lens' && (c.slug === 'lanscape-lens' || (c.title && c.title.toLowerCase().includes('landscape')))) ||
+               (c.title && c.title.toLowerCase().replace(/\s+/g, '-').includes(activeSlug))
+        ) || (activeSlug === 'landscape-lens' ? courses[0] : null);
+
         if (match) {
           setCourse({
             ...match,

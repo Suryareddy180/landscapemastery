@@ -103,7 +103,7 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
     const courseParam = searchParams.get('course') || searchParams.get('course_id') || searchParams.get('slug') || searchParams.get('id');
 
     // 2. Check path segments:
-    // e.g. /courses/lanscape-lens, /courses/lanscape-lens/enroll, /courses/1, /enroll/lanscape-lens
+    // e.g. /courses/landscape-lens, /courses/landscape-lens/enroll, /courses/1, /enroll/landscape-lens
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     let pathIdentifier = null;
     const coursesIdx = pathParts.indexOf('courses');
@@ -132,7 +132,8 @@ export default function EnrollView({ onNavigate, siteSettings, onLoginSuccess, i
           cTitle === targetLower ||
           normTitle === normTarget ||
           cSlug.includes(targetLower) ||
-          targetLower.includes(cSlug)
+          targetLower.includes(cSlug) ||
+          ((targetLower === 'landscape-lens' || targetLower === 'lanscape-lens' || targetLower === 'landscape') && (cSlug.includes('landscape') || normTitle.includes('landscape')))
         );
       });
 
