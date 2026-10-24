@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BASE_URL } from '../../lib/api.js';
 
 const QUIZ_BANKS = [
   {
@@ -250,6 +251,42 @@ export default function PracticeView({ onOpenProfile }) {
   const [submissionText, setSubmissionText] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  const fetchLiveAssignments = async () => {
+    const token = localStorage.getItem('lm_auth_token') || '';
+    if (!token) return;
+    try {
+      const res = await fetch(`${BASE_URL}/api/assignments/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.assignments && data.assignments.length > 0) {
+          const mapped = data.assignments.map(a => ({
+            id: a.id,
+            title: a.title,
+            module: a.module_name,
+            deadline: a.deadline,
+            status: a.submission ? a.submission.status : 'Pending',
+            score: a.submission?.score !== null && a.submission?.score !== undefined ? `${a.submission.score}/${a.points}` : null,
+            feedback: a.submission?.feedback || null,
+            gradedBy: a.submission?.graded_by || null,
+            description: a.description,
+            points: a.points,
+            submissionNotes: a.submission?.submission_text || '',
+            submittedAt: a.submission?.submitted_at ? new Date(a.submission.submitted_at).toLocaleDateString() : null
+          }));
+          setAssignments(mapped);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch assignments:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveAssignments();
+  }, []);
+
   // Save assignments to localStorage on update
   useEffect(() => {
     try {
@@ -287,9 +324,25 @@ export default function PracticeView({ onOpenProfile }) {
     };
   };
 
-  const handleSubmitAssignment = (e) => {
+  const handleSubmitAssignment = async (e) => {
     e.preventDefault();
     if (!activeAssignment || !submissionText.trim()) return;
+
+    const token = localStorage.getItem('lm_auth_token') || '';
+    if (token) {
+      try {
+        await fetch(`${BASE_URL}/api/assignments/${activeAssignment.id}/submit/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ submission_text: submissionText.trim() })
+        });
+      } catch (err) {
+        console.error('Error submitting to server:', err);
+      }
+    }
 
     setAssignments((prev) =>
       prev.map((a) =>
@@ -313,6 +366,7 @@ export default function PracticeView({ onOpenProfile }) {
       setSubmitSuccess(false);
       setActiveAssignment(null);
       setSubmissionText('');
+      fetchLiveAssignments();
     }, 1200);
   };
 
@@ -647,6 +701,15 @@ export default function PracticeView({ onOpenProfile }) {
                           Grade: {asg.score}
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {asg.feedback && (
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-950 space-y-1">
+                      <strong className="text-emerald-900 block font-bold">
+                        Faculty Review {asg.gradedBy ? `(${asg.gradedBy})` : ''}:
+                      </strong>
+                      <p className="leading-relaxed">{asg.feedback}</p>
                     </div>
                   )}
                 </div>

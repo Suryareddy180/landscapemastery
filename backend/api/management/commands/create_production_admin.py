@@ -49,6 +49,24 @@ class Command(BaseCommand):
                 'is_staff': True,
                 'is_superuser': False,
                 'phone': '+91 94409 99908'
+            },
+            {
+                'email': 'shruthi.frg@gmail.com',
+                'password': os.environ.get('SHRUTHI_INSTRUCTOR_PASSWORD', 'pass@LM'),
+                'name': 'Shruthi (Course Instructor)',
+                'role': 'INSTRUCTOR',
+                'is_staff': True,
+                'is_superuser': False,
+                'phone': '+91 94409 99908'
+            },
+            {
+                'email': 'krupali.frg@gmail.com',
+                'password': os.environ.get('KRUPALI_INSTRUCTOR_PASSWORD', 'pass@LM'),
+                'name': 'Krupali (Course Instructor)',
+                'role': 'INSTRUCTOR',
+                'is_staff': True,
+                'is_superuser': False,
+                'phone': '+91 94409 99908'
             }
         ]
 
@@ -79,8 +97,17 @@ class Command(BaseCommand):
             user.paid = True
             user.is_active = True
             user.full_name = adm.get('name', 'Admin')
-            user.phone = adm.get('phone', '+91 94409 99908')
             user.save()
+
+            try:
+                from company.models import UserProfile, CommunityMemberProfile
+                UserProfile.objects.get_or_create(user=user, defaults={'full_name': user.full_name})
+                CommunityMemberProfile.objects.update_or_create(
+                    user=user,
+                    defaults={'custom_role_title': 'Course Instructor' if user.role == 'INSTRUCTOR' else 'Administrator'}
+                )
+            except Exception:
+                pass
 
             action = "Created new" if created else "Updated"
             self.stdout.write(self.style.SUCCESS(

@@ -413,6 +413,7 @@ export default function ProfileModal({
     EMPLOYEE: 'Corporate Employee',
     HOUSEHOLD: 'Household Resident',
     SUPER_ADMIN: 'Super Administrator',
+    INSTRUCTOR: 'Course Instructor',
     CONTENT_MANAGER: 'Content Manager',
     SUPPORT_ADMIN: 'Support Admin',
     ADMIN: 'Administrator'
@@ -423,6 +424,7 @@ export default function ProfileModal({
     EMPLOYEE: 'bg-blue-50 text-blue-800 border-blue-200',
     HOUSEHOLD: 'bg-amber-50 text-amber-800 border-amber-200',
     SUPER_ADMIN: 'bg-purple-50 text-purple-800 border-purple-200',
+    INSTRUCTOR: 'bg-emerald-100/80 text-emerald-900 border-emerald-300 font-bold',
     ADMIN: 'bg-purple-50 text-purple-800 border-purple-200'
   }[role] || 'bg-stone-50 text-stone-800 border-stone-200';
 
@@ -761,7 +763,7 @@ export default function ProfileModal({
               )}
 
               {/* Section 2: Employee Specific Details */}
-              {(role === 'EMPLOYEE' || ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(role)) && (
+              {(role === 'EMPLOYEE' || ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(role)) && (
                 <div className="space-y-4 pt-2">
                   <div className="border-b border-stone-200 pb-2 flex items-center justify-between">
                     <h3 className="font-serif text-base font-bold text-stone-900 flex items-center gap-2">

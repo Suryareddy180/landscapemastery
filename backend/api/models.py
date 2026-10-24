@@ -20,6 +20,7 @@ class UsrMgr(BaseUserManager):
 class Usr(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
         ('SUPER_ADMIN', 'Super Admin'),
+        ('INSTRUCTOR', 'Course Instructor'),
         ('CONTENT_MANAGER', 'Content Manager'),
         ('SUPPORT_ADMIN', 'Support Admin'),
         ('THREECAPS_ADMIN', '3CAPSTECH Admin'),
@@ -281,7 +282,51 @@ class Announcement(models.Model):
     title = models.CharField(max_length=255)
     message = models.TextField()
     active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_announcements')
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+class Assignment(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
+    title = models.CharField(max_length=255)
+    module_name = models.CharField(max_length=255, blank=True, default='')
+    deadline = models.CharField(max_length=100, default='Self-Paced / Recommended Week 2')
+    description = models.TextField()
+    points = models.IntegerField(default=100)
+    created_by = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_assignments')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        db_table = 'api_assignment'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.points} pts)"
+
+class AssignmentSubmission(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Review'),
+        ('GRADED', 'Graded'),
+    )
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey(Usr, on_delete=models.CASCADE, related_name='assignment_submissions')
+    submission_text = models.TextField(blank=True, default='')
+    file_url = models.CharField(max_length=500, blank=True, default='')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    score = models.CharField(max_length=50, blank=True, default='')
+    feedback = models.TextField(blank=True, default='')
+    submitted_at = models.DateTimeField(auto_now_add=True, null=True)
+    graded_at = models.DateTimeField(null=True, blank=True)
+    graded_by = models.ForeignKey(Usr, on_delete=models.SET_NULL, null=True, blank=True, related_name='graded_submissions')
+
+    class Meta:
+        db_table = 'api_assignment_submission'
+        ordering = ['-submitted_at']
+        unique_together = ('assignment', 'student')
+
+    def __str__(self):
+        return f"Submission: {self.assignment.title} by {self.student.email} ({self.status})"
+
 
 class SiteSetting(models.Model):
     site_name = models.CharField(max_length=100, default='Landscape Mastery')

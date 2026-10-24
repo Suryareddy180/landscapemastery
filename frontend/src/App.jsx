@@ -19,7 +19,7 @@ const AdminLogin = lazy(() => import('./admin/AdminLogin.jsx'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard.jsx'));
 const PromoCourseView = lazy(() => import('./components/PromoCourseView.jsx'));
 
-export const ADMIN_ROLES = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'];
+export const ADMIN_ROLES = ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'];
 
 const ViewLoader = () => (
   <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 p-12">

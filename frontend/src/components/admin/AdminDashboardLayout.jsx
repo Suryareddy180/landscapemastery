@@ -15,20 +15,28 @@ export default function AdminDashboardLayout({
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const navItems = [
+  const isInstructor = user?.role === 'INSTRUCTOR';
+
+  const allNavItems = [
     { id: 'overview', label: 'Dashboard Overview', icon: 'dashboard', badge: null },
     { id: 'courses', label: 'Course Builder', icon: 'auto_stories', badge: 'Builder' },
+    { id: 'assignments', label: 'Studio Assignments', icon: 'assignment', badge: 'Active' },
+    { id: 'announcements', label: 'Course Announcements', icon: 'campaign', badge: 'Updates' },
     { id: 'library', label: 'Content & Media Library', icon: 'folder_open', badge: null },
     { id: 'students', label: 'Student Roster', icon: 'group', badge: null },
-    { id: 'users', label: 'User & Staff Governance', icon: 'admin_panel_settings', badge: 'Access' },
-    { id: 'payments', label: 'Payments & Orders', icon: 'payments', badge: 'Live' },
-    { id: 'cms', label: 'Landing CMS & Logo', icon: 'web', badge: 'CMS' },
-    { id: 'coupons', label: 'Coupons & Offers', icon: 'local_offer', badge: null },
-    { id: 'testimonials', label: 'Testimonials & FAQs', icon: 'chat_bubble_outline', badge: null },
     { id: 'community', label: 'Community Management', icon: 'forum', badge: 'Mod' },
-    { id: 'audit', label: 'Security Audit Logs', icon: 'security', badge: 'Logs' },
-    { id: 'settings', label: 'System Settings', icon: 'settings', badge: null }
+    { id: 'testimonials', label: 'Testimonials & FAQs', icon: 'chat_bubble_outline', badge: null },
+    { id: 'users', label: 'User & Staff Governance', icon: 'admin_panel_settings', badge: 'Access', restrictedForInstructor: true },
+    { id: 'payments', label: 'Payments & Orders', icon: 'payments', badge: 'Live', restrictedForInstructor: true },
+    { id: 'coupons', label: 'Coupons & Offers', icon: 'local_offer', badge: null, restrictedForInstructor: true },
+    { id: 'cms', label: 'Landing CMS & Logo', icon: 'web', badge: 'CMS' },
+    { id: 'audit', label: 'Security Audit Logs', icon: 'security', badge: 'Logs', restrictedForInstructor: true },
+    { id: 'settings', label: 'System Settings', icon: 'settings', badge: null, restrictedForInstructor: true }
   ];
+
+  const navItems = isInstructor
+    ? allNavItems.filter(item => !item.restrictedForInstructor)
+    : allNavItems;
 
   const currentNav = navItems.find(i => i.id === activeSection) || navItems[0];
 
@@ -57,7 +65,7 @@ export default function AdminDashboardLayout({
                 <span className="font-bold text-sm tracking-tight text-stone-900 block leading-tight truncate">Landscape Mastery</span>
                 <span className="text-[9.5px] uppercase font-bold text-emerald-800 tracking-wider flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                  Admin Operations
+                  {isInstructor ? 'Faculty Studio Console' : 'Admin Operations'}
                 </span>
               </div>
             </button>
@@ -81,7 +89,7 @@ export default function AdminDashboardLayout({
               <span className="text-xs font-bold text-stone-900 block truncate" title={user?.email}>{user?.email || 'admin@landscapemastery.com'}</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[9px] font-mono font-bold text-emerald-900 bg-emerald-100/70 border border-emerald-300/80 px-2 py-0.5 rounded-md inline-block uppercase tracking-wider truncate max-w-full">
-                  {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : (user?.role || 'Admin')}
+                  {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : user?.role === 'INSTRUCTOR' ? 'Course Instructor' : (user?.role || 'Admin')}
                 </span>
               </div>
             </div>

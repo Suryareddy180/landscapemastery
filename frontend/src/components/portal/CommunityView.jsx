@@ -46,7 +46,7 @@ const FALLBACK_CHANNELS = [
 ];
 
 export default function CommunityView({ token, user, onOpenAdminCommunity }) {
-  const isModerator = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN'].includes(user.role);
+  const isModerator = user && ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN'].includes(user.role);
 
   const [channels, setChannels] = useState(FALLBACK_CHANNELS);
   const [selectedChannelId, setSelectedChannelId] = useState('general-architecture');
@@ -477,7 +477,9 @@ export default function CommunityView({ token, user, onOpenAdminCommunity }) {
                         <span className="text-xs font-bold text-stone-900">{msg.sender}</span>
                         {msg.role && (
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            isInstructor
+                            msg.user_role === 'INSTRUCTOR' || msg.role === 'Course Instructor'
+                              ? 'bg-emerald-100 text-emerald-950 font-bold border border-emerald-300'
+                              : isInstructor
                               ? 'bg-amber-100 text-amber-900 font-bold border border-amber-200'
                               : 'bg-stone-100 text-stone-600'
                           }`}>

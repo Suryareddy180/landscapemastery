@@ -62,7 +62,7 @@ def serialize_profile(usr):
             'student_status': profile.student_status or 'Still Studying',
             'student_id': profile.student_id or f"STU-{usr.id:04d}",
         })
-    elif usr.role == 'EMPLOYEE' or usr.role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']:
+    elif usr.role == 'EMPLOYEE' or usr.role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']:
         data.update({
             'employee_id': profile.employee_id or f"EMP-{usr.id:04d}",
             'company_name': profile.company_name or '3CAPSTECH',
@@ -182,7 +182,7 @@ def user_profile(req):
                 profile.student_id = str(data.get('student_id', '')).strip()
 
         # 6. Employee Specific Fields
-        elif usr.role == 'EMPLOYEE' or usr.role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']:
+        elif usr.role == 'EMPLOYEE' or usr.role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']:
             if 'company_name' in data:
                 profile.company_name = str(data.get('company_name', '')).strip()
             if 'department' in data:

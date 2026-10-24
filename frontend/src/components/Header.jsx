@@ -41,7 +41,7 @@ export default function Header({ activeView, onNavigate, logoSize = 48, logoUrl 
     }
   };
 
-  const isAdmin = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
+  const isAdmin = user && ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
 
   return (
     <motion.header 

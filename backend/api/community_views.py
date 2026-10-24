@@ -70,10 +70,12 @@ def serialize_message(msg):
     if profile and profile.avatar:
         avatar = profile.avatar.url
     
-    is_staff_mod = author.role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN'] or author.is_staff
+    is_staff_mod = author.role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN'] or author.is_staff
     display_role = comm_profile.custom_role_title if (comm_profile and comm_profile.custom_role_title) else (
-        'Lead Faculty' if author.role in ['SUPER_ADMIN', 'CONTENT_MANAGER'] else (
-            'Staff Architect' if is_staff_mod else 'Student Architect'
+        'Course Instructor' if author.role == 'INSTRUCTOR' else (
+            'Lead Faculty' if author.role in ['SUPER_ADMIN', 'CONTENT_MANAGER'] else (
+                'Staff Architect' if is_staff_mod else 'Student Architect'
+            )
         )
     )
 
@@ -167,7 +169,7 @@ def post_channel_message(request, slug):
         reason = comm_profile.mute_reason or 'Your account has been temporarily muted by studio moderators.'
         return Response({'error': f'Cannot post: {reason}'}, status=status.HTTP_403_FORBIDDEN)
 
-    is_mod = check_admin_permission(usr, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN'])
+    is_mod = check_admin_permission(usr, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN'])
     if channel.is_read_only and not is_mod:
         return Response({'error': 'This channel is read-only for students. Only faculty and managers can post.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -231,8 +233,8 @@ def flag_message(request, message_id):
 # =========================================================================
 
 def verify_community_manager(user):
-    """Validates that user has SUPER_ADMIN or CONTENT_MANAGER rights."""
-    return check_admin_permission(user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN'])
+    """Validates that user has SUPER_ADMIN, INSTRUCTOR, or CONTENT_MANAGER rights."""
+    return check_admin_permission(user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN'])
 
 
 @api_view(['GET'])

@@ -16,7 +16,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import (
     Usr, Course, Module, Lesson, MediaAsset, ContentItem, Enrollment,
-    PaymentRecord, Coupon, Testimonial, FAQ, Announcement, SiteSetting, AuditLog, LessonProgress, VideoProgress
+    PaymentRecord, Coupon, Testimonial, FAQ, Announcement, Assignment, AssignmentSubmission,
+    SiteSetting, AuditLog, LessonProgress, VideoProgress
 )
 from .email_service import sndMail
 from .payment_service import fulfill_verified_payment
@@ -49,7 +50,7 @@ def check_admin_permission(usr, allowed_roles=None):
         return True
     if allowed_roles:
         return usr.role in allowed_roles or usr.role == 'ADMIN'
-    return usr.role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'] or usr.is_staff
+    return usr.role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'] or usr.is_staff
 
 # ---------------------------------------------------------
 # SYSTEM HEALTH CHECK (For Load Balancers & Monitoring)
@@ -1049,7 +1050,13 @@ def admin_analytics(req):
     published_courses = Course.objects.filter(status='PUBLISHED').count()
     total_enrollments = Enrollment.objects.count()
 
-    total_revenue = sum([p.amount for p in PaymentRecord.objects.filter(status='SUCCESS')]) or 0
+    # Instructors are granted full academic and studio powers but strictly restricted from financial revenue metrics
+    is_instructor = (req.user.role == 'INSTRUCTOR')
+    if is_instructor:
+        total_revenue = None
+    else:
+        total_revenue = float(sum([p.amount for p in PaymentRecord.objects.filter(status='SUCCESS')]) or 0)
+
     short_video_count = MediaAsset.objects.filter(asset_type='short_video').count() + ContentItem.objects.filter(content_type='short_video').count()
     long_video_count = MediaAsset.objects.filter(asset_type='long_video').count() + ContentItem.objects.filter(content_type='long_video').count()
     pdf_count = MediaAsset.objects.filter(asset_type='pdf').count() + ContentItem.objects.filter(content_type='pdf').count()
@@ -1064,7 +1071,8 @@ def admin_analytics(req):
         'totalCourses': total_courses,
         'publishedCourses': published_courses,
         'totalEnrollments': total_enrollments,
-        'totalRevenue': float(total_revenue),
+        'totalRevenue': total_revenue,
+        'isFinancialRestricted': is_instructor,
         'shortVideoCount': short_video_count,
         'longVideoCount': long_video_count,
         'pdfCount': pdf_count,
@@ -1093,6 +1101,8 @@ def admin_settings(req):
             'curriculumPdfSize': setting.curriculum_pdf_size
         })
     elif req.method in ['POST', 'PATCH']:
+        if req.user.role == 'INSTRUCTOR' and 'coursePrice' in req.data:
+            return Response({'error': 'Instructors are not authorized to modify financial pricing.'}, status=status.HTTP_403_FORBIDDEN)
         if 'heroTitle' in req.data: setting.hero_title = req.data['heroTitle']
         if 'heroSubtitle' in req.data: setting.hero_subtitle = req.data['heroSubtitle']
         if 'logoUrl' in req.data: setting.logo_url = req.data['logoUrl']
@@ -1223,7 +1233,7 @@ def admin_upload_logo(req):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def admin_courses(req):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Content Manager permission required'}, status=status.HTTP_403_FORBIDDEN)
     if req.method == 'GET':
         courses = []
@@ -1304,7 +1314,7 @@ def admin_courses(req):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def admin_course_detail(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Content Manager permission required'}, status=status.HTTP_403_FORBIDDEN)
     try:
         course = Course.objects.get(pk=pk)
@@ -1409,7 +1419,7 @@ def admin_course_detail(req, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_upload_course_cover(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Content Manager permission required'}, status=status.HTTP_403_FORBIDDEN)
     try:
         course = Course.objects.get(pk=pk)
@@ -1467,7 +1477,7 @@ def admin_upload_course_cover(req, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_add_module(req, course_id):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         course = Course.objects.get(pk=course_id)
@@ -1507,7 +1517,7 @@ def serialize_lesson_data(les, include_video_url=False):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_add_lesson(req, module_id):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Permission denied: Super Admin or Content Manager role required'}, status=status.HTTP_403_FORBIDDEN)
     try:
         module = Module.objects.select_related('course').get(pk=module_id)
@@ -1565,7 +1575,7 @@ def admin_add_lesson(req, module_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def admin_course_lessons(req, course_id):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         course = Course.objects.get(pk=course_id)
@@ -1582,7 +1592,7 @@ def admin_course_lessons(req, course_id):
 @api_view(['GET', 'PATCH', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def admin_lesson_detail(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         les = Lesson.objects.select_related('module__course').get(pk=pk)
@@ -1652,7 +1662,7 @@ def admin_lesson_detail(req, pk):
 @api_view(['PATCH', 'POST'])
 @permission_classes([IsAuthenticated])
 def admin_lesson_publish(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         les = Lesson.objects.get(pk=pk)
@@ -1673,7 +1683,7 @@ def admin_lesson_publish(req, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_validate_veed(req):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
     source = req.data.get('video_source') or req.data.get('url') or req.data.get('video_id') or ''
@@ -1889,7 +1899,7 @@ def lesson_playback(req, course_id, lesson_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_add_asset(req, lesson_id):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         lesson = Lesson.objects.get(pk=lesson_id)
@@ -1919,7 +1929,7 @@ def admin_add_asset(req, lesson_id):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def admin_media_list_create(req):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     
     if req.method == 'GET':
@@ -1980,7 +1990,7 @@ def admin_media_list_create(req):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def admin_media_detail(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'CONTENT_MANAGER', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         asset = MediaAsset.objects.get(pk=pk)
@@ -2085,7 +2095,7 @@ def admin_faq_detail(req, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def admin_students(req):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'SUPPORT_ADMIN', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'SUPPORT_ADMIN', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     stds = list(Usr.objects.filter(role='STUDENT').values('id', 'email', 'phone', 'paid', 'is_active', 'created_at'))
     return Response({'students': stds})
@@ -2093,7 +2103,7 @@ def admin_students(req):
 @api_view(['PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def admin_student_detail(req, pk):
-    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'SUPPORT_ADMIN', 'ADMIN']):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'SUPPORT_ADMIN', 'ADMIN']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     try:
         usr = Usr.objects.get(pk=pk, role='STUDENT')
@@ -2141,6 +2151,7 @@ def admin_users(req):
         counts = {
             'total': Usr.objects.count(),
             'super_admin': Usr.objects.filter(role='SUPER_ADMIN').count(),
+            'instructor': Usr.objects.filter(role='INSTRUCTOR').count(),
             'content_manager': Usr.objects.filter(role='CONTENT_MANAGER').count(),
             'support_admin': Usr.objects.filter(role='SUPPORT_ADMIN').count(),
             'students': Usr.objects.filter(role='STUDENT').count(),
@@ -2161,11 +2172,11 @@ def admin_users(req):
         if Usr.objects.filter(email=email).exists():
             return Response({'error': 'User with this email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        valid_roles = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
+        valid_roles = ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
         if role not in valid_roles:
             role = 'STUDENT'
 
-        is_staff = role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
+        is_staff = role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
         is_superuser = (role == 'SUPER_ADMIN')
 
         new_user = Usr.objects.create(
@@ -2221,10 +2232,10 @@ def admin_user_detail(req, pk):
     elif req.method == 'PATCH':
         if 'role' in req.data:
             new_role = req.data['role']
-            valid_roles = ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
+            valid_roles = ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN', 'STUDENT']
             if new_role in valid_roles:
                 target_usr.role = new_role
-                target_usr.is_staff = new_role in ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
+                target_usr.is_staff = new_role in ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN']
                 if new_role == 'SUPER_ADMIN':
                     target_usr.is_superuser = True
         if 'is_active' in req.data:
@@ -2345,4 +2356,350 @@ def apply_coupon(req):
         return Response({'valid': True, 'code': c.code, 'discount_pct': c.discount_pct})
     except Coupon.DoesNotExist:
         return Response({'error': 'Invalid or expired coupon code'}, status=status.HTTP_404_NOT_FOUND)
+
+# ---------------------------------------------------------
+# ANNOUNCEMENTS CMS (SUPER_ADMIN, INSTRUCTOR, CONTENT_MANAGER)
+# ---------------------------------------------------------
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_announcements(req):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor or Admin permission required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if req.method == 'GET':
+        announcements = []
+        for a in Announcement.objects.all().order_by('-created_at'):
+            announcements.append({
+                'id': a.id,
+                'title': a.title,
+                'message': a.message,
+                'active': a.active,
+                'created_by': a.created_by.email if a.created_by else 'Faculty',
+                'created_at': a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else ''
+            })
+        return Response({'announcements': announcements})
+
+    elif req.method == 'POST':
+        title = req.data.get('title', '').strip()
+        message = req.data.get('message', '').strip()
+        active = bool(req.data.get('active', True))
+        if not title or not message:
+            return Response({'error': 'Announcement title and message are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        announcement = Announcement.objects.create(
+            title=title,
+            message=message,
+            active=active,
+            created_by=req.user
+        )
+        log_admin_action(req.user, "ANNOUNCEMENT_CREATED", target=announcement.title, details=f"ID: {announcement.id}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({
+            'status': 'created',
+            'announcement': {
+                'id': announcement.id,
+                'title': announcement.title,
+                'message': announcement.message,
+                'active': announcement.active,
+                'created_by': req.user.email,
+                'created_at': announcement.created_at.strftime('%Y-%m-%d %H:%M') if announcement.created_at else ''
+            }
+        }, status=status.HTTP_201_CREATED)
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_announcement_detail(req, pk):
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor or Admin permission required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        announcement = Announcement.objects.get(pk=pk)
+    except Announcement.DoesNotExist:
+        return Response({'error': 'Announcement not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if req.method == 'DELETE':
+        announcement.delete()
+        log_admin_action(req.user, "ANNOUNCEMENT_DELETED", target=f"ID: {pk}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'deleted'})
+
+    elif req.method == 'PATCH':
+        if 'title' in req.data:
+            announcement.title = req.data['title'].strip()
+        if 'message' in req.data:
+            announcement.message = req.data['message'].strip()
+        if 'active' in req.data:
+            announcement.active = bool(req.data['active'])
+        announcement.save()
+        log_admin_action(req.user, "ANNOUNCEMENT_UPDATED", target=announcement.title, details=f"Active: {announcement.active}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'updated', 'announcement': {
+            'id': announcement.id,
+            'title': announcement.title,
+            'message': announcement.message,
+            'active': announcement.active
+        }})
+
+# ---------------------------------------------------------
+# ASSIGNMENTS & FIELD TASKS (SUPER_ADMIN, INSTRUCTOR, CONTENT_MANAGER)
+# ---------------------------------------------------------
+
+def seed_starter_assignments():
+    """Initializes starter assignments if none exist."""
+    starters = [
+        {
+            'title': 'Executive Cut-and-Fill Contour Calculation Sheet',
+            'module_name': 'Module 1: Topography & Site Grading',
+            'deadline': 'Self-Paced / Recommended Week 2',
+            'description': 'Calculate the net cubic meters of cut and fill for a 2,500 sq.m residential hill slope based on the provided AutoCAD elevation contours.',
+            'points': 100
+        },
+        {
+            'title': 'Reinforced Retaining Wall CAD Detail Section',
+            'module_name': 'Module 2: Hardscape Masonry & Engineering',
+            'deadline': 'Self-Paced / Recommended Week 4',
+            'description': 'Draft a 1:20 cross-section structural detail showing concrete footing, perforated French drain, geotextile wrap, and geogrid tiebacks.',
+            'points': 100
+        },
+        {
+            'title': 'Hydrozone Palette & Drip Irrigation Layout',
+            'module_name': 'Module 3: Botanical Scenography',
+            'deadline': 'Self-Paced / Recommended Week 6',
+            'description': 'Design a microclimate plant schedule identifying canopy trees, intermediate shrubs, and xeriscape hydrozone GPM demands for Zone 9b.',
+            'points': 100
+        }
+    ]
+    for s in starters:
+        Assignment.objects.create(**s)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_assignments(req):
+    """List all studio assignments or create a new assignment (Instructor / Admin)."""
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor permission required'}, status=status.HTTP_403_FORBIDDEN)
+
+    if Assignment.objects.count() == 0:
+        seed_starter_assignments()
+
+    if req.method == 'GET':
+        assignments = []
+        for a in Assignment.objects.all().select_related('course', 'created_by').order_by('-created_at'):
+            submissions_count = a.submissions.count()
+            graded_count = a.submissions.filter(status='GRADED').count()
+            pending_count = a.submissions.filter(status='PENDING').count()
+            assignments.append({
+                'id': a.id,
+                'title': a.title,
+                'module_name': a.module_name,
+                'course_id': a.course_id,
+                'course_title': a.course.title if a.course else 'Universal Studio',
+                'deadline': a.deadline,
+                'description': a.description,
+                'points': a.points,
+                'submissions_count': submissions_count,
+                'pending_count': pending_count,
+                'graded_count': graded_count,
+                'created_by': a.created_by.email if a.created_by else 'Faculty',
+                'created_at': a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else ''
+            })
+        return Response({'assignments': assignments})
+
+    elif req.method == 'POST':
+        title = req.data.get('title', '').strip()
+        description = req.data.get('description', '').strip()
+        module_name = req.data.get('module_name', '').strip() or 'Studio Project'
+        deadline = req.data.get('deadline', 'Self-Paced / Recommended Week 2').strip()
+        points = int(req.data.get('points', 100))
+        course_id = req.data.get('course_id')
+
+        if not title or not description:
+            return Response({'error': 'Assignment title and description are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        course = None
+        if course_id:
+            try:
+                course = Course.objects.get(pk=course_id)
+            except Course.DoesNotExist:
+                course = None
+
+        asg = Assignment.objects.create(
+            title=title,
+            description=description,
+            module_name=module_name,
+            deadline=deadline,
+            points=points,
+            course=course,
+            created_by=req.user
+        )
+        log_admin_action(req.user, "ASSIGNMENT_CREATED", target=asg.title, details=f"ID: {asg.id}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({
+            'status': 'created',
+            'assignment': {
+                'id': asg.id,
+                'title': asg.title,
+                'module_name': asg.module_name,
+                'deadline': asg.deadline,
+                'description': asg.description,
+                'points': asg.points,
+                'course_title': course.title if course else 'Universal Studio'
+            }
+        }, status=status.HTTP_201_CREATED)
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_assignment_detail(req, pk):
+    """View, update or delete an assignment."""
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor permission required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        asg = Assignment.objects.get(pk=pk)
+    except Assignment.DoesNotExist:
+        return Response({'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if req.method == 'DELETE':
+        asg.delete()
+        log_admin_action(req.user, "ASSIGNMENT_DELETED", target=f"ID: {pk}", ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'deleted'})
+
+    elif req.method == 'PATCH':
+        if 'title' in req.data: asg.title = req.data['title'].strip()
+        if 'description' in req.data: asg.description = req.data['description'].strip()
+        if 'module_name' in req.data: asg.module_name = req.data['module_name'].strip()
+        if 'deadline' in req.data: asg.deadline = req.data['deadline'].strip()
+        if 'points' in req.data: asg.points = int(req.data['points'])
+        asg.save()
+        log_admin_action(req.user, "ASSIGNMENT_UPDATED", target=asg.title, ip=req.META.get('REMOTE_ADDR'))
+        return Response({'status': 'updated', 'assignment': {
+            'id': asg.id,
+            'title': asg.title,
+            'module_name': asg.module_name,
+            'deadline': asg.deadline,
+            'points': asg.points
+        }})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_assignment_submissions(req, pk):
+    """List student submissions for a specific assignment."""
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor permission required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        asg = Assignment.objects.get(pk=pk)
+    except Assignment.DoesNotExist:
+        return Response({'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    submissions = []
+    for s in asg.submissions.all().select_related('student', 'graded_by').order_by('-submitted_at'):
+        submissions.append({
+            'id': s.id,
+            'student_id': s.student.id,
+            'student_email': s.student.email,
+            'student_name': s.student.full_name or s.student.email.split('@')[0],
+            'submission_text': s.submission_text,
+            'file_url': s.file_url,
+            'status': s.status,
+            'score': s.score,
+            'feedback': s.feedback,
+            'submitted_at': s.submitted_at.strftime('%Y-%m-%d %H:%M') if s.submitted_at else '',
+            'graded_at': s.graded_at.strftime('%Y-%m-%d %H:%M') if s.graded_at else '',
+            'graded_by': s.graded_by.full_name or s.graded_by.email if s.graded_by else ''
+        })
+    return Response({'assignment_title': asg.title, 'points': asg.points, 'submissions': submissions})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_grade_submission(req, pk):
+    """Grade a student submission with score and constructive instructor feedback."""
+    if not check_admin_permission(req.user, allowed_roles=['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER']):
+        return Response({'error': 'Course Instructor permission required'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        sub = AssignmentSubmission.objects.get(pk=pk)
+    except AssignmentSubmission.DoesNotExist:
+        return Response({'error': 'Submission record not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    score = req.data.get('score', '').strip()
+    feedback = req.data.get('feedback', '').strip()
+    from django.utils import timezone
+
+    sub.score = score
+    sub.feedback = feedback
+    sub.status = 'GRADED'
+    sub.graded_at = timezone.now()
+    sub.graded_by = req.user
+    sub.save()
+
+    log_admin_action(req.user, "ASSIGNMENT_GRADED", target=sub.student.email, details=f"Score: {score} | Asg: {sub.assignment.title}", ip=req.META.get('REMOTE_ADDR'))
+    return Response({
+        'status': 'graded',
+        'submission': {
+            'id': sub.id,
+            'score': sub.score,
+            'feedback': sub.feedback,
+            'status': sub.status,
+            'graded_by': req.user.full_name or req.user.email
+        }
+    })
+
+# STUDENT FACING ASSIGNMENT ENDPOINTS
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def student_assignments(req):
+    """Student portal view of all assignments and personal submission statuses."""
+    usr = req.user
+    if Assignment.objects.count() == 0:
+        seed_starter_assignments()
+
+    assignments = []
+    for a in Assignment.objects.all().order_by('id'):
+        sub = AssignmentSubmission.objects.filter(assignment=a, student=usr).first()
+        assignments.append({
+            'id': a.id,
+            'title': a.title,
+            'module': a.module_name,
+            'deadline': a.deadline,
+            'description': a.description,
+            'points': a.points,
+            'status': 'Submitted' if (sub and sub.status == 'PENDING') else (sub.status if sub else 'Pending'),
+            'score': sub.score if sub else '',
+            'feedback': sub.feedback if sub else '',
+            'submissionNotes': sub.submission_text if sub else '',
+            'file_url': sub.file_url if sub else '',
+            'is_submitted': bool(sub)
+        })
+    return Response({'assignments': assignments})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def student_submit_assignment(req, pk):
+    """Student submits text / link / notes for an assignment."""
+    try:
+        asg = Assignment.objects.get(pk=pk)
+    except Assignment.DoesNotExist:
+        return Response({'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    text = req.data.get('submission_text') or req.data.get('text') or ''
+    file_url = req.data.get('file_url', '')
+
+    if not str(text).strip() and not str(file_url).strip():
+        return Response({'error': 'Please provide submission notes or a work link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    sub, created = AssignmentSubmission.objects.get_or_create(
+        assignment=asg,
+        student=req.user,
+        defaults={'submission_text': str(text).strip(), 'file_url': str(file_url).strip(), 'status': 'PENDING'}
+    )
+    if not created:
+        sub.submission_text = str(text).strip()
+        if file_url: sub.file_url = str(file_url).strip()
+        sub.status = 'PENDING'
+        sub.save()
+
+    return Response({
+        'status': 'submitted',
+        'message': 'Assignment submitted successfully for instructor review.',
+        'submission': {
+            'id': sub.id,
+            'status': sub.status,
+            'submission_text': sub.submission_text
+        }
+    }, status=status.HTTP_201_CREATED)
+
 

@@ -41,7 +41,7 @@ export default function DashboardView({ onNavigate, token, user, onLogout, logoU
     }
   });
 
-  const isAdmin = user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
+  const isAdmin = user && ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(user.role);
 
   useEffect(() => {
     fetchEnrolledCourses();

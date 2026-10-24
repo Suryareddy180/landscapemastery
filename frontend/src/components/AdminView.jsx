@@ -5,6 +5,8 @@ import MediaLibrarySection from './admin/MediaLibrarySection.jsx';
 import UserGovernanceSection from './admin/UserGovernanceSection.jsx';
 import CompanyConfigSection from './admin/CompanyConfigSection.jsx';
 import CommunityManagementSection from './admin/CommunityManagementSection.jsx';
+import AssignmentManagementSection from './admin/AssignmentManagementSection.jsx';
+import AnnouncementManagementSection from './admin/AnnouncementManagementSection.jsx';
 import { BASE_URL } from '../lib/api.js';
 
 export default function AdminView({ user, onNavigate, token, onLogout, onSettingsUpdated, onOpenProfile }) {
@@ -412,14 +414,27 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
               <p className="text-[11px] text-emerald-700 font-semibold mt-2">↑ Verified Paid Enrollees</p>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Gross Platform Revenue</span>
-                <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">payments</span>
+            {analytics?.isFinancialRestricted || user?.role === 'INSTRUCTOR' || analytics?.totalRevenue === null ? (
+              <div className="bg-stone-50/80 p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Faculty Governance</span>
+                  <span className="material-symbols-outlined text-stone-500 bg-stone-100 p-2 rounded-xl border border-stone-200">lock</span>
+                </div>
+                <div>
+                  <div className="text-base font-bold text-stone-700">Financial Restricted</div>
+                  <p className="text-[11px] text-stone-500 mt-1">Executive Finance / Super Admin Only</p>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-stone-900">₹{analytics.totalRevenue.toLocaleString()}</div>
-              <p className="text-[11px] text-emerald-700 font-semibold mt-2">Verified Razorpay Captured Sales</p>
-            </div>
+            ) : (
+              <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Gross Platform Revenue</span>
+                  <span className="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl border border-emerald-200">payments</span>
+                </div>
+                <div className="text-2xl font-bold text-stone-900">₹{analytics.totalRevenue?.toLocaleString?.() || 0}</div>
+                <p className="text-[11px] text-emerald-700 font-semibold mt-2">Verified Razorpay Captured Sales</p>
+              </div>
+            )}
 
             <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
               <div className="flex justify-between items-center mb-3">
@@ -445,8 +460,47 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       {/* SECTION 2: COURSE BUILDER */}
       {activeSection === 'courses' && <CourseBuilderSection token={token} />}
 
+      {/* SECTION: ASSIGNMENTS STUDIO (Course Instructors & Admins) */}
+      {activeSection === 'assignments' && (
+        <AssignmentManagementSection token={token} user={user} />
+      )}
+
+      {/* SECTION: BROADCAST ANNOUNCEMENTS (Course Instructors & Admins) */}
+      {activeSection === 'announcements' && (
+        <AnnouncementManagementSection token={token} user={user} />
+      )}
+
       {/* SECTION 3: MEDIA & CONTENT LIBRARY */}
       {activeSection === 'library' && <MediaLibrarySection token={token} />}
+
+      {/* RESTRICTED ACCESS GUARD FOR INSTRUCTORS */}
+      {user?.role === 'INSTRUCTOR' && ['payments', 'coupons', 'users', 'audit', 'settings'].includes(activeSection) && (
+        <div className="bg-white p-12 rounded-3xl border border-stone-200 shadow-sm text-center max-w-lg mx-auto my-12 space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto border border-amber-200 shadow-xs">
+            <span className="material-symbols-outlined text-3xl">verified_user</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-stone-900">Restricted Administrative Area</h2>
+            <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+              Course Instructors have complete authority over course curriculum, assignments, announcements, and community discussions. Financial oversight, coupon management, and user governance are restricted to Executive Super Admins.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <button
+              onClick={() => setActiveSection('courses')}
+              className="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs px-5 py-2.5 rounded-xl cursor-pointer shadow-sm transition-all"
+            >
+              Go to Course Studio
+            </button>
+            <button
+              onClick={() => setActiveSection('assignments')}
+              className="bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs px-5 py-2.5 rounded-xl cursor-pointer transition-all border border-stone-200"
+            >
+              Assignments Studio
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SECTION 4: STUDENT ROSTER */}
       {activeSection === 'students' && (
@@ -504,12 +558,12 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       )}
 
       {/* SECTION: USER & STAFF ROLE GOVERNANCE */}
-      {activeSection === 'users' && (
+      {activeSection === 'users' && user?.role !== 'INSTRUCTOR' && (
         <UserGovernanceSection token={token} currentUser={user} />
       )}
 
       {/* SECTION 5: PAYMENTS & ORDERS */}
-      {activeSection === 'payments' && (
+      {activeSection === 'payments' && user?.role !== 'INSTRUCTOR' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <h1 className="text-xl font-bold text-stone-900">Payments &amp; Verified Orders Log</h1>
@@ -977,7 +1031,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       )}
 
       {/* SECTION 8: COUPONS & PROMOTIONAL OFFERS */}
-      {activeSection === 'coupons' && (
+      {activeSection === 'coupons' && user?.role !== 'INSTRUCTOR' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <h1 className="text-xl font-bold text-stone-900 flex items-center gap-2">
@@ -1093,7 +1147,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       )}
 
       {/* SECTION 9: AUDIT LOGS */}
-      {activeSection === 'audit' && (
+      {activeSection === 'audit' && user?.role !== 'INSTRUCTOR' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <h1 className="text-xl font-bold text-stone-900">Security Audit Trail &amp; System Logs</h1>
@@ -1128,7 +1182,7 @@ export default function AdminView({ user, onNavigate, token, onLogout, onSetting
       )}
 
       {/* SECTION 9: SYSTEM SETTINGS */}
-      {activeSection === 'settings' && (
+      {activeSection === 'settings' && user?.role !== 'INSTRUCTOR' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <h1 className="text-xl font-bold text-stone-900">System Security &amp; SMTP Settings</h1>

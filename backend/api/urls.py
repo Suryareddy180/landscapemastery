@@ -132,5 +132,20 @@ urlpatterns = [
     path('admin/community/messages/<int:message_id>/moderate/', community_views.admin_moderate_message),
     path('admin/community/members/', community_views.admin_members_list),
     path('admin/community/members/<int:user_id>/moderate/', community_views.admin_moderate_member),
+
+    # Announcements CMS
+    path('admin/announcements/', views.admin_announcements),
+    path('admin/announcements/<int:pk>/', views.admin_announcement_detail),
+
+    # Assignments Management & Grading (Instructors & Admin)
+    path('admin/assignments/', views.admin_assignments),
+    path('admin/assignments/<int:pk>/', views.admin_assignment_detail),
+    path('admin/assignments/<int:pk>/submissions/', views.admin_assignment_submissions),
+    path('admin/assignments/submissions/<int:pk>/grade/', views.admin_grade_submission),
+
+    # Student Assignments
+    path('assignments/', views.student_assignments),
+    path('assignments/<int:pk>/submit/', views.student_submit_assignment),
 ]
+
 

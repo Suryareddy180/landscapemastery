@@ -6,6 +6,7 @@ export default function UserGovernanceSection({ token, currentUser }) {
   const [counts, setCounts] = useState({
     total: 0,
     super_admin: 0,
+    instructor: 0,
     content_manager: 0,
     support_admin: 0,
     students: 0,
@@ -265,7 +266,7 @@ export default function UserGovernanceSection({ token, currentUser }) {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Accounts</span>
           <span className="text-xl font-bold text-stone-900 mt-1 block">{counts.total || users.length}</span>
@@ -273,6 +274,10 @@ export default function UserGovernanceSection({ token, currentUser }) {
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Super Admins</span>
           <span className="text-xl font-bold text-emerald-800 mt-1 block">{counts.super_admin || users.filter(u => u.role === 'SUPER_ADMIN').length}</span>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
+          <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">Instructors</span>
+          <span className="text-xl font-bold text-teal-800 mt-1 block">{counts.instructor || users.filter(u => u.role === 'INSTRUCTOR').length}</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
           <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider block">Content Mgrs</span>
@@ -283,8 +288,8 @@ export default function UserGovernanceSection({ token, currentUser }) {
           <span className="text-xl font-bold text-amber-800 mt-1 block">{counts.support_admin || users.filter(u => u.role === 'SUPPORT_ADMIN').length}</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
-          <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">Paid Enrollees</span>
-          <span className="text-xl font-bold text-teal-800 mt-1 block">{counts.paid_students || users.filter(u => u.paid).length}</span>
+          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Paid Enrollees</span>
+          <span className="text-xl font-bold text-emerald-700 mt-1 block">{counts.paid_students || users.filter(u => u.paid).length}</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs">
           <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Total Students</span>
@@ -306,7 +311,7 @@ export default function UserGovernanceSection({ token, currentUser }) {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 text-xs">
-          {['ALL', 'SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'STUDENT', 'PAID'].map(tab => (
+          {['ALL', 'SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'STUDENT', 'PAID'].map(tab => (
             <button
               key={tab}
               onClick={() => setRoleFilter(tab)}
@@ -368,16 +373,19 @@ export default function UserGovernanceSection({ token, currentUser }) {
                         value={u.role || 'STUDENT'}
                         onChange={(e) => handleUpdateRole(u.id, e.target.value)}
                         className={`text-[11px] font-bold rounded-lg px-2 py-1 border cursor-pointer ${
-                          isSuperAdmin 
+                          u.role === 'SUPER_ADMIN' 
                             ? 'bg-emerald-50 text-emerald-900 border-emerald-300' 
-                            : u.role === 'CONTENT_MANAGER' 
-                              ? 'bg-indigo-50 text-indigo-900 border-indigo-300' 
-                              : u.role === 'SUPPORT_ADMIN'
-                                ? 'bg-amber-50 text-amber-900 border-amber-300'
-                                : 'bg-stone-50 text-stone-800 border-stone-300'
+                            : u.role === 'INSTRUCTOR'
+                              ? 'bg-teal-50 text-teal-900 border-teal-300'
+                              : u.role === 'CONTENT_MANAGER' 
+                                ? 'bg-indigo-50 text-indigo-900 border-indigo-300' 
+                                : u.role === 'SUPPORT_ADMIN'
+                                  ? 'bg-amber-50 text-amber-900 border-amber-300'
+                                  : 'bg-stone-50 text-stone-800 border-stone-300'
                         }`}
                       >
                         <option value="SUPER_ADMIN">SUPER ADMIN (Full Rights)</option>
+                        <option value="INSTRUCTOR">COURSE INSTRUCTOR</option>
                         <option value="CONTENT_MANAGER">CONTENT MANAGER</option>
                         <option value="SUPPORT_ADMIN">SUPPORT ADMIN</option>
                         <option value="STUDENT">STUDENT</option>
@@ -518,6 +526,7 @@ export default function UserGovernanceSection({ token, currentUser }) {
                   className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-900 font-semibold focus:bg-white focus:border-emerald-600 focus:outline-none cursor-pointer"
                 >
                   <option value="SUPER_ADMIN">Super Admin (Full Governance Rights)</option>
+                  <option value="INSTRUCTOR">Course Instructor (Curriculum &amp; Studio)</option>
                   <option value="CONTENT_MANAGER">Content Manager (Curriculum &amp; Media)</option>
                   <option value="SUPPORT_ADMIN">Support Admin (Student Success &amp; Coupons)</option>
                   <option value="STUDENT">Enrolled Student</option>

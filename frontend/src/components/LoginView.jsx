@@ -85,14 +85,14 @@ export default function LoginView({ onNavigate, onLoginSuccess, logoUrl, isAdmin
       const authToken = data.token || data.access;
       if (res.ok && authToken) {
         // Also persist admin_token for company admin sync
-        if (data.user && ['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user.role)) {
+        if (data.user && ['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user.role)) {
           localStorage.setItem('admin_token', authToken);
         }
         const authPayload = { ...data, token: authToken };
         if (onLoginSuccess) {
           onLoginSuccess(authPayload);
         } else {
-          onNavigate(['SUPER_ADMIN', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user?.role) ? 'admin' : 'v3');
+          onNavigate(['SUPER_ADMIN', 'INSTRUCTOR', 'CONTENT_MANAGER', 'SUPPORT_ADMIN', 'ADMIN'].includes(data.user?.role) ? 'admin' : 'v3');
         }
       } else {
         if (res.status === 401 || res.status === 400) {
